@@ -1,0 +1,30 @@
+{
+  "name": "quingo-industrial-store",
+  "version": "1.0.0",
+  "description": "PWA para tienda en línea de productos industriales",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "cd server && npm start",
+    "lint": "concurrently \"npm run lint:client\" \"npm run lint:server\"",
+    "lint:client": "cd client && npm run lint",
+    "lint:server": "cd server && npm run lint"
+  },
+  "keywords": [
+    "pwa",
+    "ecommerce",
+    "industrial",
+    "welding",
+    "safety"
+  ],
+  "author": "Quingo",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
