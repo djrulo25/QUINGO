@@ -88,7 +88,6 @@ export default function AdminProductForm() {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
           }
         }
       )
