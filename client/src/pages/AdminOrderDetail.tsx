@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { API_BASE_URL } from '@/api/config'
 
 interface OrderItem {
   productId: string
@@ -88,7 +89,7 @@ export default function AdminOrderDetail() {
   const fetchOrder = async () => {
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await axios.get(`http://localhost:3000/api/orders/${id}`, {
+      const response = await axios.get(`${API_BASE_URL}/orders/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setOrder(response.data)
@@ -131,7 +132,7 @@ export default function AdminOrderDetail() {
       }
 
       const response = await axios.put(
-        `http://localhost:3000/api/orders/${id}`,
+        `${API_BASE_URL}/orders/${id}`,
         updateData,
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -151,7 +152,7 @@ export default function AdminOrderDetail() {
     try {
       const token = localStorage.getItem('adminToken')
       const response = await axios.put(
-        `http://localhost:3000/api/orders/${id}`,
+        `${API_BASE_URL}/orders/${id}`,
         { notes: adminNotes },
         { headers: { Authorization: `Bearer ${token}` } }
       )

@@ -1,0 +1,2 @@
+render.com---->Donde correo el servidor
+https://vercel.com/ ---Donde corre el cliente

@@ -8,6 +8,7 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline'
+import { API_BASE_URL } from '@/api/config'
 
 interface OrderStats {
   total: number
@@ -37,7 +38,7 @@ export default function AdminDashboard() {
         return
       }
 
-      const response = await axios.get('http://localhost:3000/api/orders', {
+      const response = await axios.get(`${API_BASE_URL}/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { API_BASE_URL } from '@/api/config'
 
 interface Product {
   id: string
@@ -33,7 +34,7 @@ export default function AdminProductsPage() {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await axios.get('http://localhost:3000/api/products', {
+      const response = await axios.get(`${API_BASE_URL}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setProducts(response.data)
@@ -48,7 +49,7 @@ export default function AdminProductsPage() {
     if (!window.confirm('¿Está seguro?')) return
     try {
       const token = localStorage.getItem('adminToken')
-      await axios.delete(`http://localhost:3000/api/products/${productId}`, {
+      await axios.delete(`${API_BASE_URL}/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setProducts(products.filter((p) => p.id !== productId))

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { ICustomer, AuthResponse } from '@/types/customer'
+import { API_BASE_URL } from '@/api/config'
 
 interface CustomerStore {
   customer: ICustomer | null
@@ -26,8 +27,6 @@ interface CustomerStore {
   updateProfile: (data: Partial<ICustomer>) => Promise<void>
   fetchProfile: () => Promise<void>
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 export const useCustomerStore = create<CustomerStore>()(
   persist(

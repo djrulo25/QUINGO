@@ -6,6 +6,7 @@ import {
   EyeIcon,
   FunnelIcon,
 } from '@heroicons/react/24/outline'
+import { API_BASE_URL } from '@/api/config'
 
 interface OrderItem {
   productId: string
@@ -78,7 +79,7 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem('adminToken')
-      const response = await axios.get('http://localhost:3000/api/orders', {
+      const response = await axios.get(`${API_BASE_URL}/orders`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setOrders(response.data)
@@ -122,7 +123,7 @@ export default function AdminOrdersPage() {
     try {
       const token = localStorage.getItem('adminToken')
       const response = await axios.put(
-        `http://localhost:3000/api/orders/${orderId}`,
+        `${API_BASE_URL}/orders/${orderId}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       )

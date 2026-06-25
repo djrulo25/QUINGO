@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { API_BASE_URL } from '@/api/config'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -14,7 +15,7 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email,
         password,
       })

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import axios from 'axios'
 import { Product } from '@/types'
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { API_BASE_URL } from '@/api/config'
 
 export default function AdminProductForm() {
   const navigate = useNavigate()
@@ -45,7 +46,7 @@ export default function AdminProductForm() {
   const loadProduct = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`http://localhost:3000/api/products/${id}`)
+      const response = await axios.get(`${API_BASE_URL}/products/${id}`)
       setProduct(response.data)
     } catch (error) {
       toast.error('Error al cargar el producto')
@@ -82,7 +83,7 @@ export default function AdminProductForm() {
 
       const token = localStorage.getItem('adminToken')
       const response = await axios.post(
-        'http://localhost:3000/api/uploads',
+        `${API_BASE_URL}/uploads`,
         formData,
         {
           headers: {
@@ -131,7 +132,7 @@ export default function AdminProductForm() {
       if (isEdit) {
         // Actualizar producto existente
         await axios.put(
-          `http://localhost:3000/api/products/${id}`,
+          `${API_BASE_URL}/products/${id}`,
           product,
           {
             headers: {
@@ -143,7 +144,7 @@ export default function AdminProductForm() {
       } else {
         // Crear nuevo producto
         await axios.post(
-          'http://localhost:3000/api/products',
+          `${API_BASE_URL}/products`,
           product,
           {
             headers: {
