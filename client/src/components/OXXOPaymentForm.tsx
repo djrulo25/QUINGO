@@ -59,7 +59,7 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         }
       )
 
-      const { redirectUrl: oxxoRedirectUrl, status } = confirmResponse.data
+      const { redirectUrl: oxxoRedirectUrl } = confirmResponse.data
 
       if (oxxoRedirectUrl) {
         // Redirect to OXXO payment page
