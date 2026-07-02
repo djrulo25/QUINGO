@@ -43,7 +43,7 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         }
       )
 
-      const { paymentIntentId, clientSecret, redirectUrl } = response.data
+      const { paymentIntentId, clientSecret } = response.data
 
       // Step 2: Confirm the payment (this generates the OXXO voucher)
       const confirmResponse = await axios.post(
