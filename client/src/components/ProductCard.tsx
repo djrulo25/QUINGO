@@ -27,7 +27,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover hover:scale-105 transition"
+          className="w-full h-full object-cover"
         />
         {discountPercent > 0 && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-sm font-semibold">
