@@ -423,8 +423,6 @@ export default function CheckoutPage() {
                 >
                   <option value="credit-card">Tarjeta de Crédito (Stripe)</option>
                   <option value="oxxo">OXXO (Efectivo)</option>
-                  <option value="debit-card">Tarjeta de Débito</option>
-                  <option value="bank-transfer">Transferencia Bancaria</option>
                 </select>
               )}
 
