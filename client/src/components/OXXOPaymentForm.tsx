@@ -19,16 +19,14 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [voucherUrl, setVoucherUrl] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleGenerateCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
-
     setIsLoading(true)
 
     try {
-      // Create OXXO payment intent on backend
+      // Step 1: Create OXXO payment intent on backend
       const token = localStorage.getItem('token') || localStorage.getItem('customerToken')
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/oxxo`,
@@ -45,17 +43,37 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         }
       )
 
-      const { paymentIntentId, receiptUrl } = response.data
+      const { paymentIntentId, clientSecret, redirectUrl } = response.data
 
-      // Show voucher URL for customer to pay
-      if (receiptUrl) {
-        setVoucherUrl(receiptUrl)
-        toast.success('Voucher de OXXO generado. Por favor descargar e imprimir.')
+      // Step 2: Confirm the payment (this generates the OXXO voucher)
+      const confirmResponse = await axios.post(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/oxxo/confirm`,
+        {
+          clientSecret: clientSecret,
+          returnUrl: `${window.location.origin}/order-confirmation`
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+
+      const { redirectUrl: oxxoRedirectUrl, status } = confirmResponse.data
+
+      if (oxxoRedirectUrl) {
+        // Redirect to OXXO payment page
+        toast.success('Redirigiendo a OXXO...')
+        setTimeout(() => {
+          window.location.href = oxxoRedirectUrl
+        }, 1000)
+      } else {
+        // Payment intent created, notify success
+        toast.success('Código OXXO generado exitosamente')
+        onPaymentSuccess(paymentIntentId)
       }
-
-      onPaymentSuccess(paymentIntentId)
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || error.message || 'Payment failed'
+      const errorMsg = error.response?.data?.error || error.message || 'Payment failed'
       setErrorMessage(errorMsg)
       onPaymentError(errorMsg)
       toast.error(errorMsg)
@@ -80,7 +98,7 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleGenerateCode} className="space-y-4">
         <button
           type="submit"
           disabled={isLoading}
@@ -88,23 +106,6 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         >
           {isLoading ? 'Generando código...' : 'Generar Código de Pago OXXO'}
         </button>
-
-        {voucherUrl && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-700 font-semibold mb-2">✓ Código generado</p>
-            <p className="text-sm text-green-600 mb-3">
-              Descarga tu voucher para pagar en OXXO
-            </p>
-            <a
-              href={voucherUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-            >
-              Descargar Voucher
-            </a>
-          </div>
-        )}
       </form>
     </div>
   )
