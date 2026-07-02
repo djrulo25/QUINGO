@@ -6,6 +6,7 @@ import { customerAPI, orderAPI } from '@/api'
 import { IAddress } from '@/types/customer'
 import { StripeProvider } from '@/components/StripeProvider'
 import { StripePaymentForm } from '@/components/StripePaymentForm'
+import { OXXOPaymentForm } from '@/components/OXXOPaymentForm'
 import toast from 'react-hot-toast'
 
 export default function CheckoutPage() {
@@ -208,8 +209,14 @@ export default function CheckoutPage() {
       return
     }
 
+    // If payment method is OXXO and payment not processed yet, show payment form
+    if (formData.paymentMethod === 'oxxo' && !paymentProcessed) {
+      // The OXXO payment form will handle submission
+      return
+    }
+
     // For other payment methods, create order directly
-    if (formData.paymentMethod !== 'credit-card') {
+    if (formData.paymentMethod !== 'credit-card' && formData.paymentMethod !== 'oxxo') {
       createOrder()
     }
   }
@@ -415,6 +422,7 @@ export default function CheckoutPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 mb-4"
                 >
                   <option value="credit-card">Tarjeta de Crédito (Stripe)</option>
+                  <option value="oxxo">OXXO (Efectivo)</option>
                   <option value="debit-card">Tarjeta de Débito</option>
                   <option value="bank-transfer">Transferencia Bancaria</option>
                 </select>
@@ -430,6 +438,17 @@ export default function CheckoutPage() {
                     onPaymentError={handlePaymentError}
                   />
                 </StripeProvider>
+              )}
+
+              {/* OXXO Payment Form - Only for OXXO method */}
+              {formData.paymentMethod === 'oxxo' && !paymentProcessed && (
+                <OXXOPaymentForm
+                  totalAmount={shippingCost + cart.totalPrice + tax}
+                  orderId="pending"
+                  email={formData.email}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onPaymentError={handlePaymentError}
+                />
               )}
 
               {/* Payment Processed Indicator */}

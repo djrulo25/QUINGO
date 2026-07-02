@@ -99,4 +99,59 @@ router.post('/refund', authMiddleware, async (req: Request, res: Response) => {
   }
 })
 
+// Create OXXO Payment Intent
+router.post('/oxxo', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { amount, description, email } = req.body
+
+    if (!amount || amount < 100) {
+      return res.status(400).json({ error: 'Amount must be at least $1 USD (100 cents)' })
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required for OXXO payments' })
+    }
+
+    // Create a payment intent with OXXO payment method
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount),
+      currency: 'usd', // OXXO is supported in USD
+      payment_method_types: ['oxxo'],
+      description: description || 'Quingo Order Payment - OXXO',
+      receipt_email: email,
+      metadata: {
+        customerId: (req as any).user?.id,
+        orderId: req.body.orderId || 'pending',
+        paymentMethod: 'oxxo'
+      }
+    })
+
+    // Charge the payment intent (for OXXO/boleto methods, this generates the voucher)
+    const charge = await stripe.charges.create({
+      amount: Math.round(amount),
+      currency: 'usd',
+      source: 'tok_oxxo', // Special token for OXXO
+      receipt_email: email,
+      description: description || 'Quingo Order Payment - OXXO',
+      metadata: {
+        customerId: (req as any).user?.id,
+        orderId: req.body.orderId || 'pending'
+      }
+    })
+
+    // The receipt_url contains the OXXO voucher/barcode
+    res.json({
+      paymentIntentId: paymentIntent.id,
+      chargeId: charge.id,
+      receiptUrl: charge.receipt_url || null,
+      status: charge.status,
+      amount: charge.amount,
+      message: 'OXXO voucher generated. Customer can pay at any OXXO store within 72 hours.'
+    })
+  } catch (error: any) {
+    console.error('OXXO payment creation error:', error)
+    res.status(500).json({ error: error.message || 'Failed to create OXXO payment' })
+  }
+})
+
 export default router
