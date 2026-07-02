@@ -23,7 +23,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
       {/* Image */}
-      <div className="relative overflow-hidden bg-gray-200 h-48">
+      <div className="relative overflow-hidden bg-gray-200 w-full h-48 max-h-48">
         <img
           src={product.image}
           alt={product.name}
