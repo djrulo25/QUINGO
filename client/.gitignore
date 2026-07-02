@@ -31,3 +31,4 @@ dist-ssr
 # Build outputs
 coverage
 *.tsbuildinfo
+.vercel

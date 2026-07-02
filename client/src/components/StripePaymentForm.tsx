@@ -21,8 +21,7 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     setErrorMessage(null)
 
     if (!stripe || !elements) {
@@ -90,7 +89,7 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-lg font-semibold mb-4 text-gray-900">Información de Pago</h3>
 
@@ -131,7 +130,12 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
         </div>
 
         <button
-          type="submit"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            handleSubmit()
+          }}
           disabled={isLoading || !stripe || !elements}
           className={`w-full py-3 rounded-lg font-semibold transition-colors ${
             isLoading || !stripe || !elements
@@ -152,6 +156,4 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
           )}
         </button>
       </div>
-    </form>
-  )
-}
+    </div>

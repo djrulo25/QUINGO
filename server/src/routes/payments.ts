@@ -160,8 +160,8 @@ router.post('/oxxo/confirm', authMiddleware, async (req: Request, res: Response)
     // For OXXO, we need to confirm with a redirect URL
     const confirmedIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
       return_url: returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-confirmation`,
-      payment_method_types: ['oxxo']
-    })
+      payment_method: { type: 'oxxo' }
+    } as any)
 
     res.json({
       paymentIntentId: confirmedIntent.id,
