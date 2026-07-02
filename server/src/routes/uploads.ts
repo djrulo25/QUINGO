@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express'
-import multer, { Multer } from 'multer'
+import multer from 'multer'
+import type { FileFilterCallback } from 'multer'
+import type { Request as ExpressRequest } from 'express'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
 import { authMiddleware } from '../middleware/auth.js'
@@ -18,7 +20,7 @@ const storage = multer.memoryStorage()
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  fileFilter: (req: ExpressRequest, file: Express.Multer.File, cb: FileFilterCallback) => {
     // Only accept image files
     if (file.mimetype.startsWith('image/')) {
       cb(null, true)

@@ -1,5 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express'
-import cors from 'cors'
+import cors, { CorsOptions } from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -32,8 +32,8 @@ const allowedOrigins = [
 ].filter(Boolean) as string[]
 
 // Middleware
-app.use(cors({
-  origin: (origin, callback) => {
+const corsOptions: CorsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) {
       return callback(null, true)
     }
@@ -49,7 +49,8 @@ app.use(cors({
     return callback(new Error(`Origin not allowed: ${origin}`), false)
   },
   credentials: true
-}))
+}
+app.use(cors(corsOptions))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ limit: '10mb', extended: true }))
 
