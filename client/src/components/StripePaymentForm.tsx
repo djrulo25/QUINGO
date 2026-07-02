@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import axios from 'axios'
+import apiClient from '@/api'
 import toast from 'react-hot-toast'
 
 interface StripePaymentFormProps {
@@ -33,20 +33,11 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
 
     try {
       // Step 1: Create Payment Intent on backend
-      const token = localStorage.getItem('token') || localStorage.getItem('customerToken')
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/intent`,
-        {
-          amount: Math.round(totalAmount * 100), // Convert to cents
-          description: `Order Payment - ${orderId || 'pending'}`,
-          orderId: orderId
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
+      const response = await apiClient.post('/payments/intent', {
+        amount: Math.round(totalAmount * 100), // Convert to cents
+        description: `Order Payment - ${orderId || 'pending'}`,
+        orderId: orderId
+      })
 
       const { clientSecret, paymentIntentId } = response.data
 
