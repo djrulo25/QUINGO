@@ -70,6 +70,22 @@ export default function OrderConfirmationPage() {
     )
   }
 
+  const paymentStatusLabel = order.paymentStatus === 'completed'
+    ? 'Pagado'
+    : order.paymentStatus === 'pending'
+      ? 'Pendiente de pago'
+      : 'Pago fallido'
+
+  const orderStatusLabel = order.status === 'confirmed'
+    ? 'Confirmado'
+    : order.status === 'shipped'
+      ? 'Enviado'
+      : order.status === 'delivered'
+        ? 'Entregado'
+        : order.status === 'cancelled'
+          ? 'Cancelado'
+          : 'Pendiente'
+
   return (
     <div className="py-12">
       <div className="container mx-auto px-4 text-center max-w-3xl">
@@ -83,6 +99,14 @@ export default function OrderConfirmationPage() {
           <p className="text-gray-600 mb-2">Número de Orden</p>
           <p className="text-3xl font-mono font-bold text-gray-900">#{order.orderNumber || orderId}</p>
           <p className="text-sm text-gray-500 mt-2">ID de pedido: {orderId}</p>
+          <div className="mt-4 flex flex-col sm:flex-row sm:justify-center gap-4">
+            <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-4 py-2 text-sm font-semibold">
+              Estado de pedido: {orderStatusLabel}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-4 py-2 text-sm font-semibold">
+              Estado de pago: {paymentStatusLabel}
+            </span>
+          </div>
         </div>
 
         {order.paymentMethod === 'oxxo' && (

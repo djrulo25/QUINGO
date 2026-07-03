@@ -1,11 +1,39 @@
 import express, { Router, Request, Response } from 'express'
 import Stripe from 'stripe'
+import Order from '../models/Order.js'
 import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-04-10' as any
 })
+
+const updateOrderPaymentStatus = async (paymentIntent: Stripe.PaymentIntent) => {
+  if (!paymentIntent.id) return
+
+  const update: Partial<any> = {}
+  if (paymentIntent.status === 'succeeded') {
+    update.paymentStatus = 'completed'
+    update.status = 'confirmed'
+  } else if (paymentIntent.status === 'processing') {
+    update.paymentStatus = 'pending'
+    update.status = 'pending'
+  } else if (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'requires_action') {
+    update.paymentStatus = 'pending'
+    update.status = 'pending'
+  } else if (paymentIntent.status === 'canceled') {
+    update.paymentStatus = 'failed'
+    update.status = 'cancelled'
+  }
+
+  if (Object.keys(update).length === 0) return
+
+  await Order.findOneAndUpdate(
+    { paymentIntentId: paymentIntent.id },
+    update,
+    { new: true }
+  )
+}
 
 // Create Payment Intent
 router.post('/intent', async (req: Request, res: Response) => {
@@ -217,15 +245,27 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
     switch (event.type) {
       case 'payment_intent.succeeded':
         console.log('Payment Intent Succeeded:', event.data.object)
-        // Payment successful - you can update order status here
+        await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
-      case 'charge.succeeded':
-        console.log('Charge Succeeded:', event.data.object)
-        // Charge successful
+      case 'payment_intent.processing':
+        console.log('Payment Intent Processing:', event.data.object)
+        await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
+        break
+      case 'payment_intent.requires_payment_method':
+      case 'payment_intent.requires_action':
+        console.log('Payment Intent Pending Action:', event.data.object)
+        await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
       case 'payment_intent.payment_failed':
         console.log('Payment Intent Failed:', event.data.object)
-        // Payment failed
+        await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
+        break
+      case 'payment_intent.canceled':
+        console.log('Payment Intent Canceled:', event.data.object)
+        await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
+        break
+      case 'charge.succeeded':
+        console.log('Charge Succeeded:', event.data.object)
         break
       default:
         console.log('Unhandled event type:', event.type)
