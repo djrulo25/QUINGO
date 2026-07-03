@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import axios from 'axios'
+import apiClient from '@/api'
 import toast from 'react-hot-toast'
 
 interface OXXOPaymentFormProps {
@@ -27,37 +27,20 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
 
     try {
       // Step 1: Create OXXO payment intent on backend
-      const token = localStorage.getItem('token') || localStorage.getItem('customerToken')
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/oxxo`,
-        {
-          amount: Math.round(totalAmount * 100), // Convert to cents
-          description: `Order Payment - ${orderId || 'pending'}`,
-          orderId: orderId,
-          email: email
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
+      const response = await apiClient.post('/payments/oxxo', {
+        amount: Math.round(totalAmount * 100), // Convert to cents
+        description: `Order Payment - ${orderId || 'pending'}`,
+        orderId: orderId,
+        email: email
+      })
 
       const { paymentIntentId, clientSecret } = response.data
 
       // Step 2: Confirm the payment (this generates the OXXO voucher)
-      const confirmResponse = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/oxxo/confirm`,
-        {
-          clientSecret: clientSecret,
-          returnUrl: `${window.location.origin}/order-confirmation`
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
+      const confirmResponse = await apiClient.post('/payments/oxxo/confirm', {
+        clientSecret: clientSecret,
+        returnUrl: `${window.location.origin}/order-confirmation`
+      })
 
       const { redirectUrl: oxxoRedirectUrl } = confirmResponse.data
 
