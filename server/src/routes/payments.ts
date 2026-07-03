@@ -141,12 +141,14 @@ router.post('/oxxo', async (req: Request, res: Response) => {
       }
     })
 
+    const oxxoUrl = paymentIntent.next_action?.oxxo_display_details?.hosted_voucher_url || paymentIntent.next_action?.redirect_to_url?.url || null
+
     res.json({
       paymentIntentId: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,
       status: paymentIntent.status,
       nextAction: paymentIntent.next_action,
-      redirectUrl: paymentIntent.next_action?.redirect_to_url?.url || null,
+      redirectUrl: oxxoUrl,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
       message: 'OXXO payment created and confirmed. Redirect to payment page.'
