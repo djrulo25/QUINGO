@@ -31,6 +31,8 @@ export interface IOrder extends Document {
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
   paymentMethod: string
   paymentStatus: 'pending' | 'completed' | 'failed'
+  paymentIntentId?: string
+  oxxoVoucherUrl?: string
   notes?: string
   createdAt: Date
   updatedAt: Date
@@ -83,6 +85,12 @@ const orderSchema = new Schema<IOrder>(
     total: {
       type: Number,
       required: true
+    },
+    paymentIntentId: {
+      type: String,
+    },
+    oxxoVoucherUrl: {
+      type: String,
     },
     status: {
       type: String,

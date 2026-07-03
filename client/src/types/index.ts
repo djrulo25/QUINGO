@@ -68,6 +68,8 @@ export interface Order {
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
   paymentMethod: string
   paymentStatus: 'pending' | 'completed' | 'failed'
+  paymentIntentId?: string
+  oxxoVoucherUrl?: string
   notes?: string
   createdAt: string
   updatedAt: string

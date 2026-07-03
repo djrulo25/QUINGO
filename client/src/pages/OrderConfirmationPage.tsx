@@ -1,12 +1,78 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
+import { orderAPI } from '@/api'
+import { Order } from '@/types'
 
 export default function OrderConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>()
+  const [order, setOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!orderId) return
+
+    const fetchOrder = async () => {
+      setLoading(true)
+      try {
+        const response = await orderAPI.getById(orderId)
+        setOrder(response.data)
+      } catch (err: any) {
+        setError(err.response?.data?.error || err.message || 'No se pudo cargar el pedido')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrder()
+  }, [orderId])
+
+  if (loading) {
+    return (
+      <div className="py-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-lg font-semibold">Cargando detalles de la orden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="py-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-lg font-semibold text-red-600">{error}</p>
+          <Link
+            to="/products"
+            className="mt-6 inline-block border border-gray-300 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 transition"
+          >
+            Volver al catálogo
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!order) {
+    return (
+      <div className="py-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-lg font-semibold">No se encontró la información del pedido.</p>
+          <Link
+            to="/products"
+            className="mt-6 inline-block border border-gray-300 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 transition"
+          >
+            Volver al catálogo
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="py-12">
-      <div className="container mx-auto px-4 text-center max-w-2xl">
+      <div className="container mx-auto px-4 text-center max-w-3xl">
         <CheckCircleIcon className="w-16 h-16 text-green-600 mx-auto mb-4" />
         <h1 className="text-4xl font-bold mb-4">¡Pedido Confirmado!</h1>
         <p className="text-gray-600 mb-6">
@@ -15,8 +81,37 @@ export default function OrderConfirmationPage() {
 
         <div className="bg-gray-50 rounded-lg p-8 mb-8">
           <p className="text-gray-600 mb-2">Número de Orden</p>
-          <p className="text-3xl font-mono font-bold text-gray-900">#{orderId}</p>
+          <p className="text-3xl font-mono font-bold text-gray-900">#{order.orderNumber || orderId}</p>
+          <p className="text-sm text-gray-500 mt-2">ID de pedido: {orderId}</p>
         </div>
+
+        {order.paymentMethod === 'oxxo' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 text-left">
+            <h3 className="font-semibold text-yellow-900 mb-3">Pago en OXXO</h3>
+            {order.oxxoVoucherUrl ? (
+              <>
+                <p className="text-yellow-900 mb-3">
+                  Tu código/voucher está listo. Abre el enlace y muestra el código en la tienda OXXO.
+                </p>
+                <a
+                  href={order.oxxoVoucherUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block bg-yellow-900 text-white font-semibold py-3 px-6 rounded-lg hover:bg-yellow-800 transition"
+                >
+                  Ver Voucher OXXO
+                </a>
+                <p className="text-sm text-gray-600 mt-3">
+                  Si el enlace no carga, copia la URL y abrela en una nueva pestaña.
+                </p>
+              </>
+            ) : (
+              <p className="text-yellow-900">
+                El voucher OXXO no se generó completamente. Revisa tu email o contacta soporte si no recibes el código.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 text-left">
           <h3 className="font-semibold text-blue-900 mb-3">Próximos Pasos:</h3>
