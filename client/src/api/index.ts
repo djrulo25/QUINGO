@@ -54,9 +54,12 @@ export const orderAPI = {
 
 // Cart
 export const cartAPI = {
-  get: () => apiClient.get('/customers/cart'),
-  sync: (items: any[]) => apiClient.post('/customers/cart', { items }),
-  clear: () => apiClient.delete('/customers/cart'),
+  get: (token?: string) =>
+    apiClient.get('/customers/cart', token ? { headers: { Authorization: `Bearer ${token}` } } : undefined),
+  sync: (items: any[], token?: string) =>
+    apiClient.post('/customers/cart', { items }, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined),
+  clear: (token?: string) =>
+    apiClient.delete('/customers/cart', token ? { headers: { Authorization: `Bearer ${token}` } } : undefined),
 }
 
 // Customers

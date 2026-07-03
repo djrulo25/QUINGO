@@ -7,8 +7,8 @@ interface CartStore {
   addToCart: (product: Product, quantity: number) => void
   removeFromCart: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
-  clearCart: (sync?: boolean) => Promise<void>
-  loadCart: () => Promise<void>
+  clearCart: (sync?: boolean, token?: string) => Promise<void>
+  loadCart: (token?: string) => Promise<void>
   getTotal: () => number
 }
 
@@ -87,9 +87,9 @@ const mergeCartItems = (existing: CartItem[], incoming: CartItem[]) => {
   return Array.from(merged.values())
 }
 
-const syncCartToServer = async (cart: Cart) => {
+const syncCartToServer = async (cart: Cart, token?: string) => {
   try {
-    await cartAPI.sync(cart.items.map(mapCartItemToServerItem))
+    await cartAPI.sync(cart.items.map(mapCartItemToServerItem), token)
   } catch (error) {
     console.error('Failed to sync cart to server:', error)
   }
@@ -176,20 +176,20 @@ export const useCartStore = create<CartStore>()((set, get) => ({
     syncCartToServer(get().cart)
   },
 
-  clearCart: async (sync = false) => {
+  clearCart: async (sync = false, token?: string) => {
     set({ cart: initialCart })
     if (sync) {
       try {
-        await cartAPI.clear()
+        await cartAPI.clear(token)
       } catch (error) {
         console.error('Failed to clear cart on server:', error)
       }
     }
   },
 
-  loadCart: async () => {
+  loadCart: async (token?: string) => {
     try {
-      const response = await cartAPI.get()
+      const response = await cartAPI.get(token)
       const serverCart = response.data || { items: [], totalPrice: 0, totalItems: 0 }
       const serverItems = Array.isArray(serverCart.items)
         ? serverCart.items.map(mapServerItemToCartItem)
@@ -210,7 +210,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       set({ cart: mergedCart })
 
       if (currentCart.items.length) {
-        syncCartToServer(mergedCart)
+        syncCartToServer(mergedCart, token)
       }
     } catch (error) {
       console.error('Failed to load cart from server:', error)

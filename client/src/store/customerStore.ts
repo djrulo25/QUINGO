@@ -64,7 +64,7 @@ export const useCustomerStore = create<CustomerStore>()(
 
           const data: AuthResponse = await response.json()
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
-          await useCartStore.getState().loadCart()
+          await useCartStore.getState().loadCart(data.token)
           return data
         } catch (error: any) {
           const errorMsg = error.message || 'Error registering'
@@ -88,7 +88,7 @@ export const useCustomerStore = create<CustomerStore>()(
 
           const data: AuthResponse = await response.json()
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
-          await useCartStore.getState().loadCart()
+          await useCartStore.getState().loadCart(data.token)
           return data
         } catch (error: any) {
           const errorMsg = error.message || 'Error logging in'
