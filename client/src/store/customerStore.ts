@@ -44,7 +44,7 @@ export const useCustomerStore = create<CustomerStore>()(
       setError: (error: string | null) => set({ error }),
 
       logout: () => {
-        useCartStore.getState().clearCart(true)
+        useCartStore.getState().clearCart()
         set({ customer: null, token: null, isLoggedIn: false })
         localStorage.removeItem('customer-store')
       },
