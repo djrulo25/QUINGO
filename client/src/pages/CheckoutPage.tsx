@@ -177,7 +177,11 @@ export default function CheckoutPage() {
           zipCode: formData.zipCode,
           country: formData.country,
         },
-        items: cart.items,
+        items: cart.items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
         shippingMethod: formData.shippingMethod,
         shippingCost: formData.shippingMethod === 'express' ? 50 : 20,
         paymentMethod: formData.paymentMethod,
@@ -191,9 +195,12 @@ export default function CheckoutPage() {
       const response = await orderAPI.create(orderData)
       clearCart()
       toast.success('Pedido creado exitosamente')
-      navigate(`/order-confirmation/${response.data.id}`)
-    } catch (error) {
-      console.error('Error creating order:', error)
+      const orderId = response.data.id || response.data._id
+      navigate(`/order-confirmation/${orderId}`)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message || 'Error creating order'
+      console.error('Error creating order:', errorMessage)
+      toast.error(errorMessage)
       throw error
     } finally {
       setLoading(false)
