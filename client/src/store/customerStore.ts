@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { ICustomer, AuthResponse } from '@/types/customer'
 import { API_BASE_URL } from '@/api/config'
-import { useCartStore } from '@/store/cartStore'
 
 interface CustomerStore {
   customer: ICustomer | null
