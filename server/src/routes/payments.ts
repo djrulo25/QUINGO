@@ -115,6 +115,7 @@ router.post('/oxxo', async (req: Request, res: Response) => {
     const paymentMethod = await stripe.paymentMethods.create({
       type: 'oxxo',
       billing_details: {
+        name: req.body.name || email,
         email,
       },
     })

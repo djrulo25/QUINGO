@@ -484,6 +484,7 @@ export default function CheckoutPage() {
                   totalAmount={shippingCost + cart.totalPrice + tax}
                   orderId="pending"
                   email={formData.email}
+                  name={`${formData.firstName} ${formData.lastName}`.trim()}
                   onPaymentSuccess={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}
                 />

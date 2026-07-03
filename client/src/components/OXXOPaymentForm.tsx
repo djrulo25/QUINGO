@@ -6,6 +6,7 @@ interface OXXOPaymentFormProps {
   totalAmount: number
   orderId?: string
   email: string
+  name: string
   onPaymentSuccess: (paymentIntentId: string, redirectUrl?: string) => void
   onPaymentError: (error: string) => void
 }
@@ -14,6 +15,7 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
   totalAmount,
   orderId,
   email,
+  name,
   onPaymentSuccess,
   onPaymentError
 }) => {
@@ -34,6 +36,7 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         description: `Order Payment - ${orderId || 'pending'}`,
         orderId: orderId,
         email: email,
+        name,
         returnUrl: `${window.location.origin}/order-confirmation`
       })
 
