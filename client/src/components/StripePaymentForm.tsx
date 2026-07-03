@@ -148,3 +148,6 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
         </button>
       </div>
     </div>
+  )
+}
+
