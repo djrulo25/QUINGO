@@ -7,6 +7,7 @@ interface OXXOPaymentFormProps {
   orderId?: string
   email: string
   name: string
+  onPrepareOrder?: () => Promise<string>
   onPaymentSuccess: (paymentIntentId: string, redirectUrl?: string) => void
   onPaymentError: (error: string) => void
 }
@@ -16,6 +17,7 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
   orderId,
   email,
   name,
+  onPrepareOrder,
   onPaymentSuccess,
   onPaymentError
 }) => {
@@ -30,11 +32,16 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
     setIsLoading(true)
 
     try {
+      const resolvedOrderId = orderId || (onPrepareOrder ? await onPrepareOrder() : undefined)
+      if (!resolvedOrderId) {
+        throw new Error('Order ID is required to generate OXXO payment')
+      }
+
       // Step 1: Create OXXO payment intent on backend
       const response = await apiClient.post('/payments/oxxo', {
         amount: Math.round(totalAmount * 100), // Convert to cents
-        description: `Order Payment - ${orderId || 'pending'}`,
-        orderId: orderId,
+        description: `Order Payment - ${resolvedOrderId}`,
+        orderId: resolvedOrderId,
         email: email,
         name,
         returnUrl: `${window.location.origin}/order-confirmation`

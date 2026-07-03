@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { ICustomer, AuthResponse } from '@/types/customer'
 import { API_BASE_URL } from '@/api/config'
+import { useCartStore } from '@/store/cartStore'
 
 interface CustomerStore {
   customer: ICustomer | null
@@ -44,6 +45,8 @@ export const useCustomerStore = create<CustomerStore>()(
 
       logout: () => {
         set({ customer: null, token: null, isLoggedIn: false })
+        const { clearCart } = useCartStore.getState()
+        clearCart()
         localStorage.removeItem('customer-store')
       },
 
