@@ -138,13 +138,19 @@ export default function CheckoutPage() {
   console.log('CheckoutPage render', { paymentMethod: formData.paymentMethod, paymentProcessed })
 
   const handlePaymentSuccess = async (paymentId: string, redirectUrl?: string) => {
-    setPaymentIntentId(paymentId)
+    const newPaymentIntentId = paymentId
+    setPaymentIntentId(newPaymentIntentId)
 
     // If Stripe returns a redirect URL for OXXO, create the pending order and show the voucher link
     if (redirectUrl) {
       toast.success('Pago OXXO generado. Creando pedido pendiente...')
       try {
-        await createOrder({ redirectAfterCreation: true, isOxxoPending: true, oxxoVoucherUrl: redirectUrl })
+        await createOrder({
+          redirectAfterCreation: true,
+          isOxxoPending: true,
+          oxxoVoucherUrl: redirectUrl,
+          paymentIntentId: newPaymentIntentId,
+        })
         return
       } catch (error) {
         console.error('Error creando pedido pendiente de OXXO:', error)
@@ -160,7 +166,7 @@ export default function CheckoutPage() {
 
     // Create order after payment is successful
     try {
-      await createOrder()
+      await createOrder({ paymentIntentId: newPaymentIntentId })
     } catch (error) {
       console.error('Error creating order after payment:', error)
       setPaymentProcessed(false)
@@ -175,7 +181,7 @@ export default function CheckoutPage() {
     setPaymentIntentId(null)
   }
 
-  const createOrder = async (options?: { redirectAfterCreation?: boolean; isOxxoPending?: boolean; oxxoVoucherUrl?: string }) => {
+  const createOrder = async (options?: { redirectAfterCreation?: boolean; isOxxoPending?: boolean; oxxoVoucherUrl?: string; paymentIntentId?: string }) => {
     setLoading(true)
 
     try {
@@ -205,7 +211,7 @@ export default function CheckoutPage() {
         shippingCost: formData.shippingMethod === 'express' ? 50 : 20,
         paymentMethod: formData.paymentMethod,
         paymentStatus: options?.isOxxoPending ? 'pending' : paymentProcessed ? 'completed' : 'pending',
-        paymentIntentId: paymentIntentId || undefined,
+        paymentIntentId: options?.paymentIntentId || paymentIntentId || undefined,
         oxxoVoucherUrl: options?.oxxoVoucherUrl,
         subtotal: cart.totalPrice,
         tax: cart.totalPrice * 0.1,

@@ -28,11 +28,23 @@ const updateOrderPaymentStatus = async (paymentIntent: Stripe.PaymentIntent) => 
 
   if (Object.keys(update).length === 0) return
 
-  await Order.findOneAndUpdate(
+  const order = await Order.findOneAndUpdate(
     { paymentIntentId: paymentIntent.id },
     update,
     { new: true }
   )
+
+  if (!order) {
+    console.warn('Webhook: order not found by paymentIntentId', paymentIntent.id)
+    if (paymentIntent.metadata?.orderId) {
+      console.warn('Webhook: trying fallback by metadata.orderId', paymentIntent.metadata.orderId)
+      await Order.findOneAndUpdate(
+        { orderNumber: paymentIntent.metadata.orderId as string },
+        update,
+        { new: true }
+      )
+    }
+  }
 }
 
 // Create Payment Intent
