@@ -157,10 +157,15 @@ router.post('/oxxo/confirm', async (req: Request, res: Response) => {
     // Retrieve the payment intent
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
 
-    // For OXXO, we need to confirm with a redirect URL
+    // For OXXO, we need to confirm with a redirect URL and payment_method_data
     const confirmedIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
       return_url: returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-confirmation`,
-      payment_method: { type: 'oxxo' }
+      payment_method_data: {
+        type: 'oxxo',
+        billing_details: {
+          email: paymentIntent?.receipt_email || undefined,
+        },
+      },
     } as any)
 
     res.json({
