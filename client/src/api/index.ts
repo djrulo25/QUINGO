@@ -1,7 +1,9 @@
 import axios from 'axios'
 import { Product, Order, Customer, Address } from '@/types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://quingo-api.onrender.com/api'
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://quingo-api.onrender.com/api'
+const normalizedApiUrl = rawApiUrl.trim().replace(/\/+$, '')
+const API_BASE_URL = normalizedApiUrl.endsWith('/api') ? normalizedApiUrl : `${normalizedApiUrl}/api`
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
