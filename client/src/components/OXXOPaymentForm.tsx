@@ -33,25 +33,16 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         amount: Math.round(totalAmount * 100), // Convert to cents
         description: `Order Payment - ${orderId || 'pending'}`,
         orderId: orderId,
-        email: email
-      })
-
-      const { paymentIntentId, clientSecret } = response.data
-
-      // Step 2: Confirm the payment (this generates the OXXO voucher)
-      const confirmResponse = await apiClient.post('/payments/oxxo/confirm', {
-        clientSecret: clientSecret,
+        email: email,
         returnUrl: `${window.location.origin}/order-confirmation`
       })
 
-      const { redirectUrl: oxxoRedirectUrl } = confirmResponse.data
+      const { paymentIntentId, redirectUrl: oxxoRedirectUrl } = response.data
 
       if (oxxoRedirectUrl) {
-        // Notify parent so it can create the pending order and then redirect
         toast.success('Redirigiendo a OXXO...')
         onPaymentSuccess(paymentIntentId, oxxoRedirectUrl)
       } else {
-        // Payment intent created, notify success
         toast.success('Código OXXO generado exitosamente')
         onPaymentSuccess(paymentIntentId)
       }

@@ -112,11 +112,25 @@ router.post('/oxxo', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email is required for OXXO payments' })
     }
 
-    // Create a payment intent with OXXO payment method
+    const paymentMethod = await stripe.paymentMethods.create({
+      type: 'oxxo',
+      billing_details: {
+        email,
+      },
+    })
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount),
-      currency: 'mxn', // OXXO works with MXN
+      currency: 'mxn',
       payment_method_types: ['oxxo'],
+      payment_method: paymentMethod.id,
+      confirm: true,
+      return_url: req.body.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-confirmation`,
+      payment_method_options: {
+        oxxo: {
+          expires_after_days: 3,
+        },
+      },
       description: description || 'Quingo Order Payment - OXXO',
       receipt_email: email,
       metadata: {
@@ -126,15 +140,15 @@ router.post('/oxxo', async (req: Request, res: Response) => {
       }
     })
 
-    // For testing/development, provide the client secret
-    // In production, you would redirect to hosted payment page or confirm with your frontend
     res.json({
       paymentIntentId: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,
       status: paymentIntent.status,
+      nextAction: paymentIntent.next_action,
+      redirectUrl: paymentIntent.next_action?.redirect_to_url?.url || null,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
-      message: 'OXXO payment intent created. Use client secret to confirm payment.'
+      message: 'OXXO payment created and confirmed. Redirect to payment page.'
     })
   } catch (error: any) {
     console.error('OXXO payment creation error:', error)
