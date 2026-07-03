@@ -262,6 +262,94 @@ router.delete(
   }
 )
 
+// Get customer cart (protected)
+router.get('/cart', customerAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const customer = await Customer.findById(req.customer?.id).select('cart')
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' })
+    }
+
+    res.json(customer.cart || { items: [], totalPrice: 0, totalItems: 0 })
+  } catch (error) {
+    console.error('Get cart error:', error)
+    res.status(500).json({ error: 'Error fetching cart' })
+  }
+})
+
+// Update customer cart (protected)
+router.post('/cart', customerAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { items } = req.body
+
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: 'Cart items must be an array' })
+    }
+
+    const sanitizedItems = items.map((item: any) => ({
+      productId: item.product?.id || item.productId,
+      name: item.product?.name || item.name,
+      price: Number(item.product?.price ?? item.price ?? 0),
+      image: item.product?.image || item.image,
+      category: item.product?.category || item.category,
+      subcategory: item.product?.subcategory || item.subcategory,
+      sku: item.product?.sku || item.sku,
+      quantity: Number(item.quantity ?? 0),
+      addedAt: item.addedAt ? new Date(item.addedAt) : new Date(),
+    })).filter((item: any) => item.productId && item.name && item.quantity > 0)
+
+    const totalPrice = sanitizedItems.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    )
+    const totalItems = sanitizedItems.reduce(
+      (sum: number, item: any) => sum + item.quantity,
+      0
+    )
+
+    const customer = await Customer.findByIdAndUpdate(
+      req.customer?.id,
+      {
+        cart: {
+          items: sanitizedItems,
+          totalPrice,
+          totalItems,
+        },
+      },
+      { new: true, select: 'cart' }
+    )
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' })
+    }
+
+    res.json(customer.cart)
+  } catch (error) {
+    console.error('Update cart error:', error)
+    res.status(500).json({ error: 'Error updating cart' })
+  }
+})
+
+// Clear customer cart (protected)
+router.delete('/cart', customerAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const customer = await Customer.findByIdAndUpdate(
+      req.customer?.id,
+      { cart: { items: [], totalPrice: 0, totalItems: 0 } },
+      { new: true, select: 'cart' }
+    )
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' })
+    }
+
+    res.json(customer.cart)
+  } catch (error) {
+    console.error('Clear cart error:', error)
+    res.status(500).json({ error: 'Error clearing cart' })
+  }
+})
+
 // Get order history (protected)
 router.get('/orders', customerAuthMiddleware, async (req: Request, res: Response) => {
   try {

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { Product, Order, Customer, Address } from '@/types'
+import { useCustomerStore } from '@/store/customerStore'
 
 const rawApiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://quingo-api.onrender.com/api'
 const normalizedApiUrl = rawApiUrl.trim().replace(/\/+$/, '')
@@ -14,24 +15,24 @@ const apiClient = axios.create({
 
 // Add token to requests if it exists
 apiClient.interceptors.request.use((config) => {
-  // Try to get token from customer store first, then fall back to authToken
-  let token = null
-  
-  const customerStore = localStorage.getItem('customer-store')
-  if (customerStore) {
-    try {
-      const parsed = JSON.parse(customerStore)
-      token = parsed.state?.token
-    } catch (e) {
-      // Ignore parse errors
+  let token = useCustomerStore.getState().token || null
+
+  if (!token) {
+    const customerStore = localStorage.getItem('customer-store')
+    if (customerStore) {
+      try {
+        const parsed = JSON.parse(customerStore)
+        token = parsed.state?.token
+      } catch (e) {
+        // Ignore parse errors
+      }
     }
   }
-  
-  // Fall back to authToken if not found in customer store
+
   if (!token) {
     token = localStorage.getItem('authToken')
   }
-  
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -57,7 +58,9 @@ export const orderAPI = {
 
 // Cart
 export const cartAPI = {
-  sync: (items: any[]) => apiClient.post('/cart/sync', { items }),
+  get: () => apiClient.get('/customers/cart'),
+  sync: (items: any[]) => apiClient.post('/customers/cart', { items }),
+  clear: () => apiClient.delete('/customers/cart'),
 }
 
 // Customers

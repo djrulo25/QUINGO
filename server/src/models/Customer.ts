@@ -18,6 +18,24 @@ export interface IAddress {
   createdAt?: Date
 }
 
+export interface ICartItem {
+  productId: string
+  name: string
+  price: number
+  image: string
+  category: string
+  subcategory: string
+  sku: string
+  quantity: number
+  addedAt: Date
+}
+
+export interface ICart {
+  items: ICartItem[]
+  totalPrice: number
+  totalItems: number
+}
+
 export interface ICustomer extends Document {
   email: string
   password: string
@@ -26,6 +44,7 @@ export interface ICustomer extends Document {
   phone: string
   profileImage?: string
   addresses: IAddress[]
+  cart?: ICart
   dateOfBirth?: Date
   cpf?: string
   company?: string
@@ -123,6 +142,23 @@ const customerSchema = new Schema<ICustomer>(
       sparse: true,
     },
     company: String,
+    cart: {
+      items: [
+        {
+          productId: { type: String, required: true },
+          name: { type: String, required: true },
+          price: { type: Number, required: true },
+          image: { type: String, required: true },
+          category: { type: String, required: true },
+          subcategory: { type: String, required: true },
+          sku: { type: String, required: true },
+          quantity: { type: Number, required: true, min: 1 },
+          addedAt: { type: Date, required: true, default: Date.now },
+        },
+      ],
+      totalPrice: { type: Number, required: true, default: 0 },
+      totalItems: { type: Number, required: true, default: 0 },
+    },
   },
   { timestamps: true }
 )

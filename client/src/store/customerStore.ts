@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { ICustomer, AuthResponse } from '@/types/customer'
 import { API_BASE_URL } from '@/api/config'
+import { useCartStore } from './cartStore'
 
 interface CustomerStore {
   customer: ICustomer | null
@@ -43,6 +44,7 @@ export const useCustomerStore = create<CustomerStore>()(
       setError: (error: string | null) => set({ error }),
 
       logout: () => {
+        useCartStore.getState().clearCart(true)
         set({ customer: null, token: null, isLoggedIn: false })
         localStorage.removeItem('customer-store')
       },
@@ -62,6 +64,7 @@ export const useCustomerStore = create<CustomerStore>()(
 
           const data: AuthResponse = await response.json()
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
+          await useCartStore.getState().loadCart()
           return data
         } catch (error: any) {
           const errorMsg = error.message || 'Error registering'
@@ -85,6 +88,7 @@ export const useCustomerStore = create<CustomerStore>()(
 
           const data: AuthResponse = await response.json()
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
+          await useCartStore.getState().loadCart()
           return data
         } catch (error: any) {
           const errorMsg = error.message || 'Error logging in'
