@@ -6,7 +6,7 @@ interface OXXOPaymentFormProps {
   totalAmount: number
   orderId?: string
   email: string
-  onPaymentSuccess: (paymentIntentId: string) => void
+  onPaymentSuccess: (paymentIntentId: string, redirectUrl?: string) => void
   onPaymentError: (error: string) => void
 }
 
@@ -20,8 +20,10 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const handleGenerateCode = async (e: React.FormEvent) => {
-    e.preventDefault()
+  console.log('OXXOPaymentForm rendered', { totalAmount, orderId, email })
+
+  const handleGenerateCode = async () => {
+    console.log('OXXOPaymentForm handleGenerateCode clicked')
     setErrorMessage(null)
     setIsLoading(true)
 
@@ -45,11 +47,9 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
       const { redirectUrl: oxxoRedirectUrl } = confirmResponse.data
 
       if (oxxoRedirectUrl) {
-        // Redirect to OXXO payment page
+        // Notify parent so it can create the pending order and then redirect
         toast.success('Redirigiendo a OXXO...')
-        setTimeout(() => {
-          window.location.href = oxxoRedirectUrl
-        }, 1000)
+        onPaymentSuccess(paymentIntentId, oxxoRedirectUrl)
       } else {
         // Payment intent created, notify success
         toast.success('Código OXXO generado exitosamente')
@@ -81,15 +81,19 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         </p>
       </div>
 
-      <form onSubmit={handleGenerateCode} className="space-y-4">
+      <div className="space-y-4">
         <button
-          type="submit"
+          type="button"
+          onClick={() => {
+            console.log('OXXO button clicked')
+            handleGenerateCode()
+          }}
           disabled={isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Generando código...' : 'Generar Código de Pago OXXO'}
         </button>
-      </form>
+      </div>
     </div>
   )
 }

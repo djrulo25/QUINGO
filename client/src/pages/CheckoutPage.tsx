@@ -128,17 +128,37 @@ export default function CheckoutPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+    console.log('CheckoutPage handleChange', name, value)
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  const handlePaymentSuccess = async (paymentId: string) => {
+  console.log('CheckoutPage render', { paymentMethod: formData.paymentMethod, paymentProcessed })
+
+  const handlePaymentSuccess = async (paymentId: string, redirectUrl?: string) => {
     setPaymentIntentId(paymentId)
+
+    // If Stripe returns a redirect URL for OXXO, create the pending order first
+    if (redirectUrl) {
+      toast.success('Pago OXXO generado. Creando pedido pendiente...')
+      try {
+        await createOrder({ redirectAfterCreation: false, isOxxoPending: true })
+        window.location.href = redirectUrl
+        return
+      } catch (error) {
+        console.error('Error creando pedido pendiente de OXXO:', error)
+        setPaymentProcessed(false)
+        setPaymentIntentId(null)
+        toast.error('Error al crear el pedido OXXO')
+        return
+      }
+    }
+
     setPaymentProcessed(true)
     toast.success('Pago procesado exitosamente')
-    
+
     // Create order after payment is successful
     try {
       await createOrder()
@@ -156,7 +176,7 @@ export default function CheckoutPage() {
     setPaymentIntentId(null)
   }
 
-  const createOrder = async () => {
+  const createOrder = async (options?: { redirectAfterCreation?: boolean; isOxxoPending?: boolean }) => {
     setLoading(true)
 
     try {
@@ -185,7 +205,7 @@ export default function CheckoutPage() {
         shippingMethod: formData.shippingMethod,
         shippingCost: formData.shippingMethod === 'express' ? 50 : 20,
         paymentMethod: formData.paymentMethod,
-        paymentStatus: paymentProcessed ? 'completed' : 'pending',
+        paymentStatus: options?.isOxxoPending ? 'pending' : paymentProcessed ? 'completed' : 'pending',
         paymentIntentId: paymentIntentId || undefined,
         subtotal: cart.totalPrice,
         tax: cart.totalPrice * 0.1,
@@ -194,9 +214,15 @@ export default function CheckoutPage() {
 
       const response = await orderAPI.create(orderData)
       clearCart()
+
+      if (options?.redirectAfterCreation === false) {
+        return response.data
+      }
+
       toast.success('Pedido creado exitosamente')
       const orderId = response.data.id || response.data._id
       navigate(`/order-confirmation/${orderId}`)
+      return response.data
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || error.message || 'Error creating order'
       console.error('Error creating order:', errorMessage)
@@ -422,15 +448,22 @@ export default function CheckoutPage() {
               
               {/* Payment Method Selection */}
               {!paymentProcessed && (
-                <select
-                  name="paymentMethod"
-                  value={formData.paymentMethod}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 mb-4"
-                >
-                  <option value="credit-card">Tarjeta de Crédito (Stripe)</option>
-                  <option value="oxxo">OXXO (Efectivo)</option>
-                </select>
+                <>
+                  <select
+                    name="paymentMethod"
+                    value={formData.paymentMethod}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 mb-4"
+                  >
+                    <option value="credit-card">Tarjeta de Crédito (Stripe)</option>
+                    <option value="oxxo">OXXO (Efectivo)</option>
+                  </select>
+                  {formData.paymentMethod === 'oxxo' && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
+                      OXXO seleccionado. Debes ver el botón “Generar Código de Pago OXXO” abajo.
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Stripe Payment Form - Only for credit card method */}

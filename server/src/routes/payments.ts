@@ -100,7 +100,7 @@ router.post('/refund', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Create OXXO Payment Intent
-router.post('/oxxo', authMiddleware, async (req: Request, res: Response) => {
+router.post('/oxxo', async (req: Request, res: Response) => {
   try {
     const { amount, description, email } = req.body
 
@@ -143,7 +143,7 @@ router.post('/oxxo', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Confirm OXXO Payment
-router.post('/oxxo/confirm', authMiddleware, async (req: Request, res: Response) => {
+router.post('/oxxo/confirm', async (req: Request, res: Response) => {
   try {
     const { clientSecret, returnUrl } = req.body
 
