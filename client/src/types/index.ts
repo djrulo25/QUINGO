@@ -53,7 +53,8 @@ export interface Address {
 }
 
 export interface Order {
-  id: string
+  id?: string
+  _id?: string
   orderNumber: string
   customer: Customer
   items: CartItem[]
