@@ -51,8 +51,9 @@ const corsOptions: CorsOptions = {
   credentials: true
 }
 app.use(cors(corsOptions))
-app.use(express.json({ limit: '10mb' }))
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
 app.use(express.urlencoded({ limit: '10mb', extended: true }))
+app.use(express.json({ limit: '10mb' }))
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
