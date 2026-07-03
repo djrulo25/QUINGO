@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 })
 
 // Create Payment Intent
-router.post('/intent', authMiddleware, async (req: Request, res: Response) => {
+router.post('/intent', async (req: Request, res: Response) => {
   try {
     const { amount, description, customerId } = req.body
 
