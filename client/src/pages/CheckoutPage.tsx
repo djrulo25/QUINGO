@@ -219,7 +219,7 @@ export default function CheckoutPage() {
       } as any
 
       const response = await orderAPI.create(orderData)
-      clearCart()
+      await clearCart(true)
 
       if (options?.redirectAfterCreation === false) {
         return response.data

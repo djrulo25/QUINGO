@@ -142,8 +142,8 @@ export default function CartPage() {
               </Link>
 
               <button
-                onClick={() => {
-                  clearCart()
+                onClick={async () => {
+                  await clearCart(true)
                   toast.success('Carrito vaciado')
                 }}
                 className="w-full border border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-100 transition"
