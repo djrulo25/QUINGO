@@ -213,24 +213,15 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       const serverItems = Array.isArray(serverCart.items)
         ? serverCart.items.map(mapServerItemToCartItem)
         : []
-      const currentCart = get().cart
 
-      const finalItems = currentCart.items.length
-        ? mergeCartItems(currentCart.items, serverItems)
-        : serverItems
-
-      const totals = calculateTotals(finalItems)
-      const mergedCart: Cart = {
-        items: finalItems,
+      const totals = calculateTotals(serverItems)
+      const newCart: Cart = {
+        items: serverItems,
         totalPrice: totals.totalPrice,
         totalItems: totals.totalItems,
       }
 
-      set({ cart: mergedCart, cartLoaded: true })
-
-      if (currentCart.items.length) {
-        syncCartToServer(mergedCart, authToken)
-      }
+      set({ cart: newCart, cartLoaded: true })
     } catch (error) {
       console.error('Failed to load cart from server:', error)
     }
