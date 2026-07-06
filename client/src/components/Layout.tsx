@@ -10,14 +10,14 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const token = useCustomerStore((state) => state.token)
-  const cartItemsLength = useCartStore((state) => state.cart.items.length)
+  const cartLoaded = useCartStore((state) => state.cartLoaded)
   const loadCart = useCartStore((state) => state.loadCart)
 
   useEffect(() => {
-    if (token && cartItemsLength === 0) {
-      loadCart()
+    if (token && !cartLoaded) {
+      loadCart(token)
     }
-  }, [token, cartItemsLength, loadCart])
+  }, [token, cartLoaded, loadCart])
 
   return (
     <div className="min-h-screen flex flex-col">

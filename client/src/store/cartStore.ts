@@ -4,6 +4,8 @@ import { cartAPI } from '@/api/index'
 
 interface CartStore {
   cart: Cart
+  cartLoaded: boolean
+  setCartLoaded: (loaded: boolean) => void
   addToCart: (product: Product, quantity: number) => void
   removeFromCart: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
@@ -87,9 +89,22 @@ const mergeCartItems = (existing: CartItem[], incoming: CartItem[]) => {
   return Array.from(merged.values())
 }
 
+const getStoredToken = (): string | null => {
+  const customerStore = localStorage.getItem('customer-store')
+  if (!customerStore) return null
+
+  try {
+    const parsed = JSON.parse(customerStore)
+    return parsed.state?.token || null
+  } catch {
+    return null
+  }
+}
+
 const syncCartToServer = async (cart: Cart, token?: string) => {
   try {
-    await cartAPI.sync(cart.items.map(mapCartItemToServerItem), token)
+    const authToken = token ?? getStoredToken() ?? undefined
+    await cartAPI.sync(cart.items.map(mapCartItemToServerItem), authToken)
   } catch (error) {
     console.error('Failed to sync cart to server:', error)
   }
@@ -97,6 +112,8 @@ const syncCartToServer = async (cart: Cart, token?: string) => {
 
 export const useCartStore = create<CartStore>()((set, get) => ({
   cart: initialCart,
+  cartLoaded: false,
+  setCartLoaded: (loaded: boolean) => set({ cartLoaded: loaded }),
 
   addToCart: (product: Product, quantity: number) => {
     set((state) => {
@@ -177,10 +194,11 @@ export const useCartStore = create<CartStore>()((set, get) => ({
   },
 
   clearCart: async (sync = false, token?: string) => {
-    set({ cart: initialCart })
+    set({ cart: initialCart, cartLoaded: false })
     if (sync) {
       try {
-        await cartAPI.clear(token)
+        const authToken = token ?? getStoredToken() ?? undefined
+        await cartAPI.clear(authToken)
       } catch (error) {
         console.error('Failed to clear cart on server:', error)
       }
@@ -189,7 +207,8 @@ export const useCartStore = create<CartStore>()((set, get) => ({
 
   loadCart: async (token?: string) => {
     try {
-      const response = await cartAPI.get(token)
+      const authToken = token ?? getStoredToken() ?? undefined
+      const response = await cartAPI.get(authToken)
       const serverCart = response.data || { items: [], totalPrice: 0, totalItems: 0 }
       const serverItems = Array.isArray(serverCart.items)
         ? serverCart.items.map(mapServerItemToCartItem)
@@ -207,10 +226,10 @@ export const useCartStore = create<CartStore>()((set, get) => ({
         totalItems: totals.totalItems,
       }
 
-      set({ cart: mergedCart })
+      set({ cart: mergedCart, cartLoaded: true })
 
       if (currentCart.items.length) {
-        syncCartToServer(mergedCart, token)
+        syncCartToServer(mergedCart, authToken)
       }
     } catch (error) {
       console.error('Failed to load cart from server:', error)

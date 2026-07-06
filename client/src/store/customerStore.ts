@@ -47,6 +47,7 @@ export const useCustomerStore = create<CustomerStore>()(
         useCartStore.getState().clearCart()
         set({ customer: null, token: null, isLoggedIn: false })
         localStorage.removeItem('customer-store')
+        localStorage.removeItem('authToken')
       },
 
       register: async (email: string, password: string, firstName: string, lastName: string, phone: string) => {
@@ -64,6 +65,7 @@ export const useCustomerStore = create<CustomerStore>()(
 
           const data: AuthResponse = await response.json()
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
+          localStorage.setItem('authToken', data.token)
           await useCartStore.getState().loadCart(data.token)
           return data
         } catch (error: any) {
@@ -88,6 +90,7 @@ export const useCustomerStore = create<CustomerStore>()(
 
           const data: AuthResponse = await response.json()
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
+          localStorage.setItem('authToken', data.token)
           await useCartStore.getState().loadCart(data.token)
           return data
         } catch (error: any) {
