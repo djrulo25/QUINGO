@@ -68,27 +68,6 @@ const mapCartItemToServerItem = (item: CartItem) => ({
   addedAt: item.addedAt,
 })
 
-const mergeCartItems = (existing: CartItem[], incoming: CartItem[]) => {
-  const merged = new Map<string, CartItem>()
-
-  const addItem = (item: CartItem) => {
-    const existingItem = merged.get(item.product.id)
-    if (existingItem) {
-      merged.set(item.product.id, {
-        ...existingItem,
-        quantity: existingItem.quantity + item.quantity,
-      })
-    } else {
-      merged.set(item.product.id, item)
-    }
-  }
-
-  existing.forEach(addItem)
-  incoming.forEach(addItem)
-
-  return Array.from(merged.values())
-}
-
 const getStoredToken = (): string | null => {
   const customerStore = localStorage.getItem('customer-store')
   if (!customerStore) return null
