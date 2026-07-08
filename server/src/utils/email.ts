@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer'
-import sgMail from '@sendgrid/mail'
+import sgMail, { MailDataRequired } from '@sendgrid/mail'
 
 const useSendGrid = Boolean(process.env.SENDGRID_API_KEY)
 if (useSendGrid) {
@@ -47,9 +47,15 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string })
 
   try {
     if (useSendGrid) {
-      const msg = {
+      const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER
+      if (!fromEmail) {
+        console.warn('SendGrid from address not configured, skipping sendOrderEmail')
+        return
+      }
+
+      const msg: MailDataRequired = {
         to: order.customer.email,
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        from: fromEmail,
         subject,
         html,
       }
