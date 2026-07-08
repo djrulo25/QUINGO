@@ -25,14 +25,15 @@ const transporter = !useSendGrid ? nodemailer.createTransport({
   },
 }) : null
 
-export const sendOrderEmail = async (order: any, options?: { subject?: string }) => {
+export const sendOrderEmail = async (order: any, options?: { subject?: string; showVoucher?: boolean }) => {
   const subject = options?.subject || `Confirmación de Pedido ${order.orderNumber}`
+  const showVoucher = options?.showVoucher ?? (order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending')
 
   const itemsHtml = (order.items || []).map((it: any) => `
     <li>${it.productId} &times; ${it.quantity} — $${(it.price).toFixed(2)}</li>
   `).join('')
 
-  const voucherHtml = order.oxxoVoucherUrl ? `
+  const voucherHtml = showVoucher && order.oxxoVoucherUrl ? `
     <h3>Pago en OXXO</h3>
     <p>Puedes pagar con el siguiente link / voucher (válido 72 horas):</p>
     <p><a href="${order.oxxoVoucherUrl}">${order.oxxoVoucherUrl}</a></p>

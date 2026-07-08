@@ -46,10 +46,17 @@ const updateOrderPaymentStatus = async (paymentIntent: Stripe.PaymentIntent) => 
       )
     }
   } else {
-    // If payment succeeded, send confirmation email
+    // If payment succeeded, send final confirmation email
     try {
       if (paymentIntent.status === 'succeeded') {
-        await sendOrderEmail(order, { subject: `Pago confirmado - ${order.orderNumber}` })
+        const finalSubject = order.paymentMethod === 'oxxo'
+          ? `Pago OXXO confirmado - ${order.orderNumber}`
+          : `Pago confirmado - ${order.orderNumber}`
+
+        await sendOrderEmail(order, {
+          subject: finalSubject,
+          showVoucher: false
+        })
       }
     } catch (err) {
       console.error('Failed to send payment confirmation email:', err)
