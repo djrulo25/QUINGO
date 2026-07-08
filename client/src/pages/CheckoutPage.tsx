@@ -140,24 +140,11 @@ export default function CheckoutPage() {
     const newPaymentIntentId = paymentId
     setPaymentIntentId(newPaymentIntentId)
 
-    // If Stripe returns a redirect URL for OXXO, create the pending order and show the voucher link
+    // For OXXO, the order is already created before generating the code.
     if (redirectUrl) {
-      toast.success('Pago OXXO generado. Creando pedido pendiente...')
-      try {
-        await createOrder({
-          redirectAfterCreation: true,
-          isOxxoPending: true,
-          oxxoVoucherUrl: redirectUrl,
-          paymentIntentId: newPaymentIntentId,
-        })
-        return
-      } catch (error) {
-        console.error('Error creando pedido pendiente de OXXO:', error)
-        setPaymentProcessed(false)
-        setPaymentIntentId(null)
-        toast.error('Error al crear el pedido OXXO')
-        return
-      }
+      toast.success('Pago OXXO generado. Código y pedido pendiente listos.')
+      setPaymentProcessed(true)
+      return
     }
 
     setPaymentProcessed(true)
@@ -486,9 +473,15 @@ export default function CheckoutPage() {
               {formData.paymentMethod === 'oxxo' && !paymentProcessed && (
                 <OXXOPaymentForm
                   totalAmount={shippingCost + cart.totalPrice}
-                  orderId="pending"
                   email={formData.email}
                   name={`${formData.firstName} ${formData.lastName}`.trim()}
+                  onPrepareOrder={async () => {
+                    const pendingOrder = await createOrder({
+                      redirectAfterCreation: false,
+                      isOxxoPending: true,
+                    })
+                    return pendingOrder.orderNumber
+                  }}
                   onPaymentSuccess={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}
                 />

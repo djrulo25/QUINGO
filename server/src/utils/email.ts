@@ -1,29 +1,32 @@
 import nodemailer from 'nodemailer'
 import sgMail, { MailDataRequired } from '@sendgrid/mail'
 
-const useSendGrid = Boolean(process.env.SENDGRID_API_KEY)
+const getSendGridApiKey = () => process.env.SENDGRID_API_KEY?.trim()
+const getUseSendGrid = () => Boolean(getSendGridApiKey())
 
-if (useSendGrid && process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+const createTransporter = () => {
+  const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER
+  const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS
+  const smtpHost = process.env.SMTP_HOST
+  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined
+  const smtpSecure = process.env.SMTP_SECURE === 'true'
+  const smtpService = process.env.EMAIL_SERVICE || process.env.SMTP_SERVICE || 'gmail'
+
+  if (!smtpUser || !smtpPass) {
+    return null
+  }
+
+  return nodemailer.createTransport({
+    host: smtpHost || undefined,
+    port: smtpPort,
+    secure: smtpSecure,
+    service: smtpHost ? undefined : smtpService,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  })
 }
-
-const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER
-const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS
-const smtpHost = process.env.SMTP_HOST
-const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined
-const smtpSecure = process.env.SMTP_SECURE === 'true'
-const smtpService = process.env.EMAIL_SERVICE || process.env.SMTP_SERVICE || 'gmail'
-
-const transporter = !useSendGrid ? nodemailer.createTransport({
-  host: smtpHost || undefined,
-  port: smtpPort,
-  secure: smtpSecure,
-  service: smtpHost ? undefined : smtpService,
-  auth: {
-    user: smtpUser,
-    pass: smtpPass,
-  },
-}) : null
 
 export const sendOrderEmail = async (order: any, options?: { subject?: string; showVoucher?: boolean }) => {
   const subject = options?.subject || `Confirmación de Pedido ${order.orderNumber}`
@@ -58,7 +61,16 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string; s
   `
 
   try {
+    const useSendGrid = getUseSendGrid()
+
     if (useSendGrid) {
+      const apiKey = getSendGridApiKey()
+      if (!apiKey) {
+        console.warn('SendGrid API key not configured, skipping sendOrderEmail')
+        return
+      }
+      sgMail.setApiKey(apiKey)
+
       const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER
       if (!fromEmail) {
         console.warn('SendGrid from address not configured, skipping sendOrderEmail')
@@ -74,11 +86,14 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string; s
       await sgMail.send(msg)
       console.log('Order email sent via SendGrid to', order.customer.email)
     } else {
+      const transporter = createTransporter()
       if (!transporter) {
         console.warn('SMTP transporter not configured, skipping sendOrderEmail')
         return
       }
 
+      const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER
+      const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS
       if (!smtpUser || !smtpPass) {
         console.warn('Email credentials not configured, skipping sendOrderEmail')
         return

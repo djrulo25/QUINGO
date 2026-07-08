@@ -32,18 +32,20 @@ router.post('/', async (req: Request, res: Response) => {
     })
     await order.save()
 
-    // Send voucher email for OXXO pending orders, otherwise send normal confirmation
-    try {
-      const emailSubject = order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending'
-        ? `Tu voucher OXXO está listo - ${order.orderNumber}`
-        : `Confirmación de pedido ${order.orderNumber}`
+    // Send email only when we already have an OXXO voucher URL or it's not a pending OXXO order
+    if (!(order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending' && !order.oxxoVoucherUrl)) {
+      try {
+        const emailSubject = order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending'
+          ? `Tu voucher OXXO está listo - ${order.orderNumber}`
+          : `Confirmación de pedido ${order.orderNumber}`
 
-      await sendOrderEmail(order, {
-        subject: emailSubject,
-        showVoucher: order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending'
-      })
-    } catch (err) {
-      console.error('Failed to send order confirmation email:', err)
+        await sendOrderEmail(order, {
+          subject: emailSubject,
+          showVoucher: order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending'
+        })
+      } catch (err) {
+        console.error('Failed to send order confirmation email:', err)
+      }
     }
 
     res.status(201).json(order)

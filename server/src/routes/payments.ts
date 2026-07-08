@@ -193,12 +193,31 @@ router.post('/oxxo', async (req: Request, res: Response) => {
       receipt_email: email,
       metadata: {
         customerId: (req as any).user?.id,
-        orderId: req.body.orderId || 'pending',
+        orderId: req.body.orderId,
         paymentMethod: 'oxxo'
       }
     })
 
     const oxxoUrl = paymentIntent.next_action?.oxxo_display_details?.hosted_voucher_url || paymentIntent.next_action?.redirect_to_url?.url || null
+
+    if (req.body.orderId) {
+      const order = await Order.findOneAndUpdate(
+        { orderNumber: req.body.orderId },
+        { paymentIntentId: paymentIntent.id, oxxoVoucherUrl: oxxoUrl },
+        { new: true }
+      )
+
+      if (order && oxxoUrl) {
+        try {
+          await sendOrderEmail(order, {
+            subject: `Tu voucher OXXO está listo - ${order.orderNumber}`,
+            showVoucher: true
+          })
+        } catch (err) {
+          console.error('Failed to send OXXO voucher email:', err)
+        }
+      }
+    }
 
     res.json({
       paymentIntentId: paymentIntent.id,
