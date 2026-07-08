@@ -26,7 +26,7 @@ export interface IOrder extends Document {
   shippingMethod: string
   shippingCost: number
   subtotal: number
-  tax: number
+  tax?: number
   total: number
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
   paymentMethod: string
@@ -80,7 +80,6 @@ const orderSchema = new Schema<IOrder>(
     },
     tax: {
       type: Number,
-      required: true
     },
     total: {
       type: Number,

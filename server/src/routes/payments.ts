@@ -1,6 +1,7 @@
 import express, { Router, Request, Response } from 'express'
 import Stripe from 'stripe'
 import Order from '../models/Order.js'
+import { sendOrderEmail } from '../utils/email.js'
 import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
@@ -43,6 +44,15 @@ const updateOrderPaymentStatus = async (paymentIntent: Stripe.PaymentIntent) => 
         update,
         { new: true }
       )
+    }
+  } else {
+    // If payment succeeded, send confirmation email
+    try {
+      if (paymentIntent.status === 'succeeded') {
+        await sendOrderEmail(order, { subject: `Pago confirmado - ${order.orderNumber}` })
+      }
+    } catch (err) {
+      console.error('Failed to send payment confirmation email:', err)
     }
   }
 }

@@ -13,6 +13,7 @@ import categoryRoutes from './routes/categories.js'
 import authRoutes from './routes/auth.js'
 import uploadRoutes from './routes/uploads.js'
 import paymentRoutes from './routes/payments.js'
+import debugRoutes from './routes/debug.js'
 import { authMiddleware } from './middleware/auth.js'
 
 // Load environment variables from .env file in server directory
@@ -68,6 +69,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/customer/auth', customerAuthRoutes)
 app.use('/api', uploadRoutes)
 app.use('/api/payments', paymentRoutes)
+app.use('/api/debug', debugRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/customers', customerRoutes)

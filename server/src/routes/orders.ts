@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import Order from '../models/Order.js'
+import { sendOrderEmail } from '../utils/email.js'
 
 const router = Router()
 
@@ -9,8 +10,15 @@ router.get('/', async (req: Request, res: Response) => {
     // Verificar que sea admin
     const authHeader = req.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' })
+
+    // Send confirmation email (if configured)
+    try {
+      await sendOrderEmail(order)
+    } catch (err) {
+      console.error('Failed to send order confirmation email:', err)
     }
+
+    res.status(201).json(order)
 
     const orders = await Order.find().sort({ createdAt: -1 })
     res.json(orders)

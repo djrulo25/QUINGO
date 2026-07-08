@@ -123,8 +123,7 @@ export default function CheckoutPage() {
   }
 
   const shippingCost = formData.shippingMethod === 'express' ? 50 : 20
-  const tax = cart.totalPrice * 0.1
-  const total = cart.totalPrice + shippingCost + tax
+  const total = cart.totalPrice + shippingCost
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -214,8 +213,7 @@ export default function CheckoutPage() {
         paymentIntentId: options?.paymentIntentId || paymentIntentId || undefined,
         oxxoVoucherUrl: options?.oxxoVoucherUrl,
         subtotal: cart.totalPrice,
-        tax: cart.totalPrice * 0.1,
-        total: cart.totalPrice + (formData.shippingMethod === 'express' ? 50 : 20) + (cart.totalPrice * 0.1),
+        total: cart.totalPrice + (formData.shippingMethod === 'express' ? 50 : 20),
       } as any
 
       const response = await orderAPI.create(orderData)
@@ -476,7 +474,7 @@ export default function CheckoutPage() {
               {formData.paymentMethod === 'credit-card' && !paymentProcessed && (
                 <StripeProvider>
                   <StripePaymentForm
-                    totalAmount={shippingCost + cart.totalPrice + tax}
+                    totalAmount={shippingCost + cart.totalPrice}
                     orderId="pending"
                     onPaymentSuccess={handlePaymentSuccess}
                     onPaymentError={handlePaymentError}
@@ -487,7 +485,7 @@ export default function CheckoutPage() {
               {/* OXXO Payment Form - Only for OXXO method */}
               {formData.paymentMethod === 'oxxo' && !paymentProcessed && (
                 <OXXOPaymentForm
-                  totalAmount={shippingCost + cart.totalPrice + tax}
+                  totalAmount={shippingCost + cart.totalPrice}
                   orderId="pending"
                   email={formData.email}
                   name={`${formData.firstName} ${formData.lastName}`.trim()}
@@ -550,10 +548,6 @@ export default function CheckoutPage() {
                 <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Envío</span>
                   <span className="font-semibold shrink-0 whitespace-nowrap">${shippingCost}</span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-gray-600">Impuestos (10%)</span>
-                  <span className="font-semibold shrink-0 whitespace-nowrap">${tax.toFixed(2)}</span>
                 </div>
               </div>
 
