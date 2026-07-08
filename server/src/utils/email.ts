@@ -2,17 +2,18 @@ import nodemailer from 'nodemailer'
 import sgMail, { MailDataRequired } from '@sendgrid/mail'
 
 const useSendGrid = Boolean(process.env.SENDGRID_API_KEY)
-if (useSendGrid) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY || '')
+
+if (useSendGrid && process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 }
 
-const transporter = nodemailer.createTransport({
+const transporter = !useSendGrid ? nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE || 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
-})
+}) : null
 
 export const sendOrderEmail = async (order: any, options?: { subject?: string }) => {
   const subject = options?.subject || `Confirmación de Pedido ${order.orderNumber}`
@@ -62,6 +63,11 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string })
       await sgMail.send(msg)
       console.log('Order email sent via SendGrid to', order.customer.email)
     } else {
+      if (!transporter) {
+        console.warn('SMTP transporter not configured, skipping sendOrderEmail')
+        return
+      }
+
       if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
         console.warn('Email credentials not configured, skipping sendOrderEmail')
         return
