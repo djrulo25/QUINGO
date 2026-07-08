@@ -111,5 +111,3 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string; s
     console.error('Failed to send order email:', error.message || error)
   }
 }
-
-export default transporter
