@@ -7,11 +7,21 @@ if (useSendGrid && process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 }
 
+const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER
+const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS
+const smtpHost = process.env.SMTP_HOST
+const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined
+const smtpSecure = process.env.SMTP_SECURE === 'true'
+const smtpService = process.env.EMAIL_SERVICE || process.env.SMTP_SERVICE || 'gmail'
+
 const transporter = !useSendGrid ? nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
+  host: smtpHost || undefined,
+  port: smtpPort,
+  secure: smtpSecure,
+  service: smtpHost ? undefined : smtpService,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
+    user: smtpUser,
+    pass: smtpPass,
   },
 }) : null
 
@@ -68,13 +78,13 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string })
         return
       }
 
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      if (!smtpUser || !smtpPass) {
         console.warn('Email credentials not configured, skipping sendOrderEmail')
         return
       }
 
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: process.env.EMAIL_FROM || smtpUser,
         to: order.customer.email,
         subject,
         html,
