@@ -115,8 +115,9 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
         )}
 
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-700">
-            Total a pagar: <strong>${(totalAmount).toFixed(2)}</strong>
+          <p className="text-sm sm:text-base text-blue-700 flex flex-wrap items-center gap-1">
+            <span>Total a pagar:</span>
+            <strong className="break-all">${(totalAmount).toFixed(2)}</strong>
           </p>
         </div>
 

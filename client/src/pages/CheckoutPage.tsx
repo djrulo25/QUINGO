@@ -526,16 +526,16 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-20 w-full min-w-0">
               <h2 className="text-xl font-semibold mb-6">Resumen del Pedido</h2>
 
               <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
                 {cart.items.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-gray-600">
+                  <div key={item.id} className="flex justify-between gap-3 text-sm">
+                    <span className="text-gray-600 min-w-0 break-words">
                       {item.product.name} x{item.quantity}
                     </span>
-                    <span className="font-semibold">
+                    <span className="font-semibold shrink-0 whitespace-nowrap">
                       ${(item.product.price * item.quantity).toLocaleString()}
                     </span>
                   </div>
@@ -543,24 +543,24 @@ export default function CheckoutPage() {
               </div>
 
               <div className="border-t pt-4 space-y-3">
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">${cart.totalPrice.toLocaleString()}</span>
+                  <span className="font-semibold shrink-0 whitespace-nowrap">${cart.totalPrice.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-semibold">${shippingCost}</span>
+                  <span className="font-semibold shrink-0 whitespace-nowrap">${shippingCost}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <span className="text-gray-600">Impuestos (10%)</span>
-                  <span className="font-semibold">${tax.toFixed(2)}</span>
+                  <span className="font-semibold shrink-0 whitespace-nowrap">${tax.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="border-t pt-4 mt-4">
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex justify-between gap-3 text-lg font-bold">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span className="shrink-0 whitespace-nowrap">${total.toFixed(2)}</span>
                 </div>
               </div>
             </div>

@@ -35,17 +35,17 @@ export default function CartPage() {
               {cart.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex gap-4 p-6 border-b last:border-b-0 hover:bg-gray-50 transition"
+                  className="flex flex-col gap-4 p-6 border-b last:border-b-0 hover:bg-gray-50 transition sm:flex-row sm:items-center"
                 >
                   {/* Product Image */}
                   <img
                     src={item.product.image}
                     alt={item.product.name}
-                    className="w-20 h-20 object-cover rounded"
+                    className="w-20 h-20 object-cover rounded flex-shrink-0"
                   />
 
                   {/* Product Info */}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <Link
                       to={`/products/${item.product.id}`}
                       className="font-semibold text-gray-900 hover:text-blue-600 transition"
@@ -57,47 +57,49 @@ export default function CartPage() {
                     </p>
                   </div>
 
-                  {/* Quantity */}
-                  <div className="flex items-center border border-gray-300 rounded-lg">
+                  <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end sm:gap-4">
+                    {/* Quantity */}
+                    <div className="flex items-center border border-gray-300 rounded-lg">
+                      <button
+                        onClick={() =>
+                          updateQuantity(item.product.id, Math.max(1, item.quantity - 1))
+                        }
+                        className="p-1 hover:bg-gray-100 transition"
+                      >
+                        <MinusIcon className="w-4 h-4" />
+                      </button>
+                      <span className="px-3 font-semibold">{item.quantity}</span>
+                      <button
+                        onClick={() =>
+                          updateQuantity(
+                            item.product.id,
+                            Math.min(item.product.stock, item.quantity + 1)
+                          )
+                        }
+                        className="p-1 hover:bg-gray-100 transition"
+                      >
+                        <PlusIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-left sm:text-right shrink-0">
+                      <p className="font-semibold text-gray-900 whitespace-nowrap">
+                        ${(item.product.price * item.quantity).toLocaleString()}
+                      </p>
+                    </div>
+
+                    {/* Remove */}
                     <button
-                      onClick={() =>
-                        updateQuantity(item.product.id, Math.max(1, item.quantity - 1))
-                      }
-                      className="p-1 hover:bg-gray-100 transition"
+                      onClick={() => {
+                        removeFromCart(item.product.id)
+                        toast.success('Producto removido del carrito')
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded transition shrink-0"
                     >
-                      <MinusIcon className="w-4 h-4" />
-                    </button>
-                    <span className="px-3 font-semibold">{item.quantity}</span>
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.product.id,
-                          Math.min(item.product.stock, item.quantity + 1)
-                        )
-                      }
-                      className="p-1 hover:bg-gray-100 transition"
-                    >
-                      <PlusIcon className="w-4 h-4" />
+                      <TrashIcon className="w-5 h-5" />
                     </button>
                   </div>
-
-                  {/* Price */}
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">
-                      ${(item.product.price * item.quantity).toLocaleString()}
-                    </p>
-                  </div>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => {
-                      removeFromCart(item.product.id)
-                      toast.success('Producto removido del carrito')
-                    }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded transition"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
                 </div>
               ))}
             </div>
