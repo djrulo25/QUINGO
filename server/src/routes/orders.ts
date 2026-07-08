@@ -10,15 +10,8 @@ router.get('/', async (req: Request, res: Response) => {
     // Verificar que sea admin
     const authHeader = req.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-
-    // Send confirmation email (if configured)
-    try {
-      await sendOrderEmail(order)
-    } catch (err) {
-      console.error('Failed to send order confirmation email:', err)
+      return res.status(401).json({ error: 'Unauthorized' })
     }
-
-    res.status(201).json(order)
 
     const orders = await Order.find().sort({ createdAt: -1 })
     res.json(orders)
@@ -38,6 +31,14 @@ router.post('/', async (req: Request, res: Response) => {
       paymentStatus: 'pending'
     })
     await order.save()
+
+    // Send confirmation email (if configured)
+    try {
+      await sendOrderEmail(order)
+    } catch (err) {
+      console.error('Failed to send order confirmation email:', err)
+    }
+
     res.status(201).json(order)
   } catch (error) {
     res.status(400).json({ error: 'Error creating order' })
