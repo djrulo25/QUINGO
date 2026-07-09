@@ -1,24 +1,5 @@
-import dotenv from 'dotenv'
-import path from 'path'
-import { fileURLToPath } from 'url'
 import nodemailer from 'nodemailer'
 import sgMail, { MailDataRequired } from '@sendgrid/mail'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const loaded = dotenv.config({ path: path.resolve(__dirname, '../../.env') })
-if (loaded.error) {
-  const fallbackPath = path.resolve(process.cwd(), '.env')
-  const fallback = dotenv.config({ path: fallbackPath })
-  if (!fallback.error) {
-    console.log('Loaded env from fallback', fallbackPath)
-  } else {
-    console.warn('Email util could not load .env. cwd=', process.cwd(), 'error=', fallback.error?.message)
-  }
-} else {
-  console.log('Loaded env from', path.resolve(__dirname, '../../.env'))
-}
 
 const getSendGridApiKey = () => process.env.SENDGRID_API_KEY?.trim()
 const getUseSendGrid = () => Boolean(getSendGridApiKey())
