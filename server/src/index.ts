@@ -16,12 +16,8 @@ import paymentRoutes from './routes/payments.js'
 import debugRoutes from './routes/debug.js'
 import { authMiddleware } from './middleware/auth.js'
 
-// Load environment variables from .env file in server directory
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-console.log('Loading environment from:', path.resolve(__dirname, '../.env'))
-dotenv.config({ path: path.resolve(__dirname, '../.env') })
-console.log('Environment variables loaded')
 
 const app: Express = express()
 const PORT = process.env.PORT || 3000
