@@ -149,6 +149,7 @@ export default function AdminDashboard() {
           value={stats.delivered}
           icon={CheckCircleIcon}
           color="bg-green-50"
+          onClick={() => navigate('/admin/orders?filter=delivered')}
         />
 
         <StatCard

@@ -294,24 +294,24 @@ export default function CustomerProfilePage() {
                         <p className="text-sm text-gray-600">{addr.firstName} {addr.lastName}</p>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {!addr.isDefault && (
                           <button
                             onClick={() => handleSetDefault(addr._id!)}
-                            className="text-sm px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition"
+                            className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition"
                           >
                             Hacer Predeterminada
                           </button>
                         )}
                         <button
                           onClick={() => setEditingAddress(addr)}
-                          className="text-sm px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
+                          className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
                         >
                           Editar
                         </button>
                         <button
                           onClick={() => handleDeleteAddress(addr._id!)}
-                          className="text-sm px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded transition"
+                          className="text-xs px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded transition"
                         >
                           Eliminar
                         </button>

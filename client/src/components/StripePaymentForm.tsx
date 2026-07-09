@@ -90,11 +90,21 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
           </label>
           <div className="p-4 border border-gray-300 rounded-lg">
             <CardElement
+              className="w-full"
               options={{
+                classes: {
+                  base: 'stripe-card-element',
+                  focus: 'stripe-card-element-focus',
+                  invalid: 'stripe-card-element-invalid',
+                },
                 style: {
                   base: {
                     fontSize: '16px',
                     color: '#424770',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    letterSpacing: '0.025em',
+                    lineHeight: '24px',
+                    boxSizing: 'border-box',
                     '::placeholder': {
                       color: '#aab7c4'
                     }

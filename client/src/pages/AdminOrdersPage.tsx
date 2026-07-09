@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import {
@@ -59,11 +59,19 @@ export default function AdminOrdersPage() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus>('all')
   const [showFilters, setShowFilters] = useState(false)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   useEffect(() => {
     checkAuth()
     fetchOrders()
   }, [])
+
+  useEffect(() => {
+    const filterFromQuery = searchParams.get('filter') as OrderStatus | null
+    if (filterFromQuery && filterFromQuery !== filterStatus) {
+      setFilterStatus(filterFromQuery)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     applyFilters()

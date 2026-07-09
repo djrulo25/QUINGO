@@ -496,8 +496,8 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Submit Button - Only show for non-credit-card methods or after payment */}
-            {(formData.paymentMethod !== 'credit-card' || paymentProcessed) && (
+            {/* Submit Button - Only show after payment or for payment methods that don't require a separate form */}
+            {(paymentProcessed || (formData.paymentMethod !== 'credit-card' && formData.paymentMethod !== 'oxxo')) && (
               <button
                 type="submit"
                 disabled={loading}
