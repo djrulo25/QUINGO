@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import apiClient from '@/api'
 import toast from 'react-hot-toast'
 
@@ -42,14 +42,14 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
       const { clientSecret, paymentIntentId } = response.data
 
       // Step 2: Confirm payment with Stripe
-      const cardElement = elements.getElement(CardElement)
-      if (!cardElement) {
-        throw new Error('Card element not found')
+      const cardNumberElement = elements.getElement(CardNumberElement)
+      if (!cardNumberElement) {
+        throw new Error('Card number element not found')
       }
 
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: cardElement,
+          card: cardNumberElement,
           billing_details: {
             // Add billing details if needed
           }
@@ -86,25 +86,19 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Datos de Tarjeta
+            Número de Tarjeta
           </label>
           <div className="p-4 border border-gray-300 rounded-lg">
-            <CardElement
+            <CardNumberElement
               className="w-full"
               options={{
-                classes: {
-                  base: 'stripe-card-element',
-                  focus: 'stripe-card-element-focus',
-                  invalid: 'stripe-card-element-invalid',
-                },
                 style: {
                   base: {
                     fontSize: '16px',
                     color: '#424770',
                     fontFamily: 'Inter, system-ui, sans-serif',
-                    letterSpacing: '0.075em',
-                    lineHeight: '28px',
-                    padding: '12px 0',
+                    letterSpacing: '0.05em',
+                    lineHeight: '24px',
                     '::placeholder': {
                       color: '#aab7c4'
                     }
@@ -115,6 +109,64 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
                 }
               }}
             />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-4 sm:grid-cols-3">
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Expiración
+            </label>
+            <div className="p-4 border border-gray-300 rounded-lg">
+              <CardExpiryElement
+                className="w-full"
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      letterSpacing: '0.05em',
+                      lineHeight: '24px',
+                      '::placeholder': {
+                        color: '#aab7c4'
+                      }
+                    },
+                    invalid: {
+                      color: '#9e2146'
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="sm:col-span-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              CVC
+            </label>
+            <div className="p-4 border border-gray-300 rounded-lg">
+              <CardCvcElement
+                className="w-full"
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      letterSpacing: '0.05em',
+                      lineHeight: '24px',
+                      '::placeholder': {
+                        color: '#aab7c4'
+                      }
+                    },
+                    invalid: {
+                      color: '#9e2146'
+                    }
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 

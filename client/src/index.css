@@ -41,17 +41,21 @@
 }
 
 .StripeElement,
-.stripe-card-element {
+.stripe-card-element,
+.stripe-card-element .__PrivateStripeElement,
+.StripeElement iframe {
   width: 100% !important;
   min-height: 44px;
   box-sizing: border-box;
 }
 
-.stripe-card-element {
+.stripe-card-element,
+.StripeElement {
   padding: 0 !important;
 }
 
-.stripe-card-element-focus {
+.stripe-card-element-focus,
+.StripeElement:focus {
   outline: none;
 }
 
