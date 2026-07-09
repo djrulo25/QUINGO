@@ -104,7 +104,6 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
                     fontFamily: 'Inter, system-ui, sans-serif',
                     letterSpacing: '0.025em',
                     lineHeight: '24px',
-                    boxSizing: 'border-box',
                     '::placeholder': {
                       color: '#aab7c4'
                     }
