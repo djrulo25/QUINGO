@@ -88,17 +88,17 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Número de Tarjeta
           </label>
-          <div className="p-4 border border-gray-300 rounded-lg">
+          <div className="p-3 border border-gray-300 rounded-lg">
             <CardNumberElement
               className="w-full"
               options={{
                 style: {
                   base: {
-                    fontSize: '16px',
+                    fontSize: '15px',
                     color: '#424770',
                     fontFamily: 'Inter, system-ui, sans-serif',
-                    letterSpacing: '0.05em',
-                    lineHeight: '24px',
+                    letterSpacing: '0.03em',
+                    lineHeight: '22px',
                     '::placeholder': {
                       color: '#aab7c4'
                     }
@@ -117,17 +117,17 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Expiración
             </label>
-            <div className="p-4 border border-gray-300 rounded-lg">
+            <div className="p-3 border border-gray-300 rounded-lg">
               <CardExpiryElement
                 className="w-full"
                 options={{
                   style: {
                     base: {
-                      fontSize: '16px',
+                      fontSize: '15px',
                       color: '#424770',
                       fontFamily: 'Inter, system-ui, sans-serif',
-                      letterSpacing: '0.05em',
-                      lineHeight: '24px',
+                      letterSpacing: '0.03em',
+                      lineHeight: '22px',
                       '::placeholder': {
                         color: '#aab7c4'
                       }
@@ -145,17 +145,17 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               CVC
             </label>
-            <div className="p-4 border border-gray-300 rounded-lg">
+            <div className="p-3 border border-gray-300 rounded-lg">
               <CardCvcElement
                 className="w-full"
                 options={{
                   style: {
                     base: {
-                      fontSize: '16px',
+                      fontSize: '15px',
                       color: '#424770',
                       fontFamily: 'Inter, system-ui, sans-serif',
-                      letterSpacing: '0.05em',
-                      lineHeight: '24px',
+                      letterSpacing: '0.03em',
+                      lineHeight: '22px',
                       '::placeholder': {
                         color: '#aab7c4'
                       }
