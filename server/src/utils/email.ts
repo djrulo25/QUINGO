@@ -1,5 +1,34 @@
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import nodemailer from 'nodemailer'
 import sgMail, { MailDataRequired } from '@sendgrid/mail'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const loadEnvIfNeeded = () => {
+  if (process.env.SENDGRID_API_KEY || process.env.SMTP_USER || process.env.SMTP_PASS || process.env.EMAIL_USER || process.env.EMAIL_PASSWORD) {
+    return
+  }
+
+  const envPaths = [
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(process.cwd(), 'server/.env'),
+    path.resolve(process.cwd(), '.env')
+  ]
+
+  for (const envPath of envPaths) {
+    const result = dotenv.config({ path: envPath })
+    if (!result.error) {
+      console.log('Loaded env from', envPath)
+      break
+    }
+  }
+}
+
+loadEnvIfNeeded()
 
 const getSendGridApiKey = () => process.env.SENDGRID_API_KEY?.trim()
 const getUseSendGrid = () => Boolean(getSendGridApiKey())
