@@ -9,8 +9,8 @@ const __dirname = path.dirname(__filename)
 
 const loadEnvFromPaths = () => {
   const envPaths = [
-    path.resolve(__dirname, '../.env'),
     path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../.env'),
     path.resolve(process.cwd(), './server/.env'),
     path.resolve(process.cwd(), '../server/.env'),
     path.resolve(process.cwd(), '.env')
@@ -19,12 +19,24 @@ const loadEnvFromPaths = () => {
   for (const envPath of envPaths) {
     const result = dotenv.config({ path: envPath })
     if (!result.error) {
-      console.log('Loaded env from', envPath)
-      return true
+      const parsed = result.parsed || {}
+      const hasUsefulValue = Boolean(
+        parsed.SENDGRID_API_KEY?.trim() ||
+        parsed.SMTP_USER?.trim() ||
+        parsed.SMTP_PASS?.trim() ||
+        parsed.EMAIL_USER?.trim() ||
+        parsed.EMAIL_PASSWORD?.trim() ||
+        parsed.EMAIL_FROM?.trim()
+      )
+
+      if (hasUsefulValue) {
+        console.log('Loaded env from', envPath)
+        return true
+      }
     }
   }
 
-  console.warn('Email util did not load .env from known paths. cwd=', process.cwd())
+  console.warn('Email util did not load useful .env values from known paths. cwd=', process.cwd())
   return false
 }
 
