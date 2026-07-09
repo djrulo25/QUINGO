@@ -3,6 +3,27 @@ import { sendOrderEmail } from '../utils/email.js'
 
 const router = Router()
 
+// Returns runtime email configuration status (do NOT expose secrets)
+router.get('/email-config', (req: Request, res: Response) => {
+  try {
+    const sendgridKey = process.env.SENDGRID_API_KEY || ''
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || ''
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || ''
+    const from = process.env.EMAIL_FROM || ''
+
+    res.json({
+      sendGridConfigured: !!sendgridKey,
+      sendGridKeyLength: sendgridKey ? sendgridKey.length : 0,
+      smtpConfigured: !!(smtpUser && smtpPass),
+      fromConfigured: !!from,
+      cwd: process.cwd()
+    })
+  } catch (err: any) {
+    console.error('Debug email-config error:', err)
+    res.status(500).json({ error: err.message || 'Failed to read env' })
+  }
+})
+
 // Send a test order email. Body: { email: string, name?: string }
 router.post('/send-test', async (req: Request, res: Response) => {
   try {
