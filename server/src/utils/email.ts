@@ -7,41 +7,16 @@ import sgMail, { MailDataRequired } from '@sendgrid/mail'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const loadEnvFromPaths = () => {
-  const envPaths = [
-    path.resolve(__dirname, '../../.env'),
-    path.resolve(__dirname, '../.env'),
-    path.resolve(process.cwd(), './server/.env'),
-    path.resolve(process.cwd(), '../server/.env'),
-    path.resolve(process.cwd(), '.env')
-  ]
-
-  for (const envPath of envPaths) {
-    const result = dotenv.config({ path: envPath })
-    if (!result.error) {
-      const parsed = result.parsed || {}
-      const hasUsefulValue = Boolean(
-        parsed.SENDGRID_API_KEY?.trim() ||
-        parsed.SMTP_USER?.trim() ||
-        parsed.SMTP_PASS?.trim() ||
-        parsed.EMAIL_USER?.trim() ||
-        parsed.EMAIL_PASSWORD?.trim() ||
-        parsed.EMAIL_FROM?.trim()
-      )
-
-      if (hasUsefulValue) {
-        console.log('Loaded env from', envPath)
-        return true
-      }
-    }
+const loaded = dotenv.config({ path: path.resolve(__dirname, '../.env') })
+if (loaded.error) {
+  const fallback = dotenv.config({ path: path.resolve(process.cwd(), './server/.env') })
+  if (!fallback.error) {
+    console.log('Loaded env from fallback', path.resolve(process.cwd(), './server/.env'))
+  } else {
+    console.warn('Email util could not load server/.env. cwd=', process.cwd(), 'error=', fallback.error?.message)
   }
-
-  console.warn('Email util did not load useful .env values from known paths. cwd=', process.cwd())
-  return false
-}
-
-if (!process.env.SENDGRID_API_KEY && !process.env.SMTP_USER && !process.env.SMTP_PASS && !process.env.EMAIL_USER && !process.env.EMAIL_PASSWORD) {
-  loadEnvFromPaths()
+} else {
+  console.log('Loaded env from', path.resolve(__dirname, '../.env'))
 }
 
 const getSendGridApiKey = () => process.env.SENDGRID_API_KEY?.trim()

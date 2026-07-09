@@ -1,6 +1,6 @@
+import './config/env.js'
 import express, { Express, Request, Response, NextFunction } from 'express'
 import cors, { CorsOptions } from 'cors'
-import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { connectDB } from './config/database.js'
