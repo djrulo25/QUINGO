@@ -48,6 +48,10 @@ export const useCustomerStore = create<CustomerStore>()(
         set({ customer: null, token: null, isLoggedIn: false })
         localStorage.removeItem('customer-store')
         localStorage.removeItem('authToken')
+
+        if (typeof window !== 'undefined') {
+          window.location.assign('/')
+        }
       },
 
       register: async (email: string, password: string, firstName: string, lastName: string, phone: string) => {

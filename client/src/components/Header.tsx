@@ -86,6 +86,7 @@ export default function Header() {
                         onClick={() => {
                           logout()
                           setIsUserMenuOpen(false)
+                          navigate('/')
                         }}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-700 transition text-red-400"
                       >
@@ -168,6 +169,7 @@ export default function Header() {
                     onClick={() => {
                       logout()
                       setIsMenuOpen(false)
+                      navigate('/')
                     }}
                     className="block w-full text-left py-2 hover:text-red-400 transition text-red-400"
                   >
