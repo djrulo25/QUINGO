@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingCartIcon, MagnifyingGlassIcon, UserIcon } from '@heroicons/react/24/outline'
 import { useCartStore } from '@/store/cartStore'
 import { useCustomerStore } from '@/store/customerStore'
@@ -9,6 +9,7 @@ export default function Header() {
   const { isLoggedIn, customer, logout } = useCustomerStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <header className="bg-gray-900 text-white sticky top-0 z-50 shadow-lg">
@@ -34,7 +35,12 @@ export default function Header() {
 
           {/* Right Section */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 hover:bg-gray-800 rounded-lg transition">
+            <button
+              type="button"
+              onClick={() => navigate('/products')}
+              className="p-2 hover:bg-gray-800 rounded-lg transition"
+              title="Buscar productos"
+            >
               <MagnifyingGlassIcon className="w-6 h-6" />
             </button>
             <Link
