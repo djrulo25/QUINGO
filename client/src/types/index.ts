@@ -109,4 +109,5 @@ export interface FilterOptions {
   inStock?: boolean
   rating?: number
   search?: string
+  sortBy?: 'price-asc' | 'price-desc'
 }
