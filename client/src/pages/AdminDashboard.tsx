@@ -95,24 +95,24 @@ export default function AdminDashboard() {
   }) => (
     <div
       onClick={onClick}
-      className={`p-6 rounded-lg shadow cursor-pointer transition transform hover:scale-105 ${color}`}
+      className={`p-4 sm:p-6 rounded-lg shadow cursor-pointer transition transform hover:scale-[1.01] sm:hover:scale-105 ${color}`}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-gray-600 text-sm font-medium break-words">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2 break-words">{value}</p>
         </div>
-        <Icon className="w-12 h-12 text-gray-400" />
+        <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 flex-shrink-0" />
       </div>
     </div>
   )
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+    <div className="min-w-0">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Dashboard</h1>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
         <StatCard
           title="Pedidos Totales"
           value={stats.total}
@@ -122,18 +122,18 @@ export default function AdminDashboard() {
         />
 
         <StatCard
-          title="Pendientes"
+          title="Pedido creado y pendiente de pago"
           value={stats.pending}
           icon={ClockIcon}
-          color="bg-yellow-50"
+          color="bg-amber-50 border-l-4 border-amber-500"
           onClick={() => navigate('/admin/orders?filter=pending')}
         />
 
         <StatCard
-          title="Confirmados"
+          title="Pago confirmado y listo para preparación"
           value={stats.confirmed}
           icon={CheckCircleIcon}
-          color="bg-purple-50"
+          color="bg-emerald-50 border-l-4 border-emerald-500"
         />
 
         <StatCard
@@ -162,16 +162,16 @@ export default function AdminDashboard() {
       </div>
 
       {/* Revenue and Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Revenue Card */}
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow overflow-hidden">
           <div className="flex items-center gap-4">
             <div className="bg-green-100 p-3 rounded-lg">
               <CurrencyDollarIcon className="w-8 h-8 text-green-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-gray-600 text-sm">Ingresos Totales</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
                 ${stats.totalRevenue.toFixed(2)}
               </p>
             </div>
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Status Summary */}
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen de Estados</h3>
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
@@ -201,9 +201,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+      <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <button
             onClick={() => navigate('/admin/products')}
             className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-center"

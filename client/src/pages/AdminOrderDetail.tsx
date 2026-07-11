@@ -56,8 +56,8 @@ const statusColors: Record<string, string> = {
 }
 
 const statusLabels: Record<string, string> = {
-  pending: 'Pendiente',
-  confirmed: 'Confirmado',
+  pending: 'Pedido creado y pendiente de pago',
+  confirmed: 'Pago confirmado y listo para preparación',
   shipped: 'Enviado',
   delivered: 'Entregado',
   cancelled: 'Cancelado',
@@ -192,7 +192,7 @@ export default function AdminOrderDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
         {/* Header */}
         <div className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -218,12 +218,12 @@ export default function AdminOrderDetail() {
         </div>
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0">
               {/* Estado y Acciones */}
-              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Estado del Pedido</h2>
                 <div className="flex flex-col gap-4">
                   <div>
@@ -285,16 +285,16 @@ export default function AdminOrderDetail() {
                       >
                         {order.status === 'pending' && (
                           <>
-                            <option value="pending">Pendiente</option>
-                            <option value="confirmed">Confirmar Pedido</option>
-                            <option value="cancelled">Cancelar Pedido</option>
+                            <option value="pending">Pedido creado y pendiente de pago</option>
+                            <option value="confirmed">Confirmar pedido</option>
+                            <option value="cancelled">Cancelar pedido</option>
                           </>
                         )}
                         {order.status === 'confirmed' && (
                           <>
-                            <option value="confirmed">Confirmado</option>
-                            <option value="shipped">Marcar como Enviado</option>
-                            <option value="cancelled">Cancelar Pedido</option>
+                            <option value="confirmed">Pago confirmado y listo para preparación</option>
+                            <option value="shipped">Marcar como enviado</option>
+                            <option value="cancelled">Cancelar pedido</option>
                           </>
                         )}
                         {order.status === 'shipped' && (
@@ -363,7 +363,7 @@ export default function AdminOrderDetail() {
               </div>
 
               {/* Información del Cliente */}
-              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Información del Cliente</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -390,7 +390,7 @@ export default function AdminOrderDetail() {
               </div>
 
               {/* Dirección de Envío */}
-              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Dirección de Envío</h2>
                 <div className="space-y-2">
                   <p className="font-medium text-gray-900">
@@ -413,7 +413,7 @@ export default function AdminOrderDetail() {
               </div>
 
               {/* Notas del Administrador */}
-              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Notas Internas</h2>
                 <textarea
                   value={adminNotes}
@@ -432,9 +432,9 @@ export default function AdminOrderDetail() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6 min-w-0">
               {/* Resumen de Pedido */}
-              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumen</h2>
                 <div className="space-y-2 mb-4">
                   <p className="text-sm text-gray-600">Subtotal</p>
@@ -461,7 +461,7 @@ export default function AdminOrderDetail() {
               </div>
 
               {/* Productos */}
-              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Productos ({order.items.length})</h2>
                 <div className="space-y-3">
                   {order.items.map((item, index) => (

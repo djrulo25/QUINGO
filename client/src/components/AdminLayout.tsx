@@ -70,15 +70,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-gray-100 lg:flex-row">
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-lg`}
+          sidebarOpen ? 'w-full lg:w-64' : 'w-full lg:w-20'
+        } bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-lg lg:h-screen lg:sticky lg:top-0`}
       >
         {/* Logo/Header */}
-        <div className="p-6 border-b border-blue-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-blue-800 flex items-center justify-between">
           <h1 className={`font-bold text-xl ${!sidebarOpen && 'hidden'}`}>QUINGO</h1>
           <h2 className={`font-bold text-sm ${sidebarOpen && 'hidden'}`}>Q</h2>
           <button
@@ -94,7 +94,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-3 sm:p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)
@@ -118,7 +118,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-blue-800">
+        <div className="p-3 sm:p-4 border-t border-blue-800">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 hover:bg-blue-800 transition"
@@ -131,8 +131,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+        <div className="w-full max-w-full p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

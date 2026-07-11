@@ -70,12 +70,6 @@ export default function OrderConfirmationPage() {
     )
   }
 
-  const paymentStatusLabel = order.paymentStatus === 'completed'
-    ? 'Pagado'
-    : order.paymentStatus === 'pending'
-      ? 'Pendiente de pago'
-      : 'Pago fallido'
-
   const orderStatusLabel = order.status === 'confirmed'
     ? 'Confirmado'
     : order.status === 'shipped'
@@ -84,7 +78,7 @@ export default function OrderConfirmationPage() {
         ? 'Entregado'
         : order.status === 'cancelled'
           ? 'Cancelado'
-          : 'Pendiente'
+          : 'Pendiente de envío'
 
   return (
     <div className="py-12">
@@ -99,12 +93,9 @@ export default function OrderConfirmationPage() {
           <p className="text-gray-600 mb-2">Número de Orden</p>
           <p className="text-3xl font-mono font-bold text-gray-900">#{order.orderNumber || orderId}</p>
           <p className="text-sm text-gray-500 mt-2">ID de pedido: {orderId}</p>
-          <div className="mt-4 flex flex-col sm:flex-row sm:justify-center gap-4">
+          <div className="mt-4 flex justify-center">
             <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-4 py-2 text-sm font-semibold">
               Estado de pedido: {orderStatusLabel}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-4 py-2 text-sm font-semibold">
-              Estado de pago: {paymentStatusLabel}
             </span>
           </div>
         </div>

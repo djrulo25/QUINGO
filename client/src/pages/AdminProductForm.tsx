@@ -172,10 +172,10 @@ export default function AdminProductForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-4 overflow-x-hidden">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-6">
             {isEdit ? 'Editar Producto' : 'Agregar Nuevo Producto'}
           </h1>
 
@@ -228,7 +228,7 @@ export default function AdminProductForm() {
             </div>
 
             {/* Precios */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Precio Actual *
@@ -279,7 +279,7 @@ export default function AdminProductForm() {
             </div>
 
             {/* Categoría */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Categoría *
@@ -363,7 +363,7 @@ export default function AdminProductForm() {
             </div>
 
             {/* Rating */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Rating (0-5)
@@ -397,7 +397,7 @@ export default function AdminProductForm() {
             </div>
 
             {/* Botones */}
-            <div className="flex gap-4 pt-6 border-t">
+            <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
               <button
                 type="submit"
                 disabled={loading || uploading}

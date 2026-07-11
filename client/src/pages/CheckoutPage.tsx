@@ -153,7 +153,11 @@ export default function CheckoutPage() {
 
     // Create order after payment is successful
     try {
-      await createOrder({ paymentIntentId: newPaymentIntentId })
+      await createOrder({
+        paymentIntentId: newPaymentIntentId,
+        paymentStatus: 'completed',
+        status: 'confirmed',
+      })
     } catch (error) {
       console.error('Error creating order after payment:', error)
       setPaymentProcessed(false)
@@ -168,10 +172,20 @@ export default function CheckoutPage() {
     setPaymentIntentId(null)
   }
 
-  const createOrder = async (options?: { redirectAfterCreation?: boolean; isOxxoPending?: boolean; oxxoVoucherUrl?: string; paymentIntentId?: string }) => {
+  const createOrder = async (options?: {
+    redirectAfterCreation?: boolean
+    isOxxoPending?: boolean
+    oxxoVoucherUrl?: string
+    paymentIntentId?: string
+    paymentStatus?: 'pending' | 'completed' | 'failed'
+    status?: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+  }) => {
     setLoading(true)
 
     try {
+      const normalizedPaymentStatus = options?.paymentStatus || (options?.isOxxoPending ? 'pending' : paymentProcessed ? 'completed' : 'pending')
+      const normalizedStatus = options?.status || (normalizedPaymentStatus === 'completed' ? 'confirmed' : 'pending')
+
       const orderData = {
         customer: {
           firstName: formData.firstName,
@@ -197,7 +211,8 @@ export default function CheckoutPage() {
         shippingMethod: formData.shippingMethod,
         shippingCost: formData.shippingMethod === 'express' ? 50 : 20,
         paymentMethod: formData.paymentMethod,
-        paymentStatus: options?.isOxxoPending ? 'pending' : paymentProcessed ? 'completed' : 'pending',
+        status: normalizedStatus,
+        paymentStatus: normalizedPaymentStatus,
         paymentIntentId: options?.paymentIntentId || paymentIntentId || undefined,
         oxxoVoucherUrl: options?.oxxoVoucherUrl,
         subtotal: cart.totalPrice,

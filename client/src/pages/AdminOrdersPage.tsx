@@ -43,8 +43,8 @@ const statusColors: Record<string, string> = {
 }
 
 const statusLabels: Record<string, string> = {
-  pending: 'Pendiente',
-  confirmed: 'Confirmado',
+  pending: 'Pedido creado y pendiente de pago',
+  confirmed: 'Pago confirmado y listo para preparación',
   shipped: 'Enviado',
   delivered: 'Entregado',
   cancelled: 'Cancelado',
@@ -161,9 +161,9 @@ export default function AdminOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <h1 className="text-2xl font-bold text-gray-900">Gestión de Pedidos</h1>
           <button onClick={handleLogout} className="px-4 py-2 text-red-600 text-sm hover:bg-red-50 rounded">
             Cerrar sesión
@@ -171,29 +171,29 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
             <input
               type="text"
               placeholder="Buscar por orden, email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full sm:flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
             >
               <FunnelIcon className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm">Filtros</span>
+              <span className="text-sm">Filtros</span>
             </button>
           </div>
 
           {showFilters && (
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Estado del Pedido</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                 {['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'returned'].map((status) => (
                   <button
                     key={status}
@@ -217,26 +217,26 @@ export default function AdminOrdersPage() {
             <p className="text-gray-500">No hay pedidos</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             {filteredOrders.map((order) => (
-              <div key={order._id} className="bg-white rounded-lg shadow-sm p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-semibold text-gray-900">{order.orderNumber}</p>
-                    <p className="text-sm text-gray-600">{order.customer.email}</p>
+              <div key={order._id} className="bg-white rounded-lg shadow-sm p-4 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 break-words">{order.orderNumber}</p>
+                    <p className="text-sm text-gray-600 break-all">{order.customer.email}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[order.status]}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-medium self-start ${statusColors[order.status]}`}>
                     {statusLabels[order.status]}
                   </span>
                 </div>
 
-                <div className="text-sm text-gray-600 mb-3">
-                  <p>{order.customer.firstName} {order.customer.lastName}</p>
+                <div className="text-sm text-gray-600 mb-3 space-y-1">
+                  <p className="break-words">{order.customer.firstName} {order.customer.lastName}</p>
                   <p>Total: ${order.total.toFixed(2)}</p>
                   <p>Pago: {order.paymentStatus === 'completed' ? 'Pagado' : 'Pendiente'}</p>
                 </div>
 
-                <div className="flex gap-2 pt-3 border-t">
+                <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t">
                   <button
                     onClick={() => navigate(`/admin/orders/${order._id}`)}
                     className="flex-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded text-sm font-medium"
@@ -249,20 +249,20 @@ export default function AdminOrdersPage() {
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      className="flex-1 px-2 py-2 text-xs border border-gray-300 rounded"
+                      className="flex-1 px-2 py-2 text-xs border border-gray-300 rounded min-w-0"
                     >
                       {order.status === 'pending' && (
                         <>
-                          <option value="pending">Pendiente</option>
-                          <option value="confirmed">Confirmar</option>
-                          <option value="cancelled">Cancelar</option>
+                          <option value="pending">Pedido creado y pendiente de pago</option>
+                          <option value="confirmed">Confirmar pedido</option>
+                          <option value="cancelled">Cancelar pedido</option>
                         </>
                       )}
                       {order.status === 'confirmed' && (
                         <>
-                          <option value="confirmed">Confirmado</option>
+                          <option value="confirmed">Pago confirmado y listo para preparación</option>
                           <option value="shipped">Enviar</option>
-                          <option value="cancelled">Cancelar</option>
+                          <option value="cancelled">Cancelar pedido</option>
                         </>
                       )}
                       {order.status === 'shipped' && (
@@ -279,7 +279,7 @@ export default function AdminOrdersPage() {
           </div>
         )}
 
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <p className="text-sm text-gray-600">Total de Pedidos</p>
             <p className="text-3xl font-bold text-gray-900 mt-2">{orders.length}</p>

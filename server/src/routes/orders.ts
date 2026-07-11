@@ -24,11 +24,20 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const orderNumber = `ORD-${Date.now()}`
+    const normalizedPaymentStatus = req.body.paymentStatus || 'pending'
+    const normalizedStatus = req.body.status || (
+      normalizedPaymentStatus === 'completed'
+        ? 'confirmed'
+        : normalizedPaymentStatus === 'failed'
+          ? 'cancelled'
+          : 'pending'
+    )
+
     const order = new Order({
       ...req.body,
       orderNumber,
-      status: 'pending',
-      paymentStatus: 'pending'
+      status: normalizedStatus,
+      paymentStatus: normalizedPaymentStatus
     })
     await order.save()
 
