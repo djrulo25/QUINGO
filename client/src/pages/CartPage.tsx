@@ -125,7 +125,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-semibold">Calcular al checkout</span>
+                  <span className="font-semibold">Calcular al continuar con la compra</span>
                 </div>
               </div>
 
@@ -140,7 +140,7 @@ export default function CartPage() {
                 to="/checkout"
                 className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition block text-center mb-3"
               >
-                Ir al Checkout
+                Continuar con la compra
               </Link>
 
               <button

@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [addresses, setAddresses] = useState<IAddress[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [currentStep, setCurrentStep] = useState<'details' | 'payment'>('details')
   const [paymentProcessed, setPaymentProcessed] = useState(false)
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -224,9 +225,41 @@ export default function CheckoutPage() {
     }
   }
 
+  const validateDetailsStep = () => {
+    const requiredFields = [
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      formData.phone,
+      formData.street,
+      formData.number,
+      formData.city,
+      formData.state,
+      formData.zipCode,
+      formData.country,
+    ]
+
+    const hasMissingField = requiredFields.some((value) => !value.trim())
+
+    if (hasMissingField) {
+      toast.error('Completa tu información personal y la dirección antes de continuar')
+      return false
+    }
+
+    return true
+  }
+
+  const handleContinueToPayment = () => {
+    if (!validateDetailsStep()) {
+      return
+    }
+
+    setCurrentStep('payment')
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // If payment method is credit card and payment not processed yet, show payment form
     if (formData.paymentMethod === 'credit-card' && !paymentProcessed) {
       // The payment form will handle submission
@@ -248,7 +281,7 @@ export default function CheckoutPage() {
   return (
     <div className="py-8 bg-gray-50">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold mb-8">Continuar con la compra</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}
@@ -433,84 +466,107 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment Method */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Método de Pago</h2>
-              
-              {/* Payment Method Selection */}
-              {!paymentProcessed && (
-                <>
-                  <select
-                    name="paymentMethod"
-                    value={formData.paymentMethod}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 mb-4"
-                  >
-                    <option value="credit-card">Tarjeta de Crédito (Stripe)</option>
-                    <option value="oxxo">OXXO (Efectivo)</option>
-                  </select>
-                  {formData.paymentMethod === 'oxxo' && (
-                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
-                      OXXO seleccionado. Debes ver el botón “Generar Código de Pago OXXO” abajo.
-                    </div>
-                  )}
-                </>
-              )}
+            {currentStep === 'details' && (
+              <div className="bg-white rounded-lg shadow-md p-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Paso 1 de 2</p>
+                  <p className="font-semibold text-gray-900">Información personal y envío</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleContinueToPayment}
+                  className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg transition"
+                >
+                  Continuar al método de pago
+                </button>
+              </div>
+            )}
 
-              {/* Stripe Payment Form - Only for credit card method */}
-              {formData.paymentMethod === 'credit-card' && !paymentProcessed && (
-                <StripeProvider>
-                  <StripePaymentForm
+            {currentStep === 'payment' && (
+              <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Paso 2 de 2</p>
+                    <h2 className="text-xl font-semibold">Método de Pago</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep('details')}
+                    className="w-full sm:w-auto border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition"
+                  >
+                    Volver a datos
+                  </button>
+                </div>
+
+                {!paymentProcessed && (
+                  <>
+                    <select
+                      name="paymentMethod"
+                      value={formData.paymentMethod}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    >
+                      <option value="credit-card">Tarjeta de Crédito (Stripe)</option>
+                      <option value="oxxo">OXXO (Efectivo)</option>
+                    </select>
+                    {formData.paymentMethod === 'oxxo' && (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
+                        OXXO seleccionado. Debes ver el botón “Generar Código de Pago OXXO” abajo.
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {formData.paymentMethod === 'credit-card' && !paymentProcessed && (
+                  <StripeProvider>
+                    <StripePaymentForm
+                      totalAmount={shippingCost + cart.totalPrice}
+                      orderId="pending"
+                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentError={handlePaymentError}
+                    />
+                  </StripeProvider>
+                )}
+
+                {formData.paymentMethod === 'oxxo' && !paymentProcessed && (
+                  <OXXOPaymentForm
                     totalAmount={shippingCost + cart.totalPrice}
-                    orderId="pending"
+                    email={formData.email}
+                    name={`${formData.firstName} ${formData.lastName}`.trim()}
+                    onPrepareOrder={async () => {
+                      const pendingOrder = await createOrder({
+                        redirectAfterCreation: false,
+                        isOxxoPending: true,
+                      })
+                      return pendingOrder.orderNumber
+                    }}
                     onPaymentSuccess={handlePaymentSuccess}
                     onPaymentError={handlePaymentError}
                   />
-                </StripeProvider>
-              )}
+                )}
 
-              {/* OXXO Payment Form - Only for OXXO method */}
-              {formData.paymentMethod === 'oxxo' && !paymentProcessed && (
-                <OXXOPaymentForm
-                  totalAmount={shippingCost + cart.totalPrice}
-                  email={formData.email}
-                  name={`${formData.firstName} ${formData.lastName}`.trim()}
-                  onPrepareOrder={async () => {
-                    const pendingOrder = await createOrder({
-                      redirectAfterCreation: false,
-                      isOxxoPending: true,
-                    })
-                    return pendingOrder.orderNumber
-                  }}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
-                />
-              )}
+                {paymentProcessed && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-700 font-semibold">✓ Pago procesado correctamente</p>
+                    <p className="text-sm text-green-600 mt-2">ID de transacción: {paymentIntentId}</p>
+                  </div>
+                )}
 
-              {/* Payment Processed Indicator */}
-              {paymentProcessed && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-green-700 font-semibold">✓ Pago procesado correctamente</p>
-                  <p className="text-sm text-green-600 mt-2">ID de transacción: {paymentIntentId}</p>
-                </div>
-              )}
-            </div>
+                {(paymentProcessed || (formData.paymentMethod !== 'credit-card' && formData.paymentMethod !== 'oxxo')) && (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Procesando...' : 'Completar Pedido'}
+                  </button>
+                )}
 
-            {/* Submit Button - Only show after payment or for payment methods that don't require a separate form */}
-            {(paymentProcessed || (formData.paymentMethod !== 'credit-card' && formData.paymentMethod !== 'oxxo')) && (
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Procesando...' : 'Completar Pedido'}
-              </button>
-            )}
-
-            {/* Info message for credit card */}
-            {formData.paymentMethod === 'credit-card' && !paymentProcessed && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                <p className="text-blue-700 text-sm">Completa el pago con tu tarjeta arriba para continuar</p>
+                {formData.paymentMethod === 'credit-card' && !paymentProcessed && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                    <p className="text-blue-700 text-sm">Completa el pago con tu tarjeta arriba para continuar</p>
+                  </div>
+                )}
               </div>
             )}
           </form>
