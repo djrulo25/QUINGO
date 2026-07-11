@@ -74,8 +74,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? 'w-full lg:w-64' : 'w-full lg:w-20'
-        } bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-lg lg:h-screen lg:sticky lg:top-0`}
+          sidebarOpen ? 'w-full max-h-[520px] lg:w-64' : 'w-auto max-h-20 lg:w-20'
+        } self-start bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-lg overflow-hidden lg:h-screen lg:sticky lg:top-0`}
       >
         {/* Logo/Header */}
         <div className="p-4 sm:p-6 border-b border-blue-800 flex items-center justify-between">
@@ -94,7 +94,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 p-3 sm:p-4 space-y-2">
+        <nav className={`flex-1 p-3 sm:p-4 space-y-2 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
           {menuItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)
@@ -118,7 +118,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-3 sm:p-4 border-t border-blue-800">
+        <div className={`p-3 sm:p-4 border-t border-blue-800 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 hover:bg-blue-800 transition"
