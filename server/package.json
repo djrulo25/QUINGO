@@ -10,6 +10,8 @@
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "seed": "tsx src/scripts/seedProducts.ts",
+    "seed:categories": "tsx src/scripts/seedCategories.ts",
+    "migrate:product-categories": "tsx src/scripts/migrateProductCategories.ts",
     "create-test-customer": "tsx src/scripts/createTestCustomer.ts"
   },
   "keywords": [

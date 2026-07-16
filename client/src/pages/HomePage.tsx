@@ -1,27 +1,25 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { categoryAPI } from '@/api'
+import { CategoryTreeNode } from '@/types'
+import { getTopLevelCategories } from '@/utils/categories'
 
 export default function HomePage() {
-  const categories = [
-    {
-      id: 'welding',
-      name: 'Accesorios para Soldar',
-      description: 'Equipos y accesorios de alta calidad para soldadura profesional',
-      icon: '🔥',
-    },
-    {
-      id: 'safety',
-      name: 'Protección Industrial',
-      description: 'Equipo de protección personal para ambientes industriales',
-      icon: '🛡️',
-    },
-    {
-      id: 'gases',
-      name: 'Componentes para Gases',
-      description: 'Sistemas y componentes para gases industriales y medicinales',
-      icon: '⚙️',
-    },
-  ]
+  const [categories, setCategories] = useState<CategoryTreeNode[]>([])
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await categoryAPI.getAll()
+        setCategories(getTopLevelCategories(response.data))
+      } catch (error) {
+        console.error('Error loading categories', error)
+      }
+    }
+
+    loadCategories()
+  }, [])
 
   return (
     <>
@@ -60,21 +58,33 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12">Nuestras Categorías</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/products?category=${category.id}`}
-                className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition group"
-              >
-                <div className="text-5xl mb-4">{category.icon}</div>
-                <h3 className="text-xl font-semibold mb-3 group-hover:text-blue-600 transition">
-                  {category.name}
-                </h3>
-                <p className="text-gray-600 mb-4">{category.description}</p>
-                <div className="flex items-center text-blue-600 font-semibold">
-                  Ver productos
-                  <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition" />
-                </div>
-              </Link>
+              <div key={category.id} className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition group">
+                <Link to={`/products?category=${category.slug}`} className="block">
+                  <div className="text-5xl mb-4">📦</div>
+                  <h3 className="text-xl font-semibold mb-3 group-hover:text-blue-600 transition">
+                    {category.name}
+                  </h3>
+                  <p className="text-gray-600 mb-4">{category.description}</p>
+                  <div className="flex items-center text-blue-600 font-semibold">
+                    Ver productos
+                    <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition" />
+                  </div>
+                </Link>
+
+                {category.children?.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {category.children.map((child) => (
+                      <Link
+                        key={child.id}
+                        to={`/products?category=${category.slug}&subcategory=${child.slug}`}
+                        className="text-sm bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 px-3 py-1 rounded-full transition"
+                      >
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>

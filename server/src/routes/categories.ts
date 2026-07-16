@@ -1,51 +1,97 @@
 import { Router, Request, Response } from 'express'
+import Category from '../models/Category.js'
+import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
 
-// Get all categories
+// Get all categories as hierarchical menu
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const categories = [
-      {
-        id: 'welding',
-        name: 'Accesorios para Soldar',
-        slug: 'welding',
-        description: 'Equipos y accesorios para soldadura profesional',
-        image: '/images/categories/welding.jpg',
-        subcategories: [
-          { id: 'electrodes', name: 'Electrodos', slug: 'electrodes' },
-          { id: 'torches', name: 'Quemadores', slug: 'torches' },
-          { id: 'accessories', name: 'Accesorios', slug: 'accessories' }
-        ]
-      },
-      {
-        id: 'safety',
-        name: 'Protección Industrial',
-        slug: 'safety',
-        description: 'Equipos de protección personal',
-        image: '/images/categories/safety.jpg',
-        subcategories: [
-          { id: 'helmets', name: 'Cascos', slug: 'helmets' },
-          { id: 'gloves', name: 'Guantes', slug: 'gloves' },
-          { id: 'masks', name: 'Máscaras', slug: 'masks' }
-        ]
-      },
-      {
-        id: 'gases',
-        name: 'Componentes para Gases',
-        slug: 'gases',
-        description: 'Sistemas y componentes para gases industriales',
-        image: '/images/categories/gases.jpg',
-        subcategories: [
-          { id: 'regulators', name: 'Reguladores', slug: 'regulators' },
-          { id: 'flowmeters', name: 'Medidores', slug: 'flowmeters' },
-          { id: 'fittings', name: 'Conexiones', slug: 'fittings' }
-        ]
+    const categories = await Category.find({ active: true }).sort({ level: 1, order: 1, name: 1 })
+
+    const tree = categories.reduce((acc: any[], category: any) => {
+      acc.push({
+        id: category._id.toString(),
+        name: category.name,
+        slug: category.slug,
+        description: category.description,
+        image: category.image,
+        parentId: category.parent?.toString() || null,
+        level: category.level,
+        path: category.path,
+        children: []
+      })
+      return acc
+    }, [])
+
+    const map = new Map(tree.map((item) => [item.id, item]))
+
+    const rootNodes: any[] = []
+    for (const item of tree) {
+      if (!item.parentId) {
+        rootNodes.push(item)
+      } else {
+        const parent = map.get(item.parentId)
+        if (parent) {
+          parent.children.push(item)
+        }
       }
-    ]
-    res.json(categories)
+    }
+
+    res.json(rootNodes)
   } catch (error) {
     res.status(500).json({ error: 'Error fetching categories' })
+  }
+})
+
+// Get all categories for admin management
+router.get('/admin', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const categories = await Category.find().sort({ level: 1, order: 1, name: 1 })
+    res.json(categories)
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching categories for admin' })
+  }
+})
+
+// Create category
+router.post('/', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const category = new Category(req.body)
+    await category.save()
+    res.status(201).json(category)
+  } catch (error) {
+    res.status(400).json({ error: 'Error creating category' })
+  }
+})
+
+// Update category
+router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const category = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' })
+    }
+
+    res.json(category)
+  } catch (error) {
+    res.status(400).json({ error: 'Error updating category' })
+  }
+})
+
+// Delete category
+router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const category = await Category.findByIdAndDelete(req.params.id)
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' })
+    }
+
+    res.json({ message: 'Category deleted' })
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting category' })
   }
 })
 

@@ -15,7 +15,10 @@ function transformProduct(doc: any) {
     image: doc.image,
     images: doc.images || [],
     category: doc.category,
+    categorySlug: doc.categorySlug,
+    categoryId: doc.categoryId?.toString?.() || null,
     subcategory: doc.subcategory,
+    subcategorySlug: doc.subcategorySlug,
     stock: doc.stock,
     rating: doc.rating,
     reviews: doc.reviews,
@@ -32,9 +35,30 @@ router.get('/', async (req: Request, res: Response) => {
     const { category, subcategory, priceMin, priceMax, search, inStock } = req.query
 
     let query: any = {}
+    const conditions: any[] = []
 
-    if (category) query.category = category
-    if (subcategory) query.subcategory = subcategory
+    if (category) {
+      conditions.push({
+        $or: [
+          { categorySlug: category },
+          { category: category }
+        ]
+      })
+    }
+
+    if (subcategory) {
+      conditions.push({
+        $or: [
+          { subcategorySlug: subcategory },
+          { subcategory: subcategory }
+        ]
+      })
+    }
+
+    if (conditions.length > 0) {
+      query.$and = conditions
+    }
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -71,7 +95,15 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create product (Admin)
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const product = new Product(req.body)
+    const payload = req.body
+    if (payload.category && !payload.categorySlug) {
+      payload.categorySlug = payload.category
+    }
+    if (payload.subcategory && !payload.subcategorySlug) {
+      payload.subcategorySlug = payload.subcategory
+    }
+
+    const product = new Product(payload)
     await product.save()
     res.status(201).json(transformProduct(product))
   } catch (error) {

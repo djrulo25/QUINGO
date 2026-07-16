@@ -6,8 +6,11 @@ export interface Product {
   originalPrice?: number
   image: string
   images?: string[]
-  category: 'welding' | 'safety' | 'gases'
+  category: string
+  categorySlug?: string
+  categoryId?: string | null
   subcategory: string
+  subcategorySlug?: string
   stock: number
   rating: number
   reviews: number
@@ -73,6 +76,18 @@ export interface Order {
   notes?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface CategoryTreeNode {
+  id: string
+  name: string
+  slug: string
+  description: string
+  image: string
+  parentId: string | null
+  level: number
+  path: string
+  children: CategoryTreeNode[]
 }
 
 export interface Category {

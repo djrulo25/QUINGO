@@ -7,8 +7,11 @@ export interface IProduct extends Document {
   originalPrice?: number
   image: string
   images?: string[]
-  category: 'welding' | 'safety' | 'gases'
+  category: string
+  categorySlug?: string
+  categoryId?: mongoose.Types.ObjectId
   subcategory: string
+  subcategorySlug?: string
   stock: number
   rating: number
   reviews: number
@@ -45,12 +48,31 @@ const productSchema = new Schema<IProduct>(
     images: [String],
     category: {
       type: String,
-      enum: ['welding', 'safety', 'gases'],
-      required: true
+      required: true,
+      trim: true
+    },
+    categorySlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      index: true
+    },
+    categoryId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null,
+      index: true
     },
     subcategory: {
       type: String,
-      required: true
+      required: true,
+      trim: true
+    },
+    subcategorySlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      index: true
     },
     stock: {
       type: Number,

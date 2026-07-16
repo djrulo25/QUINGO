@@ -34,6 +34,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: ShoppingBagIcon,
     },
     {
+      label: 'Categorías',
+      path: '/admin/categories',
+      icon: ChartBarIcon,
+    },
+    {
       label: 'Pedidos',
       path: '/admin/orders',
       icon: ShoppingCartIcon,

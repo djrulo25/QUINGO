@@ -92,6 +92,10 @@ export const addressAPI = {
 // Categories
 export const categoryAPI = {
   getAll: () => apiClient.get('/categories'),
+  getAllAdmin: () => apiClient.get('/categories/admin'),
+  create: (data: Record<string, any>) => apiClient.post('/categories', data),
+  update: (id: string, data: Record<string, any>) => apiClient.put(`/categories/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/categories/${id}`),
 }
 
 export default apiClient

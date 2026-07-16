@@ -2,14 +2,31 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingCartIcon, MagnifyingGlassIcon, UserIcon } from '@heroicons/react/24/outline'
 import { useCartStore } from '@/store/cartStore'
 import { useCustomerStore } from '@/store/customerStore'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { categoryAPI } from '@/api'
+import { CategoryTreeNode } from '@/types'
+import { getTopLevelCategories } from '@/utils/categories'
 
 export default function Header() {
   const { cart } = useCartStore()
   const { isLoggedIn, customer, logout } = useCustomerStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await categoryAPI.getAll()
+        setCategories(getTopLevelCategories(response.data))
+      } catch (error) {
+        console.error('Error loading categories', error)
+      }
+    }
+
+    loadCategories()
+  }, [])
 
   return (
     <header className="bg-gray-900 text-white sticky top-0 z-50 shadow-lg">
@@ -25,9 +42,36 @@ export default function Header() {
             <Link to="/" className="hover:text-gray-300 transition">
               Inicio
             </Link>
-            <Link to="/products" className="hover:text-gray-300 transition">
-              Productos
-            </Link>
+            <div className="group relative">
+              <Link to="/products" className="hover:text-gray-300 transition">
+                Productos
+              </Link>
+              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-white text-gray-900 rounded-lg shadow-xl min-w-[280px] p-3 z-50">
+                {categories.map((category) => (
+                  <div key={category.id} className="mb-3 last:mb-0">
+                    <Link
+                      to={`/products?category=${category.slug}`}
+                      className="block font-semibold text-sm text-gray-900 hover:text-blue-700"
+                    >
+                      {category.name}
+                    </Link>
+                    {category.children?.length > 0 && (
+                      <div className="mt-1 ml-2 space-y-1">
+                        {category.children.map((child) => (
+                          <Link
+                            key={child.id}
+                            to={`/products?category=${category.slug}&subcategory=${child.slug}`}
+                            className="block text-xs text-gray-600 hover:text-blue-700"
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
             <a href="#contact" className="hover:text-gray-300 transition">
               Contacto
             </a>
@@ -145,6 +189,27 @@ export default function Header() {
             >
               Productos
             </Link>
+            {categories.map((category) => (
+              <div key={category.id} className="py-1">
+                <Link
+                  to={`/products?category=${category.slug}`}
+                  className="block py-1 text-sm font-semibold text-gray-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {category.name}
+                </Link>
+                {category.children?.map((child) => (
+                  <Link
+                    key={child.id}
+                    to={`/products?category=${category.slug}&subcategory=${child.slug}`}
+                    className="block pl-4 py-1 text-xs text-gray-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {child.name}
+                  </Link>
+                ))}
+              </div>
+            ))}
             <a href="#contact" className="block py-2 hover:text-gray-300 transition">
               Contacto
             </a>

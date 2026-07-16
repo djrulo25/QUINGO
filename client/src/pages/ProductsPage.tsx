@@ -1,15 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FunnelIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { Product, FilterOptions } from '@/types'
+import { Product, FilterOptions, CategoryTreeNode } from '@/types'
 import ProductCard from '@/components/ProductCard'
-import { productAPI } from '@/api'
-
-const CATEGORY_OPTIONS = [
-  { value: 'welding', label: 'Accesorios de Soldar' },
-  { value: 'safety', label: 'Protección Industrial' },
-  { value: 'gases', label: 'Componentes para Gases' },
-]
+import { productAPI, categoryAPI } from '@/api'
+import { getTopLevelCategories } from '@/utils/categories'
 
 const SORT_OPTIONS = [
   { value: 'price-asc', label: 'Precio: menor a mayor' },
@@ -21,23 +16,40 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
+  const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [filters, setFilters] = useState<FilterOptions>({
     category: searchParams.get('category') || undefined,
+    subcategory: searchParams.get('subcategory') || undefined,
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc'>('price-asc')
 
   useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await categoryAPI.getAll()
+        setCategories(getTopLevelCategories(response.data))
+      } catch (error) {
+        console.error('Error loading categories', error)
+      }
+    }
+
+    loadCategories()
+  }, [])
+
+  useEffect(() => {
     const categoryFromQuery = searchParams.get('category') || undefined
+    const subcategoryFromQuery = searchParams.get('subcategory') || undefined
 
     setFilters((currentFilters) => {
-      if (currentFilters.category === categoryFromQuery) {
+      if (currentFilters.category === categoryFromQuery && currentFilters.subcategory === subcategoryFromQuery) {
         return currentFilters
       }
 
       return {
         ...currentFilters,
         category: categoryFromQuery,
+        subcategory: subcategoryFromQuery,
       }
     })
   }, [searchParams])
@@ -76,12 +88,16 @@ export default function ProductsPage() {
     return nextProducts
   }, [products, sortBy])
 
+  const selectedCategory = categories.find((category) => category.slug === filters.category)
+  const availableSubcategories = selectedCategory?.children || []
+
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const nextCategory = e.target.value || undefined
 
     setFilters((currentFilters) => ({
       ...currentFilters,
       category: nextCategory,
+      subcategory: undefined,
     }))
 
     setSearchParams((currentParams) => {
@@ -89,8 +105,31 @@ export default function ProductsPage() {
 
       if (nextCategory) {
         nextParams.set('category', nextCategory)
+        nextParams.delete('subcategory')
       } else {
         nextParams.delete('category')
+        nextParams.delete('subcategory')
+      }
+
+      return nextParams
+    })
+  }
+
+  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextSubcategory = e.target.value || undefined
+
+    setFilters((currentFilters) => ({
+      ...currentFilters,
+      subcategory: nextSubcategory,
+    }))
+
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+
+      if (nextSubcategory) {
+        nextParams.set('subcategory', nextSubcategory)
+      } else {
+        nextParams.delete('subcategory')
       }
 
       return nextParams
@@ -146,9 +185,26 @@ export default function ProductsPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
                     <option value="">Todas las categorías</option>
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
+                    {categories.map((option) => (
+                      <option key={option.id} value={option.slug}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Subcategoría</label>
+                  <select
+                    value={filters.subcategory || ''}
+                    onChange={handleSubcategoryChange}
+                    disabled={!filters.category}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:bg-gray-100"
+                  >
+                    <option value="">Todas las subcategorías</option>
+                    {availableSubcategories.map((option) => (
+                      <option key={option.id} value={option.slug}>
+                        {option.name}
                       </option>
                     ))}
                   </select>

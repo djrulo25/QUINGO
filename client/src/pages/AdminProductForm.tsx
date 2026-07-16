@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-import { Product } from '@/types'
+import { Product, CategoryTreeNode } from '@/types'
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '@/api/config'
+import { categoryAPI } from '@/api'
+import { getTopLevelCategories } from '@/utils/categories'
 
 export default function AdminProductForm() {
   const navigate = useNavigate()
@@ -14,12 +16,15 @@ export default function AdminProductForm() {
 
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [categories, setCategories] = useState<CategoryTreeNode[]>([])
+  const [selectedParentCategory, setSelectedParentCategory] = useState('')
+  const [selectedSubcategory, setSelectedSubcategory] = useState('')
   const [product, setProduct] = useState<Partial<Product>>({
     name: '',
     description: '',
     price: 0,
     originalPrice: 0,
-    category: undefined,
+    category: '',
     subcategory: '',
     stock: 0,
     sku: '',
@@ -37,17 +42,57 @@ export default function AdminProductForm() {
       return
     }
 
+    loadCategories()
+
     // Si es edición, cargar el producto
     if (isEdit) {
       loadProduct()
     }
   }, [id, isEdit, navigate])
 
+  const loadCategories = async () => {
+    try {
+      const response = await categoryAPI.getAll()
+      setCategories(response.data)
+    } catch (error) {
+      console.error('Error loading categories', error)
+      toast.error('No se pudieron cargar las categorías')
+    }
+  }
+
+  const topLevelCategories = getTopLevelCategories(categories)
+
+  const getSubcategoriesForParent = (parentSlug: string) => {
+    const parent = topLevelCategories.find((category) => category.slug === parentSlug)
+    return parent?.children || []
+  }
+
+  const syncCategorySelection = (categorySlug: string = '', subcategorySlug: string = '') => {
+    if (!categorySlug) {
+      setSelectedParentCategory('')
+      setSelectedSubcategory('')
+      return
+    }
+
+    const parent = topLevelCategories.find((item) => item.slug === categorySlug)
+    if (parent) {
+      setSelectedParentCategory(parent.slug)
+    }
+
+    const matchingSubcategory = getSubcategoriesForParent(categorySlug).find((item) => item.slug === subcategorySlug)
+    if (matchingSubcategory) {
+      setSelectedSubcategory(matchingSubcategory.slug)
+    } else {
+      setSelectedSubcategory('')
+    }
+  }
+
   const loadProduct = async () => {
     try {
       setLoading(true)
       const response = await axios.get(`${API_BASE_URL}/products/${id}`)
       setProduct(response.data)
+      syncCategorySelection(response.data.category, response.data.subcategory)
     } catch (error) {
       toast.error('Error al cargar el producto')
       console.error(error)
@@ -63,6 +108,30 @@ export default function AdminProductForm() {
     setProduct({
       ...product,
       [name]: type === 'number' ? parseFloat(value) || 0 : value
+    })
+  }
+
+  const handleParentCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextParentSlug = e.target.value
+    setSelectedParentCategory(nextParentSlug)
+    setSelectedSubcategory('')
+
+    const nextParent = topLevelCategories.find((category) => category.slug === nextParentSlug)
+    setProduct({
+      ...product,
+      category: nextParent?.slug || '',
+      subcategory: ''
+    })
+  }
+
+  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextSubcategorySlug = e.target.value
+    setSelectedSubcategory(nextSubcategorySlug)
+
+    setProduct({
+      ...product,
+      category: selectedParentCategory,
+      subcategory: nextSubcategorySlug
     })
   }
 
@@ -116,6 +185,19 @@ export default function AdminProductForm() {
     }
   }
 
+  const getSelectedCategoryId = () => {
+    const selectedSubcategoryNode = getSubcategoriesForParent(selectedParentCategory).find(
+      (item) => item.slug === selectedSubcategory
+    )
+
+    if (selectedSubcategoryNode?.id) {
+      return selectedSubcategoryNode.id
+    }
+
+    const selectedCategoryNode = topLevelCategories.find((item) => item.slug === selectedParentCategory)
+    return selectedCategoryNode?.id || null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -127,12 +209,19 @@ export default function AdminProductForm() {
     try {
       setLoading(true)
       const token = localStorage.getItem('adminToken')
+      const payload = {
+        ...product,
+        category: selectedParentCategory,
+        subcategory: selectedSubcategory,
+        categorySlug: selectedParentCategory,
+        subcategorySlug: selectedSubcategory,
+        categoryId: getSelectedCategoryId(),
+      }
 
       if (isEdit) {
-        // Actualizar producto existente
         await axios.put(
           `${API_BASE_URL}/products/${id}`,
-          product,
+          payload,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -141,10 +230,9 @@ export default function AdminProductForm() {
         )
         toast.success('Producto actualizado exitosamente')
       } else {
-        // Crear nuevo producto
         await axios.post(
           `${API_BASE_URL}/products`,
-          product,
+          payload,
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -284,28 +372,37 @@ export default function AdminProductForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Categoría *
                 </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={product.category}
-                  onChange={handleChange}
+                <select
+                  value={selectedParentCategory}
+                  onChange={handleParentCategoryChange}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Ej: Soldadura"
-                />
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {topLevelCategories.map((category) => (
+                    <option key={category.id} value={category.slug}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Subcategoría
                 </label>
-                <input
-                  type="text"
-                  name="subcategory"
-                  value={product.subcategory}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Ej: Electrodos"
-                />
+                <select
+                  value={selectedSubcategory}
+                  onChange={handleSubcategoryChange}
+                  disabled={!selectedParentCategory}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  <option value="">Selecciona una subcategoría</option>
+                  {getSubcategoriesForParent(selectedParentCategory).map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.slug}>
+                      {subcategory.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
