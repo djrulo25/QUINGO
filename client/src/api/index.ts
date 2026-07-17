@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Product, Order, Customer, Address } from '@/types'
+import { Product, Order, Customer, Address, CategoryAttribute } from '@/types'
 
 const rawApiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://quingo-api.onrender.com/api'
 const normalizedApiUrl = rawApiUrl.trim().replace(/\/+$/, '')
@@ -105,6 +105,7 @@ export const addressAPI = {
 export const categoryAPI = {
   getAll: () => apiClient.get('/categories'),
   getAllAdmin: () => apiClient.get('/categories/admin', getAdminAuthConfig()),
+  getAttributes: (id: string) => apiClient.get<CategoryAttribute[]>(`/categories/${id}/attributes`),
   create: (data: Record<string, any>) => apiClient.post('/categories', data, getAdminAuthConfig()),
   update: (id: string, data: Record<string, any>) => apiClient.put(`/categories/${id}`, data, getAdminAuthConfig()),
   delete: (id: string) => apiClient.delete(`/categories/${id}`, getAdminAuthConfig()),

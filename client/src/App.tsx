@@ -15,6 +15,7 @@ import AdminProductsPage from '@/pages/AdminProductsPage'
 import AdminProductForm from '@/pages/AdminProductForm'
 import AdminCategoriesPage from '@/pages/AdminCategoriesPage'
 import AdminCategoryForm from '@/pages/AdminCategoryForm'
+import AdminAttributeTemplatesPage from '@/pages/AdminAttributeTemplatesPage'
 import AdminOrdersPage from '@/pages/AdminOrdersPage'
 import AdminOrderDetail from '@/pages/AdminOrderDetail'
 import CustomerLoginPage from '@/pages/CustomerLoginPage'
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/categories" element={<AdminCategoriesPage />} />
                 <Route path="/categories/new" element={<AdminCategoryForm />} />
                 <Route path="/categories/:id/edit" element={<AdminCategoryForm />} />
+                <Route path="/attributes" element={<AdminAttributeTemplatesPage />} />
                 <Route path="/orders" element={<AdminOrdersPage />} />
                 <Route path="/orders/:id" element={<AdminOrderDetail />} />
               </Routes>

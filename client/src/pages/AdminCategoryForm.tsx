@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { categoryAPI } from '@/api'
-import { CategoryTreeNode } from '@/types'
+import { CategoryAttribute, CategoryTreeNode } from '@/types'
+import AttributeTemplateEditor from '@/components/AttributeTemplateEditor'
 
 interface CategoryFormState {
   name: string
@@ -10,6 +11,7 @@ interface CategoryFormState {
   description: string
   parentId: string
   active: boolean
+  attributes: CategoryAttribute[]
 }
 
 export default function AdminCategoryForm() {
@@ -24,6 +26,7 @@ export default function AdminCategoryForm() {
     description: '',
     parentId: '',
     active: true,
+    attributes: [],
   })
 
   useEffect(() => {
@@ -49,6 +52,7 @@ export default function AdminCategoryForm() {
         level: category.level || 0,
         path: category.path || '',
         children: [],
+        attributes: category.attributes || [],
       }))
 
       setCategories(normalized)
@@ -62,6 +66,7 @@ export default function AdminCategoryForm() {
             description: current.description || '',
             parentId: current.parent?.toString?.() || current.parentId || '',
             active: current.active,
+            attributes: current.attributes || [],
           })
         }
       }
@@ -185,6 +190,8 @@ export default function AdminCategoryForm() {
             />
             Activa
           </label>
+
+          <AttributeTemplateEditor value={form.attributes} onChange={(attributes) => setForm((current) => ({ ...current, attributes }))} />
 
           <div className="flex gap-3 pt-2">
             <button

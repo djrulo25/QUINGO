@@ -39,6 +39,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: ChartBarIcon,
     },
     {
+      label: 'Plantillas de atributos',
+      path: '/admin/attributes',
+      icon: ChartBarIcon,
+    },
+    {
       label: 'Pedidos',
       path: '/admin/orders',
       icon: ShoppingCartIcon,

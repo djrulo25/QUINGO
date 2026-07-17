@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-import { Product, CategoryTreeNode } from '@/types'
+import { Product, CategoryAttribute, CategoryTreeNode } from '@/types'
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '@/api/config'
 import { categoryAPI } from '@/api'
 import { getTopLevelCategories } from '@/utils/categories'
+import DynamicProductAttributes from '@/components/DynamicProductAttributes'
 
 export default function AdminProductForm() {
   const navigate = useNavigate()
@@ -19,6 +20,7 @@ export default function AdminProductForm() {
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [selectedParentCategory, setSelectedParentCategory] = useState('')
   const [selectedSubcategory, setSelectedSubcategory] = useState('')
+  const [attributeDefinitions, setAttributeDefinitions] = useState<CategoryAttribute[]>([])
   const [product, setProduct] = useState<Partial<Product>>({
     name: '',
     description: '',
@@ -31,7 +33,8 @@ export default function AdminProductForm() {
     image: '',
     rating: 0,
     reviews: 0,
-    specifications: {}
+    specifications: {},
+    attributes: {}
   })
 
   // Verificar autenticación
@@ -61,6 +64,28 @@ export default function AdminProductForm() {
   }
 
   const topLevelCategories = getTopLevelCategories(categories)
+
+  useEffect(() => {
+    if (!product.category || categories.length === 0) return
+    syncCategorySelection(product.category, product.subcategory)
+  }, [categories, product.category, product.subcategory])
+
+  useEffect(() => {
+    const selectedNode = getSubcategoriesForParent(selectedParentCategory).find((item) => item.slug === selectedSubcategory)
+      || topLevelCategories.find((item) => item.slug === selectedParentCategory)
+
+    if (!selectedNode?.id) {
+      setAttributeDefinitions([])
+      return
+    }
+
+    categoryAPI.getAttributes(selectedNode.id)
+      .then((response) => setAttributeDefinitions(response.data))
+      .catch(() => {
+        setAttributeDefinitions([])
+        toast.error('No se pudo cargar la plantilla de atributos')
+      })
+  }, [categories, selectedParentCategory, selectedSubcategory])
 
   const getSubcategoriesForParent = (parentSlug: string) => {
     const parent = topLevelCategories.find((category) => category.slug === parentSlug)
@@ -120,7 +145,8 @@ export default function AdminProductForm() {
     setProduct({
       ...product,
       category: nextParent?.slug || '',
-      subcategory: ''
+      subcategory: '',
+      attributes: {}
     })
   }
 
@@ -131,7 +157,8 @@ export default function AdminProductForm() {
     setProduct({
       ...product,
       category: selectedParentCategory,
-      subcategory: nextSubcategorySlug
+      subcategory: nextSubcategorySlug,
+      attributes: {}
     })
   }
 
@@ -405,6 +432,12 @@ export default function AdminProductForm() {
                 </select>
               </div>
             </div>
+
+            <DynamicProductAttributes
+              definitions={attributeDefinitions}
+              values={product.attributes || {}}
+              onChange={(attributes) => setProduct((current) => ({ ...current, attributes }))}
+            />
 
             {/* Imagen - Con upload a Cloudinary */}
             <div>

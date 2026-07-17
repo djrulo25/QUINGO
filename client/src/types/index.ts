@@ -16,6 +16,7 @@ export interface Product {
   reviews: number
   sku: string
   specifications?: Record<string, string>
+  attributes?: Record<string, string | number | boolean>
   createdAt: string
   updatedAt: string
 }
@@ -88,6 +89,20 @@ export interface CategoryTreeNode {
   level: number
   path: string
   children: CategoryTreeNode[]
+  attributes?: CategoryAttribute[]
+}
+
+export type AttributeType = 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea'
+
+export interface CategoryAttribute {
+  key: string
+  name: string
+  type: AttributeType
+  options: string[]
+  required: boolean
+  unit?: string
+  placeholder?: string
+  order: number
 }
 
 export interface Category {

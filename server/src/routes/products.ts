@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import Product from '../models/Product.js'
+import Category from '../models/Category.js'
 import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
@@ -24,6 +25,7 @@ function transformProduct(doc: any) {
     reviews: doc.reviews,
     sku: doc.sku,
     specifications: doc.specifications,
+    attributes: doc.attributes ? Object.fromEntries(doc.attributes) : {},
     createdAt: doc.createdAt?.toISOString(),
     updatedAt: doc.updatedAt?.toISOString(),
   }
@@ -84,6 +86,34 @@ router.get('/', async (req: Request, res: Response) => {
   }
 })
 
+async function validateAttributes(payload: any) {
+  if (!payload.categoryId) return null
+
+  const category: any = await Category.findById(payload.categoryId).lean()
+  if (!category) return 'La categoría seleccionada no existe'
+
+  const values = payload.attributes || {}
+  for (const attribute of category.attributes || []) {
+    const value = values[attribute.key]
+    const isEmpty = value === undefined || value === null || value === ''
+    if (attribute.required && isEmpty) return `${attribute.name} es obligatorio`
+    if (isEmpty) continue
+    if (attribute.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))) {
+      return `${attribute.name} debe ser numérico`
+    }
+    if (attribute.type === 'checkbox' && typeof value !== 'boolean') {
+      return `${attribute.name} debe ser verdadero o falso`
+    }
+    if (attribute.type === 'select' && !attribute.options.includes(String(value))) {
+      return `${attribute.name} contiene una opción no válida`
+    }
+  }
+
+  const allowedKeys = new Set<string>((category.attributes || []).map((attribute: any) => attribute.key))
+  payload.attributes = Object.fromEntries(Object.entries(values).filter(([key]) => allowedKeys.has(key)))
+  return null
+}
+
 // Get product by ID
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -107,6 +137,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     if (payload.subcategory && !payload.subcategorySlug) {
       payload.subcategorySlug = payload.subcategory
     }
+    const attributeError = await validateAttributes(payload)
+    if (attributeError) return res.status(400).json({ error: attributeError })
 
     const product = new Product(payload)
     await product.save()
@@ -119,6 +151,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // Update product (Admin)
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const attributeError = await validateAttributes(req.body)
+    if (attributeError) return res.status(400).json({ error: attributeError })
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       req.body,

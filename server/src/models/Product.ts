@@ -17,6 +17,7 @@ export interface IProduct extends Document {
   reviews: number
   sku: string
   specifications?: Record<string, string>
+  attributes?: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
 }
@@ -98,6 +99,11 @@ const productSchema = new Schema<IProduct>(
     specifications: {
       type: Map,
       of: String
+    },
+    attributes: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: {}
     }
   },
   { timestamps: true }

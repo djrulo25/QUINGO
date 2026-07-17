@@ -1,5 +1,18 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
+export type AttributeType = 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea'
+
+export interface ICategoryAttribute {
+  key: string
+  name: string
+  type: AttributeType
+  options: string[]
+  required: boolean
+  unit?: string
+  placeholder?: string
+  order: number
+}
+
 export interface ICategory extends Document {
   name: string
   slug: string
@@ -10,6 +23,7 @@ export interface ICategory extends Document {
   image?: string
   description?: string
   active: boolean
+  attributes: ICategoryAttribute[]
   createdAt: Date
   updatedAt: Date
 }
@@ -60,7 +74,22 @@ const categorySchema = new Schema<ICategory>(
     active: {
       type: Boolean,
       default: true
-    }
+    },
+    attributes: [{
+      key: { type: String, required: true, trim: true, lowercase: true },
+      name: { type: String, required: true, trim: true },
+      type: {
+        type: String,
+        enum: ['text', 'number', 'select', 'checkbox', 'date', 'textarea'],
+        default: 'text'
+      },
+      options: { type: [String], default: [] },
+      required: { type: Boolean, default: false },
+      unit: { type: String, default: '', trim: true },
+      placeholder: { type: String, default: '', trim: true },
+      order: { type: Number, default: 0 },
+      _id: false
+    }]
   },
   { timestamps: true }
 )

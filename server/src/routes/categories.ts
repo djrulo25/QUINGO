@@ -19,6 +19,7 @@ router.get('/', async (req: Request, res: Response) => {
         parentId: category.parent?.toString() || null,
         level: category.level,
         path: category.path,
+        attributes: category.attributes || [],
         children: []
       })
       return acc
@@ -41,6 +42,20 @@ router.get('/', async (req: Request, res: Response) => {
     res.json(rootNodes)
   } catch (error) {
     res.status(500).json({ error: 'Error fetching categories' })
+  }
+})
+
+// Get the configurable fields for a category/subcategory
+router.get('/:id/attributes', async (req: Request, res: Response) => {
+  try {
+    const category = await Category.findById(req.params.id).select('attributes active')
+    if (!category || !category.active) {
+      return res.status(404).json({ error: 'Category not found' })
+    }
+
+    res.json([...(category.attributes || [])].sort((a, b) => a.order - b.order))
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid category id' })
   }
 })
 
