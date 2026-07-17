@@ -106,7 +106,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? 'w-full max-h-[520px] lg:w-64' : 'w-auto max-h-20 lg:w-20'
+          sidebarOpen
+            ? 'w-full max-h-[520px] lg:max-h-screen lg:w-64'
+            : 'w-auto max-h-20 lg:max-h-screen lg:w-20'
         } self-start bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-lg overflow-hidden lg:h-screen lg:sticky lg:top-0`}
       >
         {/* Logo/Header */}

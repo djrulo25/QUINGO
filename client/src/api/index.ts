@@ -54,6 +54,7 @@ export const productAPI = {
   getById: (id: string) => apiClient.get<Product>(`/products/${id}`),
   search: (query: string) =>
     apiClient.get<Product[]>('/products/search', { params: { q: query } }),
+  getTopSelling: () => apiClient.get<Product[]>('/products/top-selling'),
 }
 
 // Orders
@@ -61,6 +62,8 @@ export const orderAPI = {
   create: (orderData: Partial<Order>) =>
     apiClient.post<Order>('/orders', orderData),
   getById: (orderId: string) => apiClient.get<Order>(`/orders/${orderId}`),
+  getConfirmation: (orderId: string, token: string) =>
+    apiClient.get<Order>(`/orders/confirmation/${orderId}`, { params: { token } }),
   getMyOrders: () => apiClient.get<Order[]>('/orders/me'),
 }
 
@@ -90,15 +93,6 @@ export const customerAPI = {
   deleteAddress: (addressId: string) =>
     apiClient.delete(`/customers/addresses/${addressId}`),
   getOrders: () => apiClient.get('/customers/orders'),
-}
-
-// Addresses
-export const addressAPI = {
-  getAll: () => apiClient.get<Address[]>('/addresses'),
-  create: (data: Address) => apiClient.post<Address>('/addresses', data),
-  update: (id: string, data: Partial<Address>) =>
-    apiClient.put<Address>(`/addresses/${id}`, data),
-  delete: (id: string) => apiClient.delete(`/addresses/${id}`),
 }
 
 // Categories

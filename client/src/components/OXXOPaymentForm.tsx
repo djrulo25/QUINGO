@@ -3,59 +3,43 @@ import apiClient from '@/api'
 import toast from 'react-hot-toast'
 
 interface OXXOPaymentFormProps {
-  totalAmount: number
-  orderId?: string
-  email: string
-  name: string
-  onPrepareOrder?: () => Promise<string>
-  onPaymentSuccess: (paymentIntentId: string, redirectUrl?: string) => void
+  onPrepareOrder?: () => Promise<{ orderNumber: string; id: string; confirmationToken: string }>
+  onPaymentSuccess: (paymentIntentId: string, redirectUrl?: string, confirmationPath?: string) => void
   onPaymentError: (error: string) => void
 }
 
 export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
-  totalAmount,
-  orderId,
-  email,
-  name,
   onPrepareOrder,
   onPaymentSuccess,
   onPaymentError
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  console.log('OXXOPaymentForm rendered', { totalAmount, orderId, email })
+  const [preparedOrder, setPreparedOrder] = useState<{ orderNumber: string; id: string; confirmationToken: string } | null>(null)
 
   const handleGenerateCode = async () => {
-    console.log('OXXOPaymentForm handleGenerateCode clicked')
     setErrorMessage(null)
     setIsLoading(true)
 
     try {
-      const resolvedOrderId = orderId || (onPrepareOrder ? await onPrepareOrder() : undefined)
-      if (!resolvedOrderId) {
-        throw new Error('Order ID is required to generate OXXO payment')
+      const order = preparedOrder || (onPrepareOrder ? await onPrepareOrder() : undefined)
+      if (!order) {
+        throw new Error('No fue posible preparar el pedido para OXXO')
       }
+      setPreparedOrder(order)
 
       // Step 1: Create OXXO payment intent on backend
       const response = await apiClient.post('/payments/oxxo', {
-        amount: Math.round(totalAmount * 100), // Convert to cents
-        description: `Order Payment - ${resolvedOrderId}`,
-        orderId: resolvedOrderId,
-        email: email,
-        name,
-        returnUrl: `${window.location.origin}/order-confirmation`
+        description: `Order Payment - ${order.orderNumber}`,
+        orderId: order.orderNumber,
+        confirmationToken: order.confirmationToken,
       })
 
       const { paymentIntentId, redirectUrl: oxxoRedirectUrl } = response.data
 
-      if (oxxoRedirectUrl) {
-        toast.success('Redirigiendo a OXXO...')
-        onPaymentSuccess(paymentIntentId, oxxoRedirectUrl)
-      } else {
-        toast.success('Código OXXO generado exitosamente')
-        onPaymentSuccess(paymentIntentId)
-      }
+      toast.success('Código OXXO generado exitosamente')
+      const confirmationPath = `/order-confirmation/${order.id}?token=${order.confirmationToken}`
+      onPaymentSuccess(paymentIntentId, oxxoRedirectUrl || 'voucher-generated', confirmationPath)
     } catch (error: any) {
       const errorMsg = error.response?.data?.error || error.message || 'Payment failed'
       setErrorMessage(errorMsg)
@@ -86,7 +70,6 @@ export const OXXOPaymentForm: React.FC<OXXOPaymentFormProps> = ({
         <button
           type="button"
           onClick={() => {
-            console.log('OXXO button clicked')
             handleGenerateCode()
           }}
           disabled={isLoading}

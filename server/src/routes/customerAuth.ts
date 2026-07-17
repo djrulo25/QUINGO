@@ -5,7 +5,10 @@ import Customer from '../models/Customer.js'
 import nodemailer from 'nodemailer'
 
 const router = Router()
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production'
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is required')
+  return process.env.JWT_SECRET
+})()
 
 // Email transporter for password recovery
 const transporter = nodemailer.createTransport({
@@ -172,7 +175,7 @@ router.post(
 
       // In production, send email with reset link
       if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
+        const resetLink = `${process.env.FRONTEND_URL}/customer/reset-password?token=${resetToken}`
 
         await transporter.sendMail({
           from: process.env.EMAIL_USER,

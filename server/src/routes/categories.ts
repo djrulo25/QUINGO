@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express'
 import Category from '../models/Category.js'
 import { authMiddleware } from '../middleware/auth.js'
+import Product from '../models/Product.js'
+import { deleteCloudinaryAsset } from '../utils/cloudinaryAssets.js'
 
 const router = Router()
 
@@ -97,11 +99,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // Update category
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const previous = await Category.findById(req.params.id).lean()
     const category = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
 
     if (!category) {
       return res.status(404).json({ error: 'Category not found' })
     }
+
+    if (previous?.image && previous.image !== category.image) await deleteCloudinaryAsset(previous.image)
 
     res.json(category)
   } catch (error) {
@@ -113,11 +118,20 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Delete category
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const [childCount, productCount] = await Promise.all([
+      Category.countDocuments({ parent: req.params.id }),
+      Product.countDocuments({ categoryId: req.params.id }),
+    ])
+    if (childCount || productCount) {
+      return res.status(409).json({ error: 'No puedes eliminar una categoría que contiene subcategorías o productos.' })
+    }
     const category = await Category.findByIdAndDelete(req.params.id)
 
     if (!category) {
       return res.status(404).json({ error: 'Category not found' })
     }
+
+    await deleteCloudinaryAsset(category.image)
 
     res.json({ message: 'Category deleted' })
   } catch (error) {

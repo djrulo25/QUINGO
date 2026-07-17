@@ -29,15 +29,6 @@ const createTransporter = () => {
 }
 
 export const sendOrderEmail = async (order: any, options?: { subject?: string; showVoucher?: boolean }) => {
-  console.log('sendOrderEmail env debug:', {
-    SENDGRID_API_KEY: !!process.env.SENDGRID_API_KEY,
-    EMAIL_FROM: !!process.env.EMAIL_FROM,
-    SMTP_USER: !!process.env.SMTP_USER,
-    SMTP_PASS: !!process.env.SMTP_PASS,
-    SMTP_HOST: !!process.env.SMTP_HOST,
-    cwd: process.cwd()
-  })
-
   const subject = options?.subject || `Confirmación de Pedido ${order.orderNumber}`
   const showVoucher = options?.showVoucher ?? (order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending')
 

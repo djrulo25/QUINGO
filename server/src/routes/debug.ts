@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express'
 import { sendOrderEmail } from '../utils/email.js'
+import { authMiddleware, requireRole } from '../middleware/auth.js'
 
 const router = Router()
 
 // Returns runtime email configuration status (do NOT expose secrets)
-router.get('/email-config', (req: Request, res: Response) => {
+router.get('/email-config', authMiddleware, requireRole('super_admin'), (req: Request, res: Response) => {
   try {
     const sendgridKey = process.env.SENDGRID_API_KEY || ''
     const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || ''
@@ -25,7 +26,7 @@ router.get('/email-config', (req: Request, res: Response) => {
 })
 
 // Send a test order email. Body: { email: string, name?: string }
-router.post('/send-test', async (req: Request, res: Response) => {
+router.post('/send-test', authMiddleware, requireRole('super_admin'), async (req: Request, res: Response) => {
   try {
     const { email, name } = req.body
     if (!email) return res.status(400).json({ error: 'email is required' })

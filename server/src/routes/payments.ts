@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import Order from '../models/Order.js'
 import { sendOrderEmail } from '../utils/email.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { calculateOrder } from '../services/commerce.js'
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -67,16 +68,13 @@ const updateOrderPaymentStatus = async (paymentIntent: Stripe.PaymentIntent) => 
 // Create Payment Intent
 router.post('/intent', async (req: Request, res: Response) => {
   try {
-    const { amount, description, customerId } = req.body
-
-    if (!amount || amount < 100) {
-      return res.status(400).json({ error: 'Amount must be at least $1 USD (100 cents)' })
-    }
+    const { description, customerId } = req.body
+    const pricing = await calculateOrder(req.body.items, req.body.shippingMethod)
 
     // Create a payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount), // Amount in cents
-      currency: 'usd',
+      amount: Math.round(pricing.total * 100),
+      currency: 'mxn',
       description: description || 'Quingo Order Payment',
       metadata: {
         customerId: customerId || (req as any).user?.id,
@@ -159,31 +157,45 @@ router.post('/refund', authMiddleware, async (req: Request, res: Response) => {
 // Create OXXO Payment Intent
 router.post('/oxxo', async (req: Request, res: Response) => {
   try {
-    const { amount, description, email } = req.body
+    const { description, confirmationToken } = req.body
 
-    if (!amount || amount < 100) {
-      return res.status(400).json({ error: 'Amount must be at least $1 USD (100 cents)' })
+    if (!confirmationToken) {
+      return res.status(400).json({ error: 'Falta el token de confirmación del pedido' })
     }
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required for OXXO payments' })
+    const pendingOrder = await Order.findOne({
+      orderNumber: req.body.orderId,
+      confirmationToken,
+    }).select('+confirmationToken')
+    if (!pendingOrder || pendingOrder.paymentMethod !== 'oxxo' || pendingOrder.paymentStatus !== 'pending') {
+      return res.status(400).json({ error: 'Pedido OXXO no válido' })
     }
+    if (pendingOrder.paymentIntentId) {
+      return res.json({
+        paymentIntentId: pendingOrder.paymentIntentId,
+        status: 'requires_action',
+        redirectUrl: pendingOrder.oxxoVoucherUrl || null,
+      })
+    }
+
+    const email = pendingOrder.customer.email
+    const customerName = `${pendingOrder.customer.firstName} ${pendingOrder.customer.lastName}`.trim()
 
     const paymentMethod = await stripe.paymentMethods.create({
       type: 'oxxo',
       billing_details: {
-        name: req.body.name || email,
+        name: customerName || email,
         email,
       },
     })
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount),
+      amount: Math.round(pendingOrder.total * 100),
       currency: 'mxn',
       payment_method_types: ['oxxo'],
       payment_method: paymentMethod.id,
       confirm: true,
-      return_url: req.body.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-confirmation`,
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-confirmation/${pendingOrder._id}?token=${confirmationToken}`,
       payment_method_options: {
         oxxo: {
           expires_after_days: 3,
@@ -292,28 +304,28 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
     // Handle different event types
     switch (event.type) {
       case 'payment_intent.succeeded':
-        console.log('Payment Intent Succeeded:', event.data.object)
+        console.log('Stripe payment succeeded:', (event.data.object as Stripe.PaymentIntent).id)
         await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
       case 'payment_intent.processing':
-        console.log('Payment Intent Processing:', event.data.object)
+        console.log('Stripe payment processing:', (event.data.object as Stripe.PaymentIntent).id)
         await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
       case 'payment_intent.requires_payment_method':
       case 'payment_intent.requires_action':
-        console.log('Payment Intent Pending Action:', event.data.object)
+        console.log('Stripe payment pending action:', (event.data.object as Stripe.PaymentIntent).id)
         await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
       case 'payment_intent.payment_failed':
-        console.log('Payment Intent Failed:', event.data.object)
+        console.log('Stripe payment failed:', (event.data.object as Stripe.PaymentIntent).id)
         await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
       case 'payment_intent.canceled':
-        console.log('Payment Intent Canceled:', event.data.object)
+        console.log('Stripe payment canceled:', (event.data.object as Stripe.PaymentIntent).id)
         await updateOrderPaymentStatus(event.data.object as Stripe.PaymentIntent)
         break
       case 'charge.succeeded':
-        console.log('Charge Succeeded:', event.data.object)
+        console.log('Stripe charge succeeded:', (event.data.object as Stripe.Charge).id)
         break
       default:
         console.log('Unhandled event type:', event.type)

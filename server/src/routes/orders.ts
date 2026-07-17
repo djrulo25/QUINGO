@@ -1,106 +1,95 @@
 import { Router, Request, Response } from 'express'
+import { randomBytes } from 'crypto'
+import Stripe from 'stripe'
 import Order from '../models/Order.js'
 import { sendOrderEmail } from '../utils/email.js'
+import { authMiddleware } from '../middleware/auth.js'
+import { calculateOrder } from '../services/commerce.js'
 
 const router = Router()
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-04-10' as any })
 
-// Get all orders (Admin)
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    // Verificar que sea admin
-    const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    const orders = await Order.find().sort({ createdAt: -1 })
-    res.json(orders)
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching orders' })
-  }
+router.get('/', authMiddleware, async (_req: Request, res: Response) => {
+  try { res.json(await Order.find().sort({ createdAt: -1 })) }
+  catch { res.status(500).json({ error: 'Error fetching orders' }) }
 })
 
-// Create order
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const orderNumber = `ORD-${Date.now()}`
-    const normalizedPaymentStatus = req.body.paymentStatus || 'pending'
-    const normalizedStatus = req.body.status || (
-      normalizedPaymentStatus === 'completed'
-        ? 'confirmed'
-        : normalizedPaymentStatus === 'failed'
-          ? 'cancelled'
-          : 'pending'
-    )
+    const pricing = await calculateOrder(req.body.items, req.body.shippingMethod)
+    const paymentMethod = String(req.body.paymentMethod || '')
+    let paymentStatus: 'pending' | 'completed' = 'pending'
+    let status: 'pending' | 'confirmed' = 'pending'
 
+    if (paymentMethod === 'credit-card') {
+      if (!req.body.paymentIntentId) return res.status(400).json({ error: 'Falta la confirmación del pago' })
+      if (await Order.exists({ paymentIntentId: req.body.paymentIntentId })) {
+        return res.status(409).json({ error: 'Este pago ya fue utilizado en otro pedido' })
+      }
+      const intent = await stripe.paymentIntents.retrieve(req.body.paymentIntentId)
+      if (intent.status !== 'succeeded' || intent.currency !== 'mxn' || intent.amount !== Math.round(pricing.total * 100)) {
+        return res.status(400).json({ error: 'El pago no coincide con el total del pedido' })
+      }
+      paymentStatus = 'completed'
+      status = 'confirmed'
+    }
+
+    const confirmationToken = randomBytes(32).toString('hex')
     const order = new Order({
-      ...req.body,
-      orderNumber,
-      status: normalizedStatus,
-      paymentStatus: normalizedPaymentStatus
+      customer: req.body.customer,
+      shippingAddress: req.body.shippingAddress,
+      shippingMethod: req.body.shippingMethod,
+      paymentMethod,
+      paymentIntentId: req.body.paymentIntentId,
+      orderNumber: `ORD-${Date.now()}-${randomBytes(3).toString('hex').toUpperCase()}`,
+      confirmationToken,
+      paymentStatus,
+      status,
+      ...pricing,
     })
     await order.save()
 
-    // Send email only when we already have an OXXO voucher URL or it's not a pending OXXO order
-    if (!(order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending' && !order.oxxoVoucherUrl)) {
-      try {
-        const emailSubject = order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending'
-          ? `Tu voucher OXXO está listo - ${order.orderNumber}`
-          : `Confirmación de pedido ${order.orderNumber}`
-
-        await sendOrderEmail(order, {
-          subject: emailSubject,
-          showVoucher: order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending'
-        })
-      } catch (err) {
-        console.error('Failed to send order confirmation email:', err)
-      }
+    if (paymentMethod !== 'oxxo') {
+      sendOrderEmail(order).catch((error) => console.error('Failed to send order email:', error))
     }
-
-    res.status(201).json(order)
-  } catch (error) {
-    res.status(400).json({ error: 'Error creating order' })
+    const response = order.toObject()
+    res.status(201).json({ ...response, confirmationToken })
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Error creating order' })
   }
 })
 
-// Get all orders for customer (by email)
-router.get('/customer/:email', async (req: Request, res: Response) => {
+router.get('/confirmation/:id', async (req: Request, res: Response) => {
   try {
-    const orders = await Order.find({ 'customer.email': req.params.email })
-    res.json(orders)
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching orders' })
-  }
+    const order = await Order.findOne({ _id: req.params.id, confirmationToken: req.query.token }).select('+confirmationToken')
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado o enlace inválido' })
+    const response = order.toObject() as any
+    delete response.confirmationToken
+    res.json(response)
+  } catch { res.status(404).json({ error: 'Pedido no encontrado o enlace inválido' }) }
 })
 
-// Get order by ID
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/customer/:email', authMiddleware, async (req: Request, res: Response) => {
+  try { res.json(await Order.find({ 'customer.email': req.params.email })) }
+  catch { res.status(500).json({ error: 'Error fetching orders' }) }
+})
+
+router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const order = await Order.findById(req.params.id)
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' })
-    }
+    if (!order) return res.status(404).json({ error: 'Order not found' })
     res.json(order)
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching order' })
-  }
+  } catch { res.status(404).json({ error: 'Order not found' }) }
 })
 
-// Update order status (Admin)
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    )
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' })
-    }
+    const allowed = ['status', 'paymentStatus', 'paymentIntentId', 'oxxoVoucherUrl', 'notes']
+    const update = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)))
+    const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true })
+    if (!order) return res.status(404).json({ error: 'Order not found' })
     res.json(order)
-  } catch (error) {
-    res.status(400).json({ error: 'Error updating order' })
-  }
+  } catch { res.status(400).json({ error: 'Error updating order' }) }
 })
 
 export default router

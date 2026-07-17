@@ -9,7 +9,10 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production'
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is required')
+  return process.env.JWT_SECRET
+})()
 
 export function customerAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   try {

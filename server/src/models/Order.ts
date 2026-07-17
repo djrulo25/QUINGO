@@ -34,6 +34,7 @@ export interface IOrder extends Document {
   paymentIntentId?: string
   oxxoVoucherUrl?: string
   notes?: string
+  confirmationToken: string
   createdAt: Date
   updatedAt: Date
 }
@@ -87,6 +88,8 @@ const orderSchema = new Schema<IOrder>(
     },
     paymentIntentId: {
       type: String,
+      unique: true,
+      sparse: true,
     },
     oxxoVoucherUrl: {
       type: String,
@@ -105,7 +108,8 @@ const orderSchema = new Schema<IOrder>(
       enum: ['pending', 'completed', 'failed'],
       default: 'pending'
     },
-    notes: String
+    notes: String,
+    confirmationToken: { type: String, required: true, unique: true, index: true, select: false }
   },
   { timestamps: true }
 )

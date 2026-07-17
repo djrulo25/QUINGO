@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 import { orderAPI } from '@/api'
 import { Order } from '@/types'
 
 export default function OrderConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token') || ''
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -16,7 +18,7 @@ export default function OrderConfirmationPage() {
     const fetchOrder = async () => {
       setLoading(true)
       try {
-        const response = await orderAPI.getById(orderId)
+        const response = await orderAPI.getConfirmation(orderId, token)
         setOrder(response.data)
       } catch (err: any) {
         setError(err.response?.data?.error || err.message || 'No se pudo cargar el pedido')
@@ -26,7 +28,7 @@ export default function OrderConfirmationPage() {
     }
 
     fetchOrder()
-  }, [orderId])
+  }, [orderId, token])
 
   if (loading) {
     return (

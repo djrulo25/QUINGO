@@ -15,8 +15,9 @@ async function createOrUpdateCustomer() {
     await connectDB()
     console.log('Connected to MongoDB')
 
-    const email = 'raulf25@gmail.com'
-    const password = 'mividaoscar1403'
+    const email = process.env.SEED_CUSTOMER_EMAIL
+    const password = process.env.SEED_CUSTOMER_PASSWORD
+    if (!email || !password) throw new Error('SEED_CUSTOMER_EMAIL and SEED_CUSTOMER_PASSWORD are required')
 
     // Check if customer exists
     let customer = await Customer.findOne({ email })
@@ -59,9 +60,7 @@ async function createOrUpdateCustomer() {
 
     console.log('')
     console.log('═══════════════════════════════════')
-    console.log('Customer credentials:')
-    console.log('  Email: raulf25@gmail.com')
-    console.log('  Password: mividaoscar1403')
+    console.log('Customer created or updated from environment variables.')
     console.log('═══════════════════════════════════')
     console.log('')
     console.log('You can now login at:')

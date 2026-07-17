@@ -8,7 +8,6 @@ import productRoutes from './routes/products.js'
 import orderRoutes from './routes/orders.js'
 import customerRoutes from './routes/customers.js'
 import customerAuthRoutes from './routes/customerAuth.js'
-import addressRoutes from './routes/addresses.js'
 import categoryRoutes from './routes/categories.js'
 import authRoutes from './routes/auth.js'
 import uploadRoutes from './routes/uploads.js'
@@ -52,14 +51,6 @@ app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
 app.use(express.urlencoded({ limit: '10mb', extended: true }))
 app.use(express.json({ limit: '10mb' }))
 
-// Error handling middleware
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err)
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
-  })
-})
-
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/customer/auth', customerAuthRoutes)
@@ -69,12 +60,17 @@ app.use('/api/debug', debugRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/customers', customerRoutes)
-app.use('/api/addresses', addressRoutes)
 app.use('/api/categories', categoryRoutes)
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// Error handling must be registered after routes.
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err)
+  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
 // Start server

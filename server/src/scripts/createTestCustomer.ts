@@ -12,11 +12,17 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
 async function createTestCustomer() {
   try {
+    const email = process.env.TEST_CUSTOMER_EMAIL
+    const password = process.env.TEST_CUSTOMER_PASSWORD
+    if (!email || !password) {
+      throw new Error('TEST_CUSTOMER_EMAIL and TEST_CUSTOMER_PASSWORD are required')
+    }
+
     await connectDB()
     console.log('Connected to MongoDB')
 
     // Check if customer already exists
-    const existingCustomer = await Customer.findOne({ email: 'cliente@quingo.com' })
+    const existingCustomer = await Customer.findOne({ email })
     if (existingCustomer) {
       console.log('✓ Test customer already exists')
       return
@@ -24,8 +30,8 @@ async function createTestCustomer() {
 
     // Create test customer
     const customer = new Customer({
-      email: 'cliente@quingo.com',
-      password: 'cliente123456',
+      email,
+      password,
       firstName: 'Cliente',
       lastName: 'Prueba',
       phone: '+52 5555555555',
@@ -50,11 +56,7 @@ async function createTestCustomer() {
     await customer.save()
 
     console.log('✓ Test customer created successfully!')
-    console.log('  Email: cliente@quingo.com')
-    console.log('  Password: cliente123456')
-    console.log('')
-    console.log('Use these credentials to test the customer module at:')
-    console.log('  http://localhost:5173/customer/login')
+    console.log('Test customer created from environment variables.')
   } catch (error) {
     console.error('Error creating test customer:', error)
   } finally {

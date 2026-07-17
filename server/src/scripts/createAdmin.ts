@@ -24,18 +24,19 @@ async function createAdmin() {
       process.exit(0)
     }
 
+    const email = process.env.INITIAL_ADMIN_EMAIL
+    const password = process.env.INITIAL_ADMIN_PASSWORD
+    if (!email || !password) throw new Error('INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD are required')
     const admin = new Admin({
-      email: 'admin@quingo.com',
-      password: 'admin123456',
+      email,
+      password,
       name: 'Administrador',
       role: 'super_admin',
     })
 
     await admin.save()
     console.log('✅ Admin created successfully!')
-    console.log('📧 Email: admin@quingo.com')
-    console.log('🔑 Password: admin123456')
-    console.log('⚠️  Remember to change the password after first login!')
+    console.log('Admin created from environment variables. Change the password after first login.')
 
     await mongoose.disconnect()
     process.exit(0)

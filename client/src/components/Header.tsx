@@ -20,8 +20,8 @@ import { getTopLevelCategories } from '@/utils/categories'
 
 const MOBILE_QUICK_ACTIONS = [
   { label: 'Cotizacion rapida', href: '/#quote' },
-  { label: 'Solicitar factura', href: '#contact' },
-  { label: 'Asesoria tecnica', href: '#contact' },
+  { label: 'Solicitar factura', href: '/facturacion' },
+  { label: 'Asesoria tecnica', href: '/contacto' },
   { label: 'Entrega industrial', href: '/#shipping' },
 ]
 
@@ -138,15 +138,15 @@ export default function Header() {
             <a href="tel:+5215576881138" className="font-semibold text-white hover:text-blue-200">
               +52 1 55 7688 1138
             </a>
-            <a href="#contact" className="hover:text-white">
+            <Link to="/contacto" className="hover:text-white">
               Contacto
-            </a>
-            <a href="#shipping" className="hover:text-white">
+            </Link>
+            <a href="/#shipping" className="hover:text-white">
               Envio y entrega
             </a>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#quote" className="font-semibold text-blue-200 hover:text-white">
+            <a href="/#quote" className="font-semibold text-blue-200 hover:text-white">
               Cotizacion rapida
             </a>
             <span>Español | MXN</span>
@@ -210,13 +210,13 @@ export default function Header() {
                   <div className="border-l border-gray-200 pl-5">
                     <p className="mb-3 text-sm font-bold uppercase text-gray-500">Servicios</p>
                     <div className="space-y-2 text-sm">
-                      <a href="#quote" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                      <a href="/#quote" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
                         Solicitar cotizacion
                       </a>
-                      <a href="#contact" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                      <Link to="/contacto" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
                         Asesoria tecnica
-                      </a>
-                      <a href="#shipping" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                      </Link>
+                      <a href="/#shipping" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
                         Envio industrial
                       </a>
                     </div>
@@ -228,9 +228,9 @@ export default function Header() {
                 </div>
               </div>
             </div>
-            <a href="#contact" className="hover:text-gray-300 transition">
+            <Link to="/contacto" className="hover:text-gray-300 transition">
               Contacto
-            </a>
+            </Link>
           </nav>
 
           <ProductSearchBox
@@ -355,9 +355,9 @@ export default function Header() {
                 >
                   Productos
                 </button>
-                <a href="#contact" className="block py-2 hover:text-gray-300 transition" onClick={closeMobileMenu}>
+                <Link to="/contacto" className="block py-2 hover:text-gray-300 transition" onClick={closeMobileMenu}>
                   Contacto
-                </a>
+                </Link>
                 <div className="my-3 rounded-lg border border-gray-800 bg-gray-950/60 p-3">
                   <p className="mb-2 text-xs font-semibold uppercase text-gray-500">Accesos rapidos</p>
                   <div className="grid grid-cols-1 gap-2">

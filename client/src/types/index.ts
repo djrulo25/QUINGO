@@ -79,6 +79,7 @@ export interface Order {
   paymentIntentId?: string
   oxxoVoucherUrl?: string
   notes?: string
+  confirmationToken?: string
   createdAt: string
   updatedAt: string
 }

@@ -128,16 +128,13 @@ export default function CheckoutPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    console.log('CheckoutPage handleChange', name, value)
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  console.log('CheckoutPage render', { paymentMethod: formData.paymentMethod, paymentProcessed })
-
-  const handlePaymentSuccess = async (paymentId: string, redirectUrl?: string) => {
+  const handlePaymentSuccess = async (paymentId: string, redirectUrl?: string, confirmationPath?: string) => {
     const newPaymentIntentId = paymentId
     setPaymentIntentId(newPaymentIntentId)
 
@@ -145,6 +142,8 @@ export default function CheckoutPage() {
     if (redirectUrl) {
       toast.success('Pago OXXO generado. Código y pedido pendiente listos.')
       setPaymentProcessed(true)
+      await clearCart(true)
+      if (confirmationPath) navigate(confirmationPath)
       return
     }
 
@@ -174,6 +173,7 @@ export default function CheckoutPage() {
 
   const createOrder = async (options?: {
     redirectAfterCreation?: boolean
+    clearCartAfterCreation?: boolean
     isOxxoPending?: boolean
     oxxoVoucherUrl?: string
     paymentIntentId?: string
@@ -220,7 +220,7 @@ export default function CheckoutPage() {
       } as any
 
       const response = await orderAPI.create(orderData)
-      await clearCart(true)
+      if (options?.clearCartAfterCreation !== false) await clearCart(true)
 
       if (options?.redirectAfterCreation === false) {
         return response.data
@@ -228,7 +228,7 @@ export default function CheckoutPage() {
 
       toast.success('Pedido creado exitosamente')
       const orderId = response.data.id || response.data._id
-      navigate(`/order-confirmation/${orderId}`)
+      navigate(`/order-confirmation/${orderId}?token=${response.data.confirmationToken}`)
       return response.data
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || error.message || 'Error creating order'
@@ -537,6 +537,8 @@ export default function CheckoutPage() {
                     <StripePaymentForm
                       totalAmount={shippingCost + cart.totalPrice}
                       orderId="pending"
+                      items={cart.items.map((item) => ({ productId: item.product.id, quantity: item.quantity }))}
+                      shippingMethod={formData.shippingMethod}
                       onPaymentSuccess={handlePaymentSuccess}
                       onPaymentError={handlePaymentError}
                     />
@@ -545,15 +547,19 @@ export default function CheckoutPage() {
 
                 {formData.paymentMethod === 'oxxo' && !paymentProcessed && (
                   <OXXOPaymentForm
-                    totalAmount={shippingCost + cart.totalPrice}
-                    email={formData.email}
-                    name={`${formData.firstName} ${formData.lastName}`.trim()}
                     onPrepareOrder={async () => {
                       const pendingOrder = await createOrder({
                         redirectAfterCreation: false,
+                        clearCartAfterCreation: false,
                         isOxxoPending: true,
                       })
-                      return pendingOrder.orderNumber
+                      const pendingOrderId = pendingOrder.id || pendingOrder._id
+                      if (!pendingOrderId || !pendingOrder.confirmationToken) throw new Error('No se pudo preparar la confirmación del pedido')
+                      return {
+                        orderNumber: pendingOrder.orderNumber,
+                        id: pendingOrderId,
+                        confirmationToken: pendingOrder.confirmationToken,
+                      }
                     }}
                     onPaymentSuccess={handlePaymentSuccess}
                     onPaymentError={handlePaymentError}

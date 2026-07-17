@@ -1,9 +1,12 @@
 import { Router, Request, Response } from 'express'
 import Product from '../models/Product.js'
 import Category from '../models/Category.js'
+import Order from '../models/Order.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { deleteCloudinaryAsset } from '../utils/cloudinaryAssets.js'
 
 const router = Router()
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 // Helper function to transform MongoDB document to API response
 function transformProduct(doc: any) {
@@ -65,14 +68,15 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     if (search) {
+      const safeSearch = escapeRegex(String(search).slice(0, 100))
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } },
-        { category: { $regex: search, $options: 'i' } },
-        { categorySlug: { $regex: search, $options: 'i' } },
-        { subcategory: { $regex: search, $options: 'i' } },
-        { subcategorySlug: { $regex: search, $options: 'i' } }
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { description: { $regex: safeSearch, $options: 'i' } },
+        { sku: { $regex: safeSearch, $options: 'i' } },
+        { category: { $regex: safeSearch, $options: 'i' } },
+        { categorySlug: { $regex: safeSearch, $options: 'i' } },
+        { subcategory: { $regex: safeSearch, $options: 'i' } },
+        { subcategorySlug: { $regex: safeSearch, $options: 'i' } }
       ]
     }
     if (priceMin || priceMax) {
@@ -140,6 +144,43 @@ async function validateAttributes(payload: any) {
   return null
 }
 
+router.get('/top-selling', async (_req: Request, res: Response) => {
+  try {
+    const sales = await Order.aggregate([
+      { $match: { paymentStatus: 'completed' } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.productId', quantity: { $sum: '$items.quantity' } } },
+      { $sort: { quantity: -1 } },
+      { $limit: 8 },
+    ])
+    const products = await Product.find({ _id: { $in: sales.map((sale) => sale._id) } })
+    const byId = new Map(products.map((product: any) => [product._id.toString(), product]))
+    res.json(sales.map((sale) => byId.get(String(sale._id))).filter(Boolean).map(transformProduct))
+  } catch {
+    res.status(500).json({ error: 'Error fetching top-selling products' })
+  }
+})
+
+router.get('/search', async (req: Request, res: Response) => {
+  try {
+    const term = String(req.query.q || '').trim()
+    if (!term) return res.json([])
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: escaped, $options: 'i' } },
+        { description: { $regex: escaped, $options: 'i' } },
+        { sku: { $regex: escaped, $options: 'i' } },
+        { category: { $regex: escaped, $options: 'i' } },
+        { subcategory: { $regex: escaped, $options: 'i' } },
+      ],
+    }).limit(20)
+    res.json(products.map(transformProduct))
+  } catch {
+    res.status(500).json({ error: 'Error searching products' })
+  }
+})
+
 // Get product by ID
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -177,6 +218,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 // Update product (Admin)
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
+    const previous = await Product.findById(req.params.id).lean()
+    if (!previous) return res.status(404).json({ error: 'Product not found' })
     const attributeError = await validateAttributes(req.body)
     if (attributeError) return res.status(400).json({ error: attributeError })
     const product = await Product.findByIdAndUpdate(
@@ -187,6 +230,9 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
     if (!product) {
       return res.status(404).json({ error: 'Product not found' })
     }
+    const keptAssets = new Set([req.body.image, ...(req.body.images || []), ...(req.body.documents || []).map((item: any) => item.url)].filter(Boolean))
+    const previousAssets = [previous.image, ...(previous.images || []), ...(previous.documents || []).map((item: any) => item.url)].filter(Boolean)
+    await Promise.all(previousAssets.filter((url) => !keptAssets.has(url)).map((url) => deleteCloudinaryAsset(url)))
     res.json(transformProduct(product))
   } catch (error) {
     res.status(400).json({ error: 'Error updating product' })
@@ -200,6 +246,7 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     if (!product) {
       return res.status(404).json({ error: 'Product not found' })
     }
+    await Promise.all([product.image, ...(product.images || []), ...(product.documents || []).map((item: any) => item.url)].filter(Boolean).map((url) => deleteCloudinaryAsset(url)))
     res.json({ message: 'Product deleted' })
   } catch (error) {
     res.status(500).json({ error: 'Error deleting product' })

@@ -9,11 +9,11 @@ const productLinks = [
 ]
 
 const supportLinks = [
-  { label: 'Cotizacion rapida', href: '#quote' },
-  { label: 'Asesoria tecnica', href: '#contact' },
-  { label: 'Envios', href: '#shipping' },
-  { label: 'Devoluciones', href: '#returns' },
-  { label: 'Facturacion', href: '#billing' },
+  { label: 'Cotizacion rapida', to: '/#quote' },
+  { label: 'Asesoria tecnica', to: '/contacto' },
+  { label: 'Envios', to: '/#shipping' },
+  { label: 'Devoluciones', to: '/devoluciones' },
+  { label: 'Facturacion', to: '/facturacion' },
 ]
 
 export default function Footer() {
@@ -26,7 +26,7 @@ export default function Footer() {
           <a href="tel:+5215576881138" className="font-semibold hover:text-blue-200">
             Telefono: +52 1 55 7688 1138
           </a>
-          <a href="#quote" className="font-semibold hover:text-blue-200">
+          <a href="/#quote" className="font-semibold hover:text-blue-200">
             Cotiza por WhatsApp o formulario
           </a>
           <span className="font-semibold text-blue-100">
@@ -67,10 +67,10 @@ export default function Footer() {
             <h4 className="font-semibold">Compra y soporte</h4>
             <ul className="mt-4 space-y-2 text-sm text-gray-400">
               {supportLinks.map((link) => (
-                <li key={link.href + link.label}>
-                  <a href={link.href} className="hover:text-white">
+                <li key={link.to + link.label}>
+                  <Link to={link.to} className="hover:text-white">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -90,14 +90,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#privacy" className="hover:text-white">
+                <Link to="/privacidad" className="hover:text-white">
                   Privacidad
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#terms" className="hover:text-white">
+                <Link to="/terminos" className="hover:text-white">
                   Terminos
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

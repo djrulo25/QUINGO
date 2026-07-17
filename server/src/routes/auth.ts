@@ -1,9 +1,13 @@
 import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import Admin from '../models/Admin.js'
+import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production'
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is required')
+  return process.env.JWT_SECRET
+})()
 
 // Login
 router.post('/login', async (req: Request, res: Response) => {
@@ -46,18 +50,8 @@ router.post('/login', async (req: Request, res: Response) => {
 })
 
 // Verify token
-router.get('/verify', (req: Request, res: Response) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1]
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' })
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET) as any
-    res.json({ valid: true, admin: decoded })
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token' })
-  }
+router.get('/verify', authMiddleware, (req: Request, res: Response) => {
+  res.json({ valid: true, admin: req.admin })
 })
 
 // Create first admin (only for initial setup)

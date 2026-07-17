@@ -84,12 +84,6 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Info */}
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg text-sm text-gray-600">
-          <p className="font-semibold mb-2">Credenciales por defecto:</p>
-          <p>📧 <code className="bg-white px-2 py-1 rounded">admin@quingo.com</code></p>
-          <p>🔑 <code className="bg-white px-2 py-1 rounded">admin123456</code></p>
-        </div>
       </div>
     </div>
   )

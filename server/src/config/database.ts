@@ -9,8 +9,6 @@ export async function connectDB() {
   try {
     // Read environment variable at runtime
     const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/quingo'
-    console.log('Connection string (first 50 chars):', MONGODB_URI.substring(0, 50) + '...')
-    
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 5000,

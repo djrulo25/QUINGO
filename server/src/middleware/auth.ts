@@ -9,7 +9,10 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production'
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is required')
+  return process.env.JWT_SECRET
+})()
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
@@ -20,6 +23,9 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any
+    if (!['admin', 'super_admin'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'Admin access required' })
+    }
     req.admin = decoded
     next()
   } catch (error) {

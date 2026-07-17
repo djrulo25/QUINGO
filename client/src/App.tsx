@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Layout from '@/components/Layout'
 import AdminLayout from '@/components/AdminLayout'
@@ -24,6 +24,9 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import CustomerProfilePage from '@/pages/CustomerProfilePage'
 import OrderHistoryPage from '@/pages/OrderHistoryPage'
+import ContactPage from '@/pages/ContactPage'
+import InformationPage from '@/pages/InformationPage'
+import AdminReportsPage from '@/pages/AdminReportsPage'
 
 function App() {
   return (
@@ -38,6 +41,7 @@ function App() {
           element={
             <AdminLayout>
               <Routes>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="/dashboard" element={<AdminDashboard />} />
                 <Route path="/products" element={<AdminProductsPage />} />
                 <Route path="/products/new" element={<AdminProductForm />} />
@@ -48,6 +52,8 @@ function App() {
                 <Route path="/attributes" element={<AdminAttributeTemplatesPage />} />
                 <Route path="/orders" element={<AdminOrdersPage />} />
                 <Route path="/orders/:id" element={<AdminOrderDetail />} />
+                <Route path="/reports" element={<AdminReportsPage />} />
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
             </AdminLayout>
           }
@@ -71,6 +77,11 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+                <Route path="/contacto" element={<ContactPage />} />
+                <Route path="/devoluciones" element={<InformationPage />} />
+                <Route path="/facturacion" element={<InformationPage />} />
+                <Route path="/privacidad" element={<InformationPage />} />
+                <Route path="/terminos" element={<InformationPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>

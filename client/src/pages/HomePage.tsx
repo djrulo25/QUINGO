@@ -49,6 +49,7 @@ export default function HomePage() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [topProducts, setTopProducts] = useState<Product[]>([])
   const [quoteForm, setQuoteForm] = useState({
     sku: '',
     quantity: '1',
@@ -66,10 +67,6 @@ export default function HomePage() {
     () => [...products].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4),
     [products]
   )
-  const topProducts = useMemo(
-    () => [...products].sort((a, b) => (b.rating * 10 + b.reviews) - (a.rating * 10 + a.reviews)).slice(0, 4),
-    [products]
-  )
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -82,6 +79,12 @@ export default function HomePage() {
     }
 
     loadCategories()
+  }, [])
+
+  useEffect(() => {
+    productAPI.getTopSelling()
+      .then(({ data }) => setTopProducts(data.slice(0, 4)))
+      .catch(() => setTopProducts([]))
   }, [])
 
   useEffect(() => {

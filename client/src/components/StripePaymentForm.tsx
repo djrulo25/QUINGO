@@ -6,6 +6,8 @@ import toast from 'react-hot-toast'
 interface StripePaymentFormProps {
   totalAmount: number
   orderId?: string
+  items: { productId: string; quantity: number }[]
+  shippingMethod: string
   onPaymentSuccess: (paymentIntentId: string) => void
   onPaymentError: (error: string) => void
 }
@@ -13,6 +15,8 @@ interface StripePaymentFormProps {
 export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
   totalAmount,
   orderId,
+  items,
+  shippingMethod,
   onPaymentSuccess,
   onPaymentError
 }) => {
@@ -34,7 +38,8 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
     try {
       // Step 1: Create Payment Intent on backend
       const response = await apiClient.post('/payments/intent', {
-        amount: Math.round(totalAmount * 100), // Convert to cents
+        items,
+        shippingMethod,
         description: `Order Payment - ${orderId || 'pending'}`,
         orderId: orderId
       })
