@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import {
@@ -33,6 +33,12 @@ interface Order {
 
 type OrderStatus = 'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'returned'
 
+const orderStatuses: OrderStatus[] = ['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'returned']
+
+const isOrderStatus = (status: string | null): status is OrderStatus => {
+  return !!status && orderStatuses.includes(status as OrderStatus)
+}
+
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   confirmed: 'bg-blue-100 text-blue-800',
@@ -59,7 +65,7 @@ export default function AdminOrdersPage() {
   const [filterStatus, setFilterStatus] = useState<OrderStatus>('all')
   const [showFilters, setShowFilters] = useState(false)
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const location = useLocation()
 
   useEffect(() => {
     checkAuth()
@@ -67,11 +73,17 @@ export default function AdminOrdersPage() {
   }, [])
 
   useEffect(() => {
-    const filterFromQuery = searchParams.get('filter') as OrderStatus | null
-    if (filterFromQuery && filterFromQuery !== filterStatus) {
-      setFilterStatus(filterFromQuery)
+    const searchParams = new URLSearchParams(location.search)
+    const filterFromQuery = searchParams.get('filter')
+    const nextFilter = isOrderStatus(filterFromQuery) ? filterFromQuery : 'all'
+
+    setFilterStatus(nextFilter)
+
+    if (!filterFromQuery) {
+      setSearchTerm('')
+      setShowFilters(false)
     }
-  }, [searchParams])
+  }, [location.key, location.search])
 
   useEffect(() => {
     applyFilters()
@@ -194,7 +206,7 @@ export default function AdminOrdersPage() {
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Estado del Pedido</h3>
               <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                {['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'returned'].map((status) => (
+                {orderStatuses.map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilterStatus(status as OrderStatus)}

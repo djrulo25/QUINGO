@@ -67,11 +67,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     navigate('/admin/login')
   }
 
+  const handleMenuItemClick = (path: string) => {
+    if (path === '/admin/orders') {
+      navigate(path, { state: { resetOrdersFiltersAt: Date.now() } })
+      return
+    }
+
+    navigate(path)
+  }
+
   const isActive = (path: string) => {
     if (path.includes('?')) {
       return location.pathname === path.split('?')[0] && location.search === '?' + path.split('?')[1]
     }
-    return location.pathname === path
+    return location.pathname === path && !location.search
   }
 
   return (
@@ -107,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             return (
               <button
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => handleMenuItemClick(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                   active
                     ? 'bg-blue-700 text-white'

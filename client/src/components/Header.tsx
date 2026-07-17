@@ -149,7 +149,7 @@ export default function Header() {
           </nav>
 
           {/* Right Section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
             <button
               type="button"
               onClick={() => navigate('/products')}

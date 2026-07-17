@@ -22,7 +22,7 @@ export default function ProductsPage() {
     category: searchParams.get('category') || undefined,
     subcategory: searchParams.get('subcategory') || undefined,
   })
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc'>('price-asc')
 
   useEffect(() => {
@@ -41,6 +41,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const categoryFromQuery = searchParams.get('category') || undefined
     const subcategoryFromQuery = searchParams.get('subcategory') || undefined
+    const searchFromQuery = searchParams.get('search') || ''
 
     setFilters((currentFilters) => {
       if (currentFilters.category === categoryFromQuery && currentFilters.subcategory === subcategoryFromQuery) {
@@ -52,6 +53,14 @@ export default function ProductsPage() {
         category: categoryFromQuery,
         subcategory: subcategoryFromQuery,
       }
+    })
+
+    setSearchQuery((currentSearchQuery) => {
+      if (currentSearchQuery === searchFromQuery) {
+        return currentSearchQuery
+      }
+
+      return searchFromQuery
     })
   }, [searchParams])
 

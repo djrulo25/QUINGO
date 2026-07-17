@@ -72,31 +72,28 @@ export default function AdminCategoriesPage() {
 
   const renderCategoryTree = (nodes: CategoryTreeNode[], depth = 0) => {
     return nodes.map((node) => (
-      <div key={node.id} className="mb-3">
-        <div
-          className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
-          style={{ marginLeft: depth * 16 }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="font-semibold text-gray-900">{node.name}</p>
-              <p className="text-xs text-gray-500">{node.slug}</p>
+      <div key={node.id} className="mb-3" style={{ paddingLeft: Math.min(depth * 12, 36) }}>
+        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="break-words font-semibold text-gray-900">{node.name}</p>
+              <p className="break-all text-xs text-gray-500">{node.slug}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+              <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
                 Nivel {node.level}
               </span>
               <button
                 type="button"
                 onClick={() => navigate(`/admin/categories/${node.id}/edit`)}
-                className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700"
+                className="shrink-0 rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700"
               >
                 Editar
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(node.id)}
-                className="rounded-lg border border-red-300 px-3 py-1 text-xs font-semibold text-red-700"
+                className="shrink-0 rounded-lg border border-red-300 px-3 py-1 text-xs font-semibold text-red-700"
               >
                 Eliminar
               </button>
@@ -111,7 +108,7 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Categorías</h1>
           <p className="text-sm text-gray-600">Árbol del menú jerárquico de productos</p>
@@ -119,7 +116,7 @@ export default function AdminCategoriesPage() {
         <button
           type="button"
           onClick={() => navigate('/admin/categories/new')}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
         >
           Nueva categoría
         </button>
