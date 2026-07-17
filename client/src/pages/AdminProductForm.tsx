@@ -8,6 +8,7 @@ import { API_BASE_URL } from '@/api/config'
 import { categoryAPI } from '@/api'
 import { getTopLevelCategories } from '@/utils/categories'
 import DynamicProductAttributes from '@/components/DynamicProductAttributes'
+import ProductSalesExtrasEditor from '@/components/ProductSalesExtrasEditor'
 
 export default function AdminProductForm() {
   const navigate = useNavigate()
@@ -35,7 +36,10 @@ export default function AdminProductForm() {
     rating: 0,
     reviews: 0,
     specifications: {},
-    attributes: {}
+    attributes: {},
+    volumePricing: [],
+    documents: [],
+    faqs: []
   })
 
   // Verificar autenticación
@@ -503,6 +507,15 @@ export default function AdminProductForm() {
                 </div>}
               </div>
             </div>
+
+            <ProductSalesExtrasEditor
+              volumePricing={product.volumePricing || []}
+              documents={product.documents || []}
+              faqs={product.faqs || []}
+              onVolumePricingChange={(volumePricing) => setProduct((current) => ({ ...current, volumePricing }))}
+              onDocumentsChange={(documents) => setProduct((current) => ({ ...current, documents }))}
+              onFaqsChange={(faqs) => setProduct((current) => ({ ...current, faqs }))}
+            />
 
             {/* Rating */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

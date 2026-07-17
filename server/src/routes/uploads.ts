@@ -30,9 +30,26 @@ const upload = multer({
   }
 })
 
+const documentUpload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (_req: ExpressRequest, file: Express.Multer.File, cb: FileFilterCallback) => {
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    allowedTypes.includes(file.mimetype) ? cb(null, true) : cb(new Error('Solo se permiten archivos PDF, DOC o DOCX'))
+  }
+})
+
 const uploadToCloudinary = (file: Express.Multer.File) => new Promise<any>((resolve, reject) => {
   const uploadStream = cloudinary.uploader.upload_stream(
     { folder: 'quingo-products', resource_type: 'image' },
+    (error, result) => error ? reject(error) : resolve(result)
+  )
+  Readable.from(file.buffer).pipe(uploadStream)
+})
+
+const uploadDocumentToCloudinary = (file: Express.Multer.File) => new Promise<any>((resolve, reject) => {
+  const uploadStream = cloudinary.uploader.upload_stream(
+    { folder: 'quingo-documents', resource_type: 'raw', public_id: `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '-')}` },
     (error, result) => error ? reject(error) : resolve(result)
   )
   Readable.from(file.buffer).pipe(uploadStream)
@@ -76,6 +93,18 @@ router.post('/uploads/multiple', authMiddleware, upload.array('images'), async (
   } catch (error: any) {
     console.error('Multiple upload error:', error)
     res.status(500).json({ error: error.message || 'Error al subir las imágenes' })
+  }
+})
+
+// POST /api/uploads/document - Upload a product document to Cloudinary
+router.post('/uploads/document', authMiddleware, documentUpload.single('document'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ningún documento' })
+    const result = await uploadDocumentToCloudinary(req.file)
+    res.status(201).json({ name: req.file.originalname, url: result.secure_url, publicId: result.public_id })
+  } catch (error: any) {
+    console.error('Document upload error:', error)
+    res.status(500).json({ error: error.message || 'Error al subir el documento' })
   }
 })
 

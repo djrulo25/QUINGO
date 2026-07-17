@@ -4,6 +4,19 @@ import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
 
+const getCategoryErrorMessage = (error: any, fallback: string) => {
+  if (error?.code === 11000 && error?.keyPattern?.slug) {
+    return 'Ya existe una categoría con ese slug. Escribe uno diferente.'
+  }
+  if (error?.name === 'ValidationError') {
+    return Object.values(error.errors || {}).map((item: any) => item.message).join('. ') || fallback
+  }
+  if (error?.name === 'CastError') {
+    return 'La categoría padre seleccionada no es válida.'
+  }
+  return error?.message || fallback
+}
+
 // Get all categories as hierarchical menu
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -76,7 +89,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     await category.save()
     res.status(201).json(category)
   } catch (error) {
-    res.status(400).json({ error: 'Error creating category' })
+    console.error('Error creating category:', error)
+    res.status(400).json({ error: getCategoryErrorMessage(error, 'No se pudo crear la categoría.') })
   }
 })
 
@@ -91,7 +105,8 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 
     res.json(category)
   } catch (error) {
-    res.status(400).json({ error: 'Error updating category' })
+    console.error('Error updating category:', error)
+    res.status(400).json({ error: getCategoryErrorMessage(error, 'No se pudo actualizar la categoría.') })
   }
 })
 

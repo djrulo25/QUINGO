@@ -18,6 +18,9 @@ export interface IProduct extends Document {
   sku: string
   specifications?: Record<string, string>
   attributes?: Record<string, unknown>
+  volumePricing?: { minQuantity: number; discountPercent: number }[]
+  documents?: { name: string; url: string }[]
+  faqs?: { question: string; answer: string }[]
   createdAt: Date
   updatedAt: Date
 }
@@ -104,7 +107,22 @@ const productSchema = new Schema<IProduct>(
       type: Map,
       of: Schema.Types.Mixed,
       default: {}
-    }
+    },
+    volumePricing: [{
+      minQuantity: { type: Number, required: true, min: 2 },
+      discountPercent: { type: Number, required: true, min: 0, max: 100 },
+      _id: false
+    }],
+    documents: [{
+      name: { type: String, required: true, trim: true },
+      url: { type: String, required: true, trim: true },
+      _id: false
+    }],
+    faqs: [{
+      question: { type: String, required: true, trim: true },
+      answer: { type: String, required: true, trim: true },
+      _id: false
+    }]
   },
   { timestamps: true }
 )

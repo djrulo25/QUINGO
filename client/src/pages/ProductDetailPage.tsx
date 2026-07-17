@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Product } from '@/types'
-import { productAPI } from '@/api'
+import { CategoryAttribute, Product } from '@/types'
+import { categoryAPI, productAPI } from '@/api'
 import { useCartStore } from '@/store/cartStore'
 import toast from 'react-hot-toast'
-import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ChatBubbleLeftRightIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
+import ProductCard from '@/components/ProductCard'
+import ProductDetailExtras from '@/components/ProductDetailExtras'
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -12,6 +14,10 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState('')
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+  const [loadingRelated, setLoadingRelated] = useState(false)
+  const [attributeDefinitions, setAttributeDefinitions] = useState<CategoryAttribute[]>([])
+  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([])
   const { addToCart } = useCartStore()
 
   useEffect(() => {
@@ -20,6 +26,7 @@ export default function ProductDetailPage() {
     const fetchProduct = async () => {
       try {
         setLoading(true)
+        setRelatedProducts([])
         const { data } = await productAPI.getById(id)
         setProduct(data)
         setSelectedImage(data.image)
@@ -33,6 +40,76 @@ export default function ProductDetailPage() {
 
     fetchProduct()
   }, [id])
+
+  useEffect(() => {
+    if (!product) return
+
+    let active = true
+    const loadRelatedProducts = async () => {
+      try {
+        setLoadingRelated(true)
+        const category = product.categorySlug || product.category
+        const { data: categoryProducts } = await productAPI.getAll({ category })
+        let candidates = categoryProducts.filter((candidate) => candidate.id !== product.id)
+
+        if (candidates.length < 4) {
+          const { data: catalogProducts } = await productAPI.getAll()
+          const knownIds = new Set(candidates.map((candidate) => candidate.id))
+          candidates = [
+            ...candidates,
+            ...catalogProducts.filter((candidate) => candidate.id !== product.id && !knownIds.has(candidate.id)),
+          ]
+        }
+
+        const currentSubcategory = product.subcategorySlug || product.subcategory
+        const currentAttributes = product.attributes || {}
+        const score = (candidate: Product) => {
+          const candidateSubcategory = candidate.subcategorySlug || candidate.subcategory
+          const sharedAttributes = Object.entries(currentAttributes).filter(
+            ([key, value]) => value !== '' && candidate.attributes?.[key] === value
+          ).length
+          return (candidateSubcategory === currentSubcategory ? 100 : 0)
+            + sharedAttributes * 10
+            + (candidate.stock > 0 ? 5 : 0)
+            + candidate.rating
+        }
+
+        candidates.sort((first, second) => score(second) - score(first))
+        if (active) setRelatedProducts(candidates.slice(0, 4))
+      } catch (error) {
+        console.error('Error loading related products:', error)
+        if (active) setRelatedProducts([])
+      } finally {
+        if (active) setLoadingRelated(false)
+      }
+    }
+
+    loadRelatedProducts()
+    return () => { active = false }
+  }, [product])
+
+  useEffect(() => {
+    if (!product?.categoryId) {
+      setAttributeDefinitions([])
+      return
+    }
+    categoryAPI.getAttributes(product.categoryId)
+      .then(({ data }) => setAttributeDefinitions(data))
+      .catch(() => setAttributeDefinitions([]))
+  }, [product?.categoryId])
+
+  useEffect(() => {
+    if (!product) return
+    try {
+      const stored = JSON.parse(localStorage.getItem('recently-viewed-products') || '[]') as Product[]
+      const previous = stored.filter((item) => item.id !== product.id)
+      setRecentlyViewed(previous.slice(0, 4))
+      localStorage.setItem('recently-viewed-products', JSON.stringify([product, ...previous].slice(0, 8)))
+    } catch {
+      setRecentlyViewed([])
+      localStorage.setItem('recently-viewed-products', JSON.stringify([product]))
+    }
+  }, [product])
 
   const handleAddToCart = () => {
     if (product) {
@@ -64,6 +141,8 @@ export default function ProductDetailPage() {
   }
 
   const gallery = Array.from(new Set([product.image, ...(product.images || [])].filter(Boolean)))
+  const quoteMessage = encodeURIComponent(`Hola QUINGO, quiero cotizar:\nProducto: ${product.name}\nSKU: ${product.sku}\nCantidad: ${quantity}`)
+  const volumePricing = [...(product.volumePricing || [])].sort((a, b) => a.minQuantity - b.minQuantity)
 
   return (
     <div className="py-8">
@@ -104,6 +183,19 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
+              {volumePricing.length > 0 && (
+                <div className="mt-4 overflow-hidden rounded-xl border border-blue-100 bg-blue-50">
+                  <p className="px-4 pt-3 text-sm font-bold text-blue-950">Ahorra comprando por volumen</p>
+                  <div className="mt-2 divide-y divide-blue-100">
+                    {volumePricing.map((tier) => (
+                      <button key={tier.minQuantity} type="button" onClick={() => setQuantity(Math.min(product.stock || tier.minQuantity, tier.minQuantity))} className="flex w-full items-center justify-between gap-3 px-4 py-2 text-sm hover:bg-blue-100">
+                        <span>Desde {tier.minQuantity} piezas</span>
+                        <span className="font-bold text-blue-900">${(product.price * (1 - tier.discountPercent / 100)).toLocaleString(undefined, { maximumFractionDigits: 2 })} c/u · {tier.discountPercent}% menos</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Description */}
@@ -112,9 +204,10 @@ export default function ProductDetailPage() {
             {/* Stock */}
             <div className="mb-6">
               {product.stock > 0 ? (
-                <p className="text-green-600 font-semibold">
-                  ✓ Stock disponible ({product.stock} unidades)
-                </p>
+                <div>
+                  <p className="text-green-600 font-semibold">✓ Stock disponible ({product.stock} unidades)</p>
+                  {product.stock <= 5 && <p className="mt-1 text-sm font-bold text-orange-600">Últimas {product.stock} unidades disponibles</p>}
+                </div>
               ) : (
                 <p className="text-red-600 font-semibold">✗ Fuera de stock</p>
               )}
@@ -153,20 +246,10 @@ export default function ProductDetailPage() {
               Agregar al Carrito
             </button>
 
-            {/* Specifications */}
-            {product.specifications && Object.keys(product.specifications).length > 0 && (
-              <div className="border-t pt-6 mt-6">
-                <h3 className="font-semibold text-lg mb-4">Especificaciones</h3>
-                <div className="space-y-2">
-                  {Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="text-gray-600">{key}:</span>
-                      <span className="font-medium">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <a href={`https://wa.me/5215576881138?text=${quoteMessage}`} target="_blank" rel="noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-green-600 bg-white py-3 font-bold text-green-700 transition hover:bg-green-50">
+              <ChatBubbleLeftRightIcon className="h-5 w-5" /> Cotizar por WhatsApp
+            </a>
+            <p className="mt-3 text-center text-xs text-gray-500">¿Necesitas muchas piezas? Solicita precio empresarial y disponibilidad.</p>
 
             {/* SKU */}
             <div className="mt-6 pt-6 border-t">
@@ -176,6 +259,38 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        <ProductDetailExtras
+          product={product}
+          attributeDefinitions={attributeDefinitions}
+          relatedProducts={relatedProducts}
+          recentlyViewed={recentlyViewed}
+        />
+
+        {(loadingRelated || relatedProducts.length > 0) && (
+          <section className="mt-14 border-t border-gray-200 pt-10">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-wide text-blue-800">Complementa tu compra</p>
+                <h2 className="mt-1 text-2xl font-bold text-gray-900">También te puede interesar</h2>
+                <p className="mt-1 text-sm text-gray-600">Productos relacionados con {product.subcategory || product.category}.</p>
+              </div>
+              <Link to={`/products?category=${encodeURIComponent(product.categorySlug || product.category)}`} className="hidden text-sm font-semibold text-blue-700 hover:text-blue-900 sm:block">
+                Ver más productos
+              </Link>
+            </div>
+
+            {loadingRelated ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[...Array(4)].map((_, index) => <div key={index} className="h-96 animate-pulse rounded-lg bg-gray-200" />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {relatedProducts.map((relatedProduct) => <ProductCard key={relatedProduct.id} product={relatedProduct} />)}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

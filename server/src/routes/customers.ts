@@ -290,6 +290,8 @@ router.post('/cart', customerAuthMiddleware, async (req: Request, res: Response)
       productId: item.product?.id || item.productId,
       name: item.product?.name || item.name,
       price: Number(item.product?.price ?? item.price ?? 0),
+      basePrice: Number(item.product?.basePrice ?? item.basePrice ?? item.product?.price ?? item.price ?? 0),
+      volumePricing: item.product?.volumePricing || item.volumePricing || [],
       image: item.product?.image || item.image,
       category: item.product?.category || item.category,
       subcategory: item.product?.subcategory || item.subcategory,

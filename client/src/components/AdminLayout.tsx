@@ -9,6 +9,7 @@ import {
   TruckIcon,
   ArrowPathIcon,
   ChartBarIcon,
+  ChevronDownIcon,
   ArrowLeftOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
@@ -17,12 +18,24 @@ interface AdminLayoutProps {
   children: React.ReactNode
 }
 
+interface AdminMenuItem {
+  label: string
+  path: string
+  icon: typeof HomeIcon
+  children?: { label: string; path: string }[]
+}
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(() =>
+    location.pathname.startsWith('/admin/categories') || location.pathname.startsWith('/admin/attributes')
+      ? '/admin/categories'
+      : null
+  )
 
-  const menuItems = [
+  const menuItems: AdminMenuItem[] = [
     {
       label: 'Dashboard',
       path: '/admin/dashboard',
@@ -37,11 +50,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Categorías',
       path: '/admin/categories',
       icon: ChartBarIcon,
-    },
-    {
-      label: 'Plantillas de atributos',
-      path: '/admin/attributes',
-      icon: ChartBarIcon,
+      children: [
+        { label: 'Gestionar categorías', path: '/admin/categories' },
+        { label: 'Plantillas de atributos', path: '/admin/attributes' },
+      ],
     },
     {
       label: 'Pedidos',
@@ -73,6 +85,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   const handleMenuItemClick = (path: string) => {
+    setExpandedMenu(null)
     if (path === '/admin/orders') {
       navigate(path, { state: { resetOrdersFiltersAt: Date.now() } })
       return
@@ -113,25 +126,61 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Menu Items */}
-        <nav className={`flex-1 p-3 sm:p-4 space-y-2 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
+        <nav className={`flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
           {menuItems.map((item) => {
             const Icon = item.icon
-            const active = isActive(item.path)
+            const hasChildren = Boolean(item.children?.length)
+            const active = hasChildren
+              ? item.children!.some((child) => location.pathname.startsWith(child.path))
+              : isActive(item.path)
+            const expanded = expandedMenu === item.path
 
             return (
-              <button
-                key={item.path}
-                onClick={() => handleMenuItemClick(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                  active
-                    ? 'bg-blue-700 text-white'
-                    : 'text-blue-100 hover:bg-blue-800'
-                }`}
-                title={!sidebarOpen ? item.label : ''}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className={`${!sidebarOpen && 'hidden'}`}>{item.label}</span>
-              </button>
+              <div key={item.path}>
+                <button
+                  onClick={() => {
+                    if (hasChildren) {
+                      setExpandedMenu(expanded ? null : item.path)
+                      if (!active) navigate(item.path)
+                    } else {
+                      handleMenuItemClick(item.path)
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                    active ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-800'
+                  }`}
+                  title={!sidebarOpen ? item.label : ''}
+                  aria-expanded={hasChildren ? expanded : undefined}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className={`flex-1 text-left ${!sidebarOpen && 'hidden'}`}>{item.label}</span>
+                  {hasChildren && sidebarOpen && (
+                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                  )}
+                </button>
+
+                {hasChildren && expanded && sidebarOpen && (
+                  <div className="ml-6 mt-1 space-y-1 border-l border-blue-700 pl-3">
+                    {item.children!.map((child) => {
+                      const childActive = location.pathname.startsWith(child.path)
+                      return (
+                        <button
+                          key={child.path}
+                          type="button"
+                          onClick={() => navigate(child.path)}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                            childActive
+                              ? 'bg-blue-800 font-semibold text-white'
+                              : 'text-blue-200 hover:bg-blue-800 hover:text-white'
+                          }`}
+                        >
+                          {child.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             )
           })}
         </nav>

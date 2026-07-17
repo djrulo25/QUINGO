@@ -30,6 +30,18 @@ const calculateTotals = (items: CartItem[]) => {
   return { totalPrice, totalItems }
 }
 
+const applyVolumePrice = (product: Product, quantity: number): Product => {
+  const basePrice = product.basePrice ?? product.price
+  const tier = [...(product.volumePricing || [])]
+    .filter((item) => quantity >= item.minQuantity)
+    .sort((a, b) => b.minQuantity - a.minQuantity)[0]
+  return {
+    ...product,
+    basePrice,
+    price: tier ? basePrice * (1 - tier.discountPercent / 100) : basePrice,
+  }
+}
+
 const mapServerItemToCartItem = (item: any): CartItem => {
   const createdAt = item.addedAt ? new Date(item.addedAt).toISOString() : new Date().toISOString()
   return {
@@ -39,6 +51,8 @@ const mapServerItemToCartItem = (item: any): CartItem => {
       name: item.name || 'Producto',
       description: item.description || '',
       price: item.price || 0,
+      basePrice: item.basePrice,
+      volumePricing: item.volumePricing || [],
       originalPrice: item.originalPrice,
       image: item.image || '',
       images: item.images || [],
@@ -60,6 +74,8 @@ const mapCartItemToServerItem = (item: CartItem) => ({
   productId: item.product.id,
   name: item.product.name,
   price: item.product.price,
+  basePrice: item.product.basePrice,
+  volumePricing: item.product.volumePricing || [],
   image: item.product.image,
   category: item.product.category,
   subcategory: item.product.subcategory,
@@ -103,13 +119,17 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       if (existingItem) {
         newItems = state.cart.items.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? {
+                ...item,
+                quantity: item.quantity + quantity,
+                product: applyVolumePrice({ ...item.product, volumePricing: product.volumePricing || item.product.volumePricing }, item.quantity + quantity),
+              }
             : item
         )
       } else {
         const newItem: CartItem = {
           id: `${product.id}-${Date.now()}`,
-          product,
+          product: applyVolumePrice(product, quantity),
           quantity,
           addedAt: new Date().toISOString(),
         }
@@ -156,7 +176,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
 
     set((state) => {
       const newItems = state.cart.items.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
+        item.product.id === productId ? { ...item, quantity, product: applyVolumePrice(item.product, quantity) } : item
       )
       const totals = calculateTotals(newItems)
 

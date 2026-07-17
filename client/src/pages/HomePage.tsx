@@ -15,6 +15,7 @@ import { flattenCategoryCatalog, getCategoryImage, getCategoryProductLink } from
 import { getTopLevelCategories } from '@/utils/categories'
 
 const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
+type ProductRailVariant = 'offers' | 'new' | 'top'
 
 const TRUST_SIGNALS = [
   {
@@ -115,44 +116,83 @@ export default function HomePage() {
     window.location.href = `https://wa.me/5215576881138?text=${encodeURIComponent(message)}`
   }
 
-  const renderProductRail = (title: string, subtitle: string, items: Product[]) => {
+  const renderProductRail = (title: string, subtitle: string, items: Product[], variant: ProductRailVariant) => {
     if (items.length === 0) {
       return null
     }
 
+    const theme = {
+      offers: {
+        section: 'border-y border-red-100 bg-gradient-to-r from-red-50 via-orange-50 to-amber-50',
+        eyebrow: 'Oportunidades por tiempo limitado',
+        eyebrowClass: 'text-red-700',
+        titleClass: 'text-gray-950',
+        subtitleClass: 'text-gray-600',
+        linkClass: 'text-red-700 hover:text-red-900',
+      },
+      new: {
+        section: 'bg-white',
+        eyebrow: 'Recién agregados al catálogo',
+        eyebrowClass: 'text-blue-700',
+        titleClass: 'text-gray-950',
+        subtitleClass: 'text-gray-600',
+        linkClass: 'text-blue-700 hover:text-blue-900',
+      },
+      top: {
+        section: 'bg-gray-950',
+        eyebrow: 'Los favoritos de nuestros clientes',
+        eyebrowClass: 'text-amber-300',
+        titleClass: 'text-white',
+        subtitleClass: 'text-gray-300',
+        linkClass: 'text-amber-300 hover:text-amber-200',
+      },
+    }[variant]
+
     return (
-      <section className="py-8">
+      <section className={`py-10 sm:py-12 ${theme.section}`}>
         <div className="container mx-auto px-4">
-          <div className="mb-4 flex items-end justify-between gap-4">
+          <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{title}</h2>
-              <p className="text-sm text-gray-600">{subtitle}</p>
+              <p className={`text-xs font-bold uppercase tracking-[0.18em] ${theme.eyebrowClass}`}>{theme.eyebrow}</p>
+              <h2 className={`mt-1 text-2xl font-bold sm:text-3xl ${theme.titleClass}`}>{title}</h2>
+              <p className={`mt-1 text-sm ${theme.subtitleClass}`}>{subtitle}</p>
             </div>
-            <Link to="/products" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
-              Ver todo
+            <Link to="/products" className={`shrink-0 text-sm font-semibold ${theme.linkClass}`}>
+              Ver todo <span aria-hidden="true">→</span>
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {items.map((product) => (
+          <div className={variant === 'offers' ? 'grid grid-cols-1 gap-4 sm:grid-cols-2' : 'grid grid-cols-2 gap-3 md:grid-cols-4'}>
+            {items.map((product, index) => {
+              const discount = product.originalPrice
+                ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+                : 0
+              const badge = variant === 'offers'
+                ? (discount > 0 ? `-${discount}%` : 'Oferta')
+                : variant === 'new' ? 'Nuevo' : `Top ${index + 1}`
+
+              return (
               <Link
                 key={`${title}-${product.id}`}
                 to={`/products/${product.id}`}
-                className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className={`${variant === 'offers' ? 'grid grid-cols-[120px_1fr] items-center sm:grid-cols-[150px_1fr]' : 'block'} group relative overflow-hidden rounded-xl border p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg ${variant === 'top' ? 'border-gray-700 bg-gray-900' : variant === 'offers' ? 'border-red-100 bg-white' : 'border-gray-200 bg-white'}`}
               >
-                <div className="aspect-square overflow-hidden rounded-md bg-gray-100">
+                <span className={`absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${variant === 'offers' ? 'bg-red-600 text-white' : variant === 'new' ? 'bg-blue-700 text-white' : 'bg-amber-400 text-gray-950'}`}>{badge}</span>
+                <div className={`aspect-square overflow-hidden rounded-lg ${variant === 'top' ? 'bg-white' : 'bg-gray-100'}`}>
                   <img src={product.image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
                 </div>
-                <p className="mt-3 line-clamp-2 min-h-[40px] text-sm font-semibold leading-tight text-gray-900">{product.name}</p>
-                <p className="mt-1 text-xs text-gray-500">SKU: {product.sku}</p>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-bold text-gray-900">${product.price.toLocaleString()}</span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-gray-500 line-through">${product.originalPrice.toLocaleString()}</span>
-                  )}
+                <div className={variant === 'offers' ? 'min-w-0 pl-4' : ''}>
+                  <p className={`${variant === 'offers' ? '' : 'mt-3'} line-clamp-2 min-h-[40px] text-sm font-semibold leading-tight ${variant === 'top' ? 'text-white' : 'text-gray-900'}`}>{product.name}</p>
+                  <p className={`mt-1 text-xs ${variant === 'top' ? 'text-gray-400' : 'text-gray-500'}`}>SKU: {product.sku}</p>
+                  <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                    <span className={`text-lg font-bold ${variant === 'top' ? 'text-amber-300' : variant === 'offers' ? 'text-red-700' : 'text-gray-900'}`}>${product.price.toLocaleString()}</span>
+                    {product.originalPrice && <span className={`text-xs line-through ${variant === 'top' ? 'text-gray-500' : 'text-gray-500'}`}>${product.originalPrice.toLocaleString()}</span>}
+                  </div>
+                  {variant === 'offers' && <span className="mt-3 inline-flex items-center text-xs font-bold text-red-700">Ver oportunidad <ArrowRightIcon className="ml-1 h-3.5 w-3.5" /></span>}
                 </div>
               </Link>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
@@ -247,28 +287,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="shipping" className="bg-white py-5">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {TRUST_SIGNALS.map((signal) => {
-              const Icon = signal.icon
-              return (
-                <div key={signal.title} className="flex gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <Icon className="h-6 w-6 shrink-0 text-blue-900" />
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{signal.title}</p>
-                    <p className="mt-1 text-xs text-gray-600">{signal.description}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {renderProductRail('Ofertas y oportunidades', 'Productos con precio especial o promocion activa.', offerProducts)}
-      {renderProductRail('Nuevos productos', 'Ultimas altas en el catalogo para surtir tu operacion.', newProducts)}
-      {renderProductRail('Mas vendidos y destacados', 'Productos con mejor calificacion y mayor movimiento.', topProducts)}
+      {renderProductRail('Ofertas y oportunidades', 'Productos con precio especial o promoción activa.', offerProducts, 'offers')}
+      {renderProductRail('Nuevos productos', 'Últimas altas en el catálogo para surtir tu operación.', newProducts, 'new')}
+      {renderProductRail('Más vendidos y destacados', 'Productos con mejor calificación y mayor movimiento.', topProducts, 'top')}
 
       <section id="quote" className="py-12">
         <div className="container mx-auto px-4">
@@ -347,6 +368,25 @@ export default function HomePage() {
                 Enviar cotizacion por WhatsApp
               </button>
             </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="shipping" className="bg-white py-5">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {TRUST_SIGNALS.map((signal) => {
+              const Icon = signal.icon
+              return (
+                <div key={signal.title} className="flex gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <Icon className="h-6 w-6 shrink-0 text-blue-900" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{signal.title}</p>
+                    <p className="mt-1 text-xs text-gray-600">{signal.description}</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

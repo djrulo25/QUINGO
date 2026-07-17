@@ -96,7 +96,7 @@ const categorySchema = new Schema<ICategory>(
   { timestamps: true }
 )
 
-const CategoryModel = mongoose.models.Category || mongoose.model<ICategory>('Category', categorySchema)
+let CategoryModel: mongoose.Model<ICategory>
 
 const syncCategoryTreeMeta = async (category: any) => {
   const parentId = category.parent || null
@@ -107,6 +107,9 @@ const syncCategoryTreeMeta = async (category: any) => {
   }
 
   const parent = parentId ? await CategoryModel.findById(parentId).lean() : null
+  if (parentId && !parent) {
+    throw new Error('La categoría padre seleccionada no existe')
+  }
   const parentDoc = parent as any
   const level = parentDoc ? parentDoc.level + 1 : 0
   const path = parentDoc ? `${parentDoc.path}/${slug}` : slug
@@ -137,6 +140,9 @@ categorySchema.pre('findOneAndUpdate', async function (next) {
   const slug = update.slug?.trim?.().toLowerCase() || currentDoc?.slug
   const parentId = update.parent ?? currentDoc?.parent ?? null
   const parent = parentId ? await CategoryModel.findById(parentId).lean() : null
+  if (parentId && !parent) {
+    return next(new Error('La categoría padre seleccionada no existe'))
+  }
   const parentDoc = parent as any
 
   update.level = parentDoc ? parentDoc.level + 1 : 0
@@ -148,5 +154,9 @@ categorySchema.pre('findOneAndUpdate', async function (next) {
 
   next()
 })
+
+// Los middlewares deben registrarse antes de compilar el modelo.
+CategoryModel = mongoose.models.Category as mongoose.Model<ICategory>
+  || mongoose.model<ICategory>('Category', categorySchema)
 
 export default CategoryModel

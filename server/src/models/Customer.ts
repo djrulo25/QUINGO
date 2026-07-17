@@ -22,6 +22,8 @@ export interface ICartItem {
   productId: string
   name: string
   price: number
+  basePrice?: number
+  volumePricing?: { minQuantity: number; discountPercent: number }[]
   image: string
   category: string
   subcategory: string
@@ -148,6 +150,12 @@ const customerSchema = new Schema<ICustomer>(
           productId: { type: String, required: true },
           name: { type: String, required: true },
           price: { type: Number, required: true },
+          basePrice: { type: Number },
+          volumePricing: [{
+            minQuantity: { type: Number, required: true },
+            discountPercent: { type: Number, required: true },
+            _id: false
+          }],
           image: { type: String, required: true },
           category: { type: String, required: true },
           subcategory: { type: String, required: true },

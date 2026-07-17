@@ -3,6 +3,7 @@ export interface Product {
   name: string
   description: string
   price: number
+  basePrice?: number
   originalPrice?: number
   image: string
   images?: string[]
@@ -17,6 +18,9 @@ export interface Product {
   sku: string
   specifications?: Record<string, string>
   attributes?: Record<string, string | number | boolean>
+  volumePricing?: { minQuantity: number; discountPercent: number }[]
+  documents?: { name: string; url: string }[]
+  faqs?: { question: string; answer: string }[]
   createdAt: string
   updatedAt: string
 }

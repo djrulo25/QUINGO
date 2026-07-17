@@ -26,6 +26,9 @@ function transformProduct(doc: any) {
     sku: doc.sku,
     specifications: doc.specifications,
     attributes: doc.attributes ? Object.fromEntries(doc.attributes) : {},
+    volumePricing: doc.volumePricing || [],
+    documents: doc.documents || [],
+    faqs: doc.faqs || [],
     createdAt: doc.createdAt?.toISOString(),
     updatedAt: doc.updatedAt?.toISOString(),
   }
