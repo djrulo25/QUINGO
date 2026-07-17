@@ -18,11 +18,10 @@ import { CategoryTreeNode } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 
-const MOBILE_SERVICES = [
+const SERVICES = [
   { label: 'Cotizacion rapida', href: '/#quote' },
   { label: 'Solicitar factura', href: '/facturacion' },
   { label: 'Asesoria tecnica', href: '/contacto' },
-  { label: 'Entrega industrial', href: '/#shipping' },
 ]
 
 export default function Header() {
@@ -35,7 +34,9 @@ export default function Header() {
   const [showProductsExplorer, setShowProductsExplorer] = useState(false)
   const [showServicesExplorer, setShowServicesExplorer] = useState(false)
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false)
+  const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false)
   const productsMenuRef = useRef<HTMLDivElement>(null)
+  const servicesMenuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -55,6 +56,7 @@ export default function Header() {
 
   useEffect(() => {
     setIsProductsMenuOpen(false)
+    setIsServicesMenuOpen(false)
   }, [location.pathname, location.search, location.hash])
 
   useEffect(() => {
@@ -62,10 +64,16 @@ export default function Header() {
       if (productsMenuRef.current && !productsMenuRef.current.contains(event.target as Node)) {
         setIsProductsMenuOpen(false)
       }
+      if (servicesMenuRef.current && !servicesMenuRef.current.contains(event.target as Node)) {
+        setIsServicesMenuOpen(false)
+      }
     }
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsProductsMenuOpen(false)
+      if (event.key === 'Escape') {
+        setIsProductsMenuOpen(false)
+        setIsServicesMenuOpen(false)
+      }
     }
 
     document.addEventListener('pointerdown', closeOnOutsideInteraction)
@@ -196,7 +204,10 @@ export default function Header() {
             <div
               ref={productsMenuRef}
               className="relative flex h-16 items-center"
-              onMouseEnter={() => setIsProductsMenuOpen(true)}
+              onMouseEnter={() => {
+                setIsServicesMenuOpen(false)
+                setIsProductsMenuOpen(true)
+              }}
               onMouseLeave={() => setIsProductsMenuOpen(false)}
               onFocus={() => setIsProductsMenuOpen(true)}
               onBlur={(event) => {
@@ -214,8 +225,8 @@ export default function Header() {
               >
                 Productos
               </Link>
-              <div className={`absolute left-0 top-full z-50 min-w-[760px] pt-2 ${isProductsMenuOpen ? 'block' : 'hidden'}`}>
-                <div className="grid grid-cols-[1.5fr_1fr_1fr] gap-5 rounded-lg bg-white p-4 text-gray-900 shadow-xl">
+              <div className={`absolute left-0 top-full z-50 min-w-[560px] pt-2 ${isProductsMenuOpen ? 'block' : 'hidden'}`}>
+                <div className="rounded-lg bg-white p-4 text-gray-900 shadow-xl">
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-bold uppercase text-gray-500">Categorias</p>
@@ -241,43 +252,46 @@ export default function Header() {
                     </div>
                   </div>
 
-                  <div className="border-l border-gray-200 pl-5">
-                    <p className="mb-3 text-sm font-bold uppercase text-gray-500">Compra rapida</p>
-                    <div className="space-y-2">
-                      {['Electrodos', 'Guantes', 'Reguladores', 'Mangueras', 'Caretas'].map((term) => (
-                        <button
-                          key={term}
-                          type="button"
-                          onClick={() => {
-                            setIsProductsMenuOpen(false)
-                            navigate(`/products?search=${encodeURIComponent(term)}`)
-                          }}
-                          className="block w-full rounded-md px-2 py-1.5 text-left text-sm font-semibold text-gray-800 hover:bg-gray-100"
-                        >
-                          {term}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-l border-gray-200 pl-5">
-                    <p className="mb-3 text-sm font-bold uppercase text-gray-500">Servicios</p>
-                    <div className="space-y-2 text-sm">
-                      <a href="/#quote" onClick={() => setIsProductsMenuOpen(false)} className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
-                        Solicitar cotizacion
-                      </a>
-                      <Link to="/contacto" onClick={() => setIsProductsMenuOpen(false)} className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
-                        Asesoria tecnica
-                      </Link>
-                      <a href="/#shipping" onClick={() => setIsProductsMenuOpen(false)} className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
-                        Envio industrial
-                      </a>
-                    </div>
-                    <div className="mt-4 rounded-lg bg-gray-100 p-3">
-                      <p className="text-xs font-semibold uppercase text-gray-500">Atencion</p>
-                      <p className="mt-1 text-lg font-bold text-gray-900">+52 1 55 7688 1138</p>
-                    </div>
-                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              ref={servicesMenuRef}
+              className="relative flex h-16 items-center"
+              onMouseEnter={() => {
+                setIsProductsMenuOpen(false)
+                setIsServicesMenuOpen(true)
+              }}
+              onMouseLeave={() => setIsServicesMenuOpen(false)}
+              onFocus={() => setIsServicesMenuOpen(true)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setIsServicesMenuOpen(false)
+                }
+              }}
+            >
+              <button
+                type="button"
+                className="hover:text-gray-300 transition"
+                aria-haspopup="true"
+                aria-expanded={isServicesMenuOpen}
+                onClick={() => setIsServicesMenuOpen(true)}
+              >
+                Servicios
+              </button>
+              <div className={`absolute left-0 top-full z-50 min-w-[250px] pt-2 ${isServicesMenuOpen ? 'block' : 'hidden'}`}>
+                <div className="space-y-1 rounded-lg bg-white p-3 text-gray-900 shadow-xl">
+                  {SERVICES.map((service) => (
+                    <Link
+                      key={service.label}
+                      to={service.href}
+                      onClick={() => setIsServicesMenuOpen(false)}
+                      className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-semibold hover:bg-gray-100 hover:text-blue-700"
+                    >
+                      <span>{service.label}</span>
+                      <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
@@ -540,16 +554,16 @@ export default function Header() {
                 </div>
 
                 <div className="space-y-2">
-                  {MOBILE_SERVICES.map((service) => (
-                    <a
+                  {SERVICES.map((service) => (
+                    <Link
                       key={service.label}
-                      href={service.href}
+                      to={service.href}
                       onClick={closeMobileMenu}
                       className="flex w-full items-center justify-between rounded-lg border border-gray-800 px-3 py-3 text-sm font-semibold text-gray-200 hover:border-gray-700 hover:bg-gray-800"
                     >
                       <span>{service.label}</span>
                       <ChevronRightIcon className="h-4 w-4 text-gray-500" />
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
