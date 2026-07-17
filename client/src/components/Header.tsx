@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bars3Icon,
   ChevronLeftIcon,
@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useCartStore } from '@/store/cartStore'
 import { useCustomerStore } from '@/store/customerStore'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { categoryAPI } from '@/api'
 import ProductSearchBox from '@/components/ProductSearchBox'
 import { CategoryTreeNode } from '@/types'
@@ -33,7 +33,10 @@ export default function Header() {
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [mobilePath, setMobilePath] = useState<string[]>([])
   const [showProductsExplorer, setShowProductsExplorer] = useState(false)
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false)
+  const productsMenuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -47,6 +50,29 @@ export default function Header() {
     }
 
     loadCategories()
+  }, [])
+
+  useEffect(() => {
+    setIsProductsMenuOpen(false)
+  }, [location.pathname, location.search, location.hash])
+
+  useEffect(() => {
+    const closeOnOutsideInteraction = (event: PointerEvent) => {
+      if (productsMenuRef.current && !productsMenuRef.current.contains(event.target as Node)) {
+        setIsProductsMenuOpen(false)
+      }
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsProductsMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsideInteraction)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideInteraction)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
   }, [])
 
   const mobileBreadcrumb = useMemo(() => {
@@ -165,16 +191,37 @@ export default function Header() {
             <Link to="/" className="hover:text-gray-300 transition">
               Inicio
             </Link>
-            <div className="group relative flex h-16 items-center">
-              <Link to="/products" className="hover:text-gray-300 transition">
+            <div
+              ref={productsMenuRef}
+              className="relative flex h-16 items-center"
+              onMouseEnter={() => setIsProductsMenuOpen(true)}
+              onMouseLeave={() => setIsProductsMenuOpen(false)}
+              onFocus={() => setIsProductsMenuOpen(true)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setIsProductsMenuOpen(false)
+                }
+              }}
+            >
+              <Link
+                to="/products"
+                className="hover:text-gray-300 transition"
+                aria-haspopup="true"
+                aria-expanded={isProductsMenuOpen}
+                onClick={() => setIsProductsMenuOpen(false)}
+              >
                 Productos
               </Link>
-              <div className="absolute left-0 top-full z-50 hidden min-w-[760px] pt-2 group-hover:block group-focus-within:block">
+              <div className={`absolute left-0 top-full z-50 min-w-[760px] pt-2 ${isProductsMenuOpen ? 'block' : 'hidden'}`}>
                 <div className="grid grid-cols-[1.5fr_1fr_1fr] gap-5 rounded-lg bg-white p-4 text-gray-900 shadow-xl">
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-bold uppercase text-gray-500">Categorias</p>
-                      <Link to="/products" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+                      <Link
+                        to="/products"
+                        className="text-sm font-semibold text-blue-700 hover:text-blue-900"
+                        onClick={() => setIsProductsMenuOpen(false)}
+                      >
                         Ver todo
                       </Link>
                     </div>
@@ -184,6 +231,7 @@ export default function Header() {
                           key={item.category.id}
                           to={getCategoryProductLink(item)}
                           className="text-sm font-medium text-gray-800 hover:text-blue-700"
+                          onClick={() => setIsProductsMenuOpen(false)}
                         >
                           {item.category.name}
                         </Link>
@@ -198,7 +246,10 @@ export default function Header() {
                         <button
                           key={term}
                           type="button"
-                          onClick={() => navigate(`/products?search=${encodeURIComponent(term)}`)}
+                          onClick={() => {
+                            setIsProductsMenuOpen(false)
+                            navigate(`/products?search=${encodeURIComponent(term)}`)
+                          }}
                           className="block w-full rounded-md px-2 py-1.5 text-left text-sm font-semibold text-gray-800 hover:bg-gray-100"
                         >
                           {term}
@@ -210,13 +261,13 @@ export default function Header() {
                   <div className="border-l border-gray-200 pl-5">
                     <p className="mb-3 text-sm font-bold uppercase text-gray-500">Servicios</p>
                     <div className="space-y-2 text-sm">
-                      <a href="/#quote" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                      <a href="/#quote" onClick={() => setIsProductsMenuOpen(false)} className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
                         Solicitar cotizacion
                       </a>
-                      <Link to="/contacto" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                      <Link to="/contacto" onClick={() => setIsProductsMenuOpen(false)} className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
                         Asesoria tecnica
                       </Link>
-                      <a href="/#shipping" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                      <a href="/#shipping" onClick={() => setIsProductsMenuOpen(false)} className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
                         Envio industrial
                       </a>
                     </div>
