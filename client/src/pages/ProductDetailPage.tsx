@@ -11,6 +11,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState('')
   const { addToCart } = useCartStore()
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function ProductDetailPage() {
         setLoading(true)
         const { data } = await productAPI.getById(id)
         setProduct(data)
+        setSelectedImage(data.image)
       } catch (error) {
         console.error('Error fetching product:', error)
         toast.error('Error al cargar el producto')
@@ -61,17 +63,26 @@ export default function ProductDetailPage() {
     )
   }
 
+  const gallery = Array.from(new Set([product.image, ...(product.images || [])].filter(Boolean)))
+
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Image */}
-          <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-auto max-h-96 object-contain"
-            />
+          {/* Product gallery */}
+          <div>
+            <div className="flex items-center justify-center bg-gray-100 rounded-lg p-8">
+              <img
+                src={selectedImage || product.image}
+                alt={product.name}
+                className="w-full h-auto max-h-96 object-contain"
+              />
+            </div>
+            {gallery.length > 1 && <div className="mt-3 grid grid-cols-5 gap-2">
+              {gallery.map((imageUrl, index) => <button key={imageUrl} type="button" onClick={() => setSelectedImage(imageUrl)} className={`overflow-hidden rounded-lg border-2 bg-white p-1 ${selectedImage === imageUrl ? 'border-blue-700' : 'border-gray-200 hover:border-gray-400'}`} aria-label={`Ver imagen ${index + 1}`}>
+                <img src={imageUrl} alt="" className="aspect-square w-full object-cover" />
+              </button>)}
+            </div>}
           </div>
 
           {/* Details */}

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
 import { Product, CategoryAttribute, CategoryTreeNode } from '@/types'
-import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PhotoIcon, StarIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { API_BASE_URL } from '@/api/config'
 import { categoryAPI } from '@/api'
 import { getTopLevelCategories } from '@/utils/categories'
@@ -31,6 +31,7 @@ export default function AdminProductForm() {
     stock: 0,
     sku: '',
     image: '',
+    images: [],
     rating: 0,
     reviews: 0,
     specifications: {},
@@ -116,7 +117,8 @@ export default function AdminProductForm() {
     try {
       setLoading(true)
       const response = await axios.get(`${API_BASE_URL}/products/${id}`)
-      setProduct(response.data)
+      const gallery = Array.from(new Set([response.data.image, ...(response.data.images || [])].filter(Boolean))) as string[]
+      setProduct({ ...response.data, image: gallery[0] || '', images: gallery })
       syncCategorySelection(response.data.category, response.data.subcategory)
     } catch (error) {
       toast.error('Error al cargar el producto')
@@ -163,23 +165,22 @@ export default function AdminProductForm() {
   }
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor selecciona una imagen válida')
+    if (files.some((file) => !file.type.startsWith('image/'))) {
+      toast.error('Todos los archivos deben ser imágenes válidas')
       return
     }
 
     try {
       setUploading(true)
       const formData = new FormData()
-      formData.append('image', file)
+      files.forEach((file) => formData.append('images', file))
 
       const token = localStorage.getItem('adminToken')
       const response = await axios.post(
-        `${API_BASE_URL}/uploads`,
+        `${API_BASE_URL}/uploads/multiple`,
         formData,
         {
           headers: {
@@ -188,28 +189,38 @@ export default function AdminProductForm() {
         }
       )
 
-      // Usar la URL segura de Cloudinary
-      const imageUrl = response.data.secure_url
-      setProduct({ ...product, image: imageUrl })
-      toast.success('Imagen subida correctamente')
+      const uploadedUrls = response.data.images.map((image: { url: string }) => image.url)
+      setProduct((current) => {
+        const gallery = Array.from(new Set([...(current.images || []), ...uploadedUrls]))
+        return { ...current, image: current.image || gallery[0] || '', images: gallery }
+      })
+      toast.success(`${uploadedUrls.length} imagen${uploadedUrls.length === 1 ? '' : 'es'} subida${uploadedUrls.length === 1 ? '' : 's'} correctamente`)
 
       // Limpiar input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Error al subir la imagen')
+      toast.error(error.response?.data?.error || 'Error al subir las imágenes')
       console.error(error)
     } finally {
       setUploading(false)
     }
   }
 
-  const handleRemoveImage = () => {
-    setProduct({ ...product, image: '' })
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+  const handleRemoveImage = (imageUrl: string) => {
+    setProduct((current) => {
+      const gallery = (current.images || []).filter((url) => url !== imageUrl)
+      return { ...current, images: gallery, image: current.image === imageUrl ? gallery[0] || '' : current.image }
+    })
+  }
+
+  const handleSetPrimaryImage = (imageUrl: string) => {
+    setProduct((current) => ({
+      ...current,
+      image: imageUrl,
+      images: [imageUrl, ...(current.images || []).filter((url) => url !== imageUrl)]
+    }))
   }
 
   const getSelectedCategoryId = () => {
@@ -228,7 +239,7 @@ export default function AdminProductForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!product.name || !product.price || !product.category || !product.sku) {
+    if (!product.name || !product.price || !product.category || !product.sku || !product.image) {
       toast.error('Por favor completa los campos requeridos')
       return
     }
@@ -243,6 +254,8 @@ export default function AdminProductForm() {
         categorySlug: selectedParentCategory,
         subcategorySlug: selectedSubcategory,
         categoryId: getSelectedCategoryId(),
+        image: product.image,
+        images: product.images || [product.image],
       }
 
       if (isEdit) {
@@ -439,11 +452,12 @@ export default function AdminProductForm() {
               onChange={(attributes) => setProduct((current) => ({ ...current, attributes }))}
             />
 
-            {/* Imagen - Con upload a Cloudinary */}
+            {/* Galería de imágenes en Cloudinary */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Imagen del Producto
+                Imágenes del producto *
               </label>
+              <p className="mb-3 text-sm text-gray-500">Selecciona varias imágenes o agrégalas en distintas tandas. La imagen principal será la portada del producto.</p>
               <div className="space-y-4">
                 {/* File Input */}
                 <div className="flex items-center justify-center w-full">
@@ -451,13 +465,15 @@ export default function AdminProductForm() {
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <PhotoIcon className="w-8 h-8 text-blue-500 mb-2" />
                       <p className="text-sm text-gray-600">
-                        {uploading ? 'Subiendo imagen...' : 'Haz clic para seleccionar una imagen'}
+                        {uploading ? 'Subiendo imágenes a Cloudinary...' : 'Haz clic para seleccionar una o varias imágenes'}
                       </p>
+                      <p className="mt-1 text-xs text-gray-500">Máximo 10 MB por imagen</p>
                     </div>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleImageSelect}
                       disabled={uploading}
                       className="hidden"
@@ -465,30 +481,26 @@ export default function AdminProductForm() {
                   </label>
                 </div>
 
-                {/* Image Preview */}
-                {product.image && (
-                  <div className="flex flex-col items-center gap-4">
-                    <p className="text-sm text-green-600 font-semibold">✓ Imagen subida exitosamente</p>
-                    <div className="relative">
-                      <img
-                        src={product.image}
-                        alt="Preview"
-                        className="h-40 w-40 object-cover rounded-lg shadow"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/150?text=Error'
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 break-all max-w-xs">{product.image}</p>
+                {(product.images || []).length > 0 && <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-green-700">✓ {(product.images || []).length} imagen{(product.images || []).length === 1 ? '' : 'es'} en la galería</p>
+                    <p className="text-xs text-gray-500">Selecciona “Principal” para cambiar la portada</p>
                   </div>
-                )}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {(product.images || []).map((imageUrl, index) => {
+                      const isPrimary = product.image === imageUrl
+                      return <div key={imageUrl} className={`relative overflow-hidden rounded-xl border-2 bg-white ${isPrimary ? 'border-blue-600 shadow-md' : 'border-gray-200'}`}>
+                        <img src={imageUrl} alt={`Imagen ${index + 1} del producto`} className="aspect-square w-full object-cover" />
+                        <div className="flex items-center justify-between gap-1 border-t border-gray-100 p-2">
+                          <button type="button" onClick={() => handleSetPrimaryImage(imageUrl)} disabled={isPrimary} className={`inline-flex items-center gap-1 text-xs font-semibold ${isPrimary ? 'text-blue-700' : 'text-gray-600 hover:text-blue-700'}`}>
+                            <StarIcon className={`h-4 w-4 ${isPrimary ? 'fill-blue-600' : ''}`} /> {isPrimary ? 'Principal' : 'Hacer principal'}
+                          </button>
+                          <button type="button" onClick={() => handleRemoveImage(imageUrl)} className="rounded-md p-1 text-red-600 hover:bg-red-50" aria-label={`Eliminar imagen ${index + 1}`}><TrashIcon className="h-4 w-4" /></button>
+                        </div>
+                      </div>
+                    })}
+                  </div>
+                </div>}
               </div>
             </div>
 

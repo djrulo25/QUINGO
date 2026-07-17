@@ -30,6 +30,14 @@ const upload = multer({
   }
 })
 
+const uploadToCloudinary = (file: Express.Multer.File) => new Promise<any>((resolve, reject) => {
+  const uploadStream = cloudinary.uploader.upload_stream(
+    { folder: 'quingo-products', resource_type: 'image' },
+    (error, result) => error ? reject(error) : resolve(result)
+  )
+  Readable.from(file.buffer).pipe(uploadStream)
+})
+
 // POST /api/uploads - Upload image to Cloudinary
 router.post('/uploads', authMiddleware, upload.single('image'), async (req: Request, res: Response) => {
   try {
@@ -37,23 +45,7 @@ router.post('/uploads', authMiddleware, upload.single('image'), async (req: Requ
       return res.status(400).json({ error: 'No file uploaded' })
     }
 
-    // Upload to Cloudinary
-    const result = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'quingo-products',
-          resource_type: 'auto'
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      )
-
-      // Convert buffer to stream and pipe to upload
-      const stream = Readable.from(req.file!.buffer)
-      stream.pipe(uploadStream)
-    })
+    const result = await uploadToCloudinary(req.file)
 
     res.json(result)
   } catch (error: any) {
@@ -61,6 +53,29 @@ router.post('/uploads', authMiddleware, upload.single('image'), async (req: Requ
     res.status(500).json({ 
       error: error.message || 'Error al subir la imagen' 
     })
+  }
+})
+
+// POST /api/uploads/multiple - Upload a product gallery to Cloudinary
+router.post('/uploads/multiple', authMiddleware, upload.array('images'), async (req: Request, res: Response) => {
+  try {
+    const files = req.files as Express.Multer.File[] | undefined
+    if (!files?.length) {
+      return res.status(400).json({ error: 'No se recibieron imágenes' })
+    }
+
+    const results = await Promise.all(files.map(uploadToCloudinary))
+    res.status(201).json({
+      images: results.map((result) => ({
+        url: result.secure_url,
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height
+      }))
+    })
+  } catch (error: any) {
+    console.error('Multiple upload error:', error)
+    res.status(500).json({ error: error.message || 'Error al subir las imágenes' })
   }
 })
 

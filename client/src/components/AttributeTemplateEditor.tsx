@@ -49,7 +49,7 @@ export default function AttributeTemplateEditor({ value, onChange }: Props) {
 
       {value.length === 0 && <p className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">Aún no hay atributos configurados.</p>}
       {value.map((attribute, index) => (
-        <div key={`${attribute.key}-${index}`} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+        <div key={index} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm text-gray-700">Nombre
               <input value={attribute.name} required onChange={(e) => update(index, { name: e.target.value, key: makeKey(e.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" placeholder="Ej. Diámetro" />
