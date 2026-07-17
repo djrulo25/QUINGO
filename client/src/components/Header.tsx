@@ -14,6 +14,7 @@ import { useCustomerStore } from '@/store/customerStore'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { categoryAPI } from '@/api'
 import ProductSearchBox from '@/components/ProductSearchBox'
+import BrandLogo from '@/components/BrandLogo'
 import { CategoryTreeNode } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
@@ -192,8 +193,8 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold">
-            QUINGO
+          <Link to="/" aria-label="Ir al inicio" className="text-white">
+            <BrandLogo />
           </Link>
 
           {/* Navigation */}
@@ -549,7 +550,6 @@ export default function Header() {
                 </button>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase text-gray-500">Menu</p>
                   <p className="text-base font-bold text-white">Servicios</p>
                 </div>
 

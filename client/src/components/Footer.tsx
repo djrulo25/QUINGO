@@ -1,12 +1,5 @@
 import { Link } from 'react-router-dom'
-
-const productLinks = [
-  { label: 'Soldadura', to: '/products?category=soldadura' },
-  { label: 'Proteccion industrial', to: '/products?category=proteccion-industrial' },
-  { label: 'Gases', to: '/products?category=gases' },
-  { label: 'Electrodos', to: '/products?category=soldadura&subcategory=electrodos' },
-  { label: 'Reguladores', to: '/products?category=gases&subcategory=reguladores' },
-]
+import BrandLogo from '@/components/BrandLogo'
 
 const supportLinks = [
   { label: 'Cotizacion rapida', to: '/#quote' },
@@ -36,9 +29,11 @@ export default function Footer() {
       </div>
 
       <div className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div>
-            <h3 className="text-xl font-bold">QUINGO</h3>
+            <Link to="/" aria-label="Ir al inicio" className="inline-block text-white">
+              <BrandLogo variant="vertical" />
+            </Link>
             <p className="mt-3 text-sm text-gray-400">
               Suministros industriales para soldadura, proteccion, gases y operacion diaria.
             </p>
@@ -48,19 +43,6 @@ export default function Footer() {
                 +52 1 55 7688 1138
               </a>
             </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold">Productos</h4>
-            <ul className="mt-4 space-y-2 text-sm text-gray-400">
-              {productLinks.map((link) => (
-                <li key={link.to}>
-                  <Link to={link.to} className="hover:text-white">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </div>
 
           <div>
