@@ -1,53 +1,33 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { categoryAPI } from '@/api'
+import ProductSearchBox from '@/components/ProductSearchBox'
 import { CategoryTreeNode } from '@/types'
+import { flattenCategoryCatalog, getCategoryImage, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 
-const DEFAULT_CATEGORY_IMAGE =
-  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=640&q=80'
+const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  soldadura: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=640&q=80',
-  'proteccion-industrial':
-    'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=640&q=80',
-  gases: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=640&q=80',
-}
-
-const getCategoryImage = (category: CategoryTreeNode) => {
-  if (category.image?.startsWith('http')) {
-    return category.image
-  }
-
-  if (CATEGORY_IMAGES[category.slug]) {
-    return CATEGORY_IMAGES[category.slug]
-  }
-
-  if (category.slug.includes('soldadura') || category.name.toLowerCase().includes('soldadura')) {
-    return CATEGORY_IMAGES.soldadura
-  }
-
-  if (category.slug.includes('proteccion') || category.name.toLowerCase().includes('proteccion')) {
-    return CATEGORY_IMAGES['proteccion-industrial']
-  }
-
-  if (category.slug.includes('gas') || category.name.toLowerCase().includes('gas')) {
-    return CATEGORY_IMAGES.gases
-  }
-
-  return DEFAULT_CATEGORY_IMAGE
-}
-
-const getCategoryLink = (category: CategoryTreeNode) => {
-  const params = new URLSearchParams({ category: category.slug })
-  return `/products?${params.toString()}`
-}
+const QUICK_ACTIONS = [
+  { label: 'Cotizacion rapida', href: '#quote' },
+  { label: 'Solicitar factura', href: '#contact' },
+  { label: 'Entrega industrial', href: '#shipping' },
+  { label: 'Asesoria tecnica', href: '#contact' },
+]
 
 export default function HomePage() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
+  const [quoteForm, setQuoteForm] = useState({
+    sku: '',
+    quantity: '1',
+    name: '',
+    phone: '',
+    notes: '',
+  })
+  const catalogItems = flattenCategoryCatalog(categories)
+  const visibleCatalogItems = catalogItems.slice(0, 12)
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -62,39 +42,47 @@ export default function HomePage() {
     loadCategories()
   }, [])
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleQuoteChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target
+    setQuoteForm((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleQuoteSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const message = [
+      'Hola QUINGO, quiero una cotizacion.',
+      `SKU/producto: ${quoteForm.sku || 'Por definir'}`,
+      `Cantidad: ${quoteForm.quantity || '1'}`,
+      `Nombre: ${quoteForm.name || 'No indicado'}`,
+      `Telefono: ${quoteForm.phone || 'No indicado'}`,
+      quoteForm.notes ? `Notas: ${quoteForm.notes}` : '',
+    ].filter(Boolean).join('\n')
 
-    const query = searchTerm.trim()
-    if (!query) {
-      navigate('/products')
-      return
-    }
-
-    const params = new URLSearchParams({ search: query })
-    navigate(`/products?${params.toString()}`)
+    window.location.href = `https://wa.me/5215576881138?text=${encodeURIComponent(message)}`
   }
 
   return (
     <>
       <section className="bg-gray-100 py-3 sm:py-8">
         <div className="container mx-auto px-4">
-          <form onSubmit={handleSearchSubmit} className="flex overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar"
-              className="min-w-0 flex-1 px-3 py-2.5 text-sm text-gray-900 outline-none sm:px-4 sm:py-3 sm:text-base"
-            />
-            <button
-              type="submit"
-              className="flex w-12 shrink-0 items-center justify-center bg-blue-900 text-white transition hover:bg-blue-800 sm:w-14"
-              aria-label="Buscar productos"
-            >
-              <MagnifyingGlassIcon className="h-6 w-6" />
-            </button>
-          </form>
+          <ProductSearchBox
+            categories={categories}
+            inputClassName="sm:px-4 sm:py-3 sm:text-base"
+            buttonClassName="sm:w-14"
+          />
+
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 text-xs sm:text-sm">
+            {POPULAR_SEARCHES.map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => navigate(`/products?search=${encodeURIComponent(term)}`)}
+                className="shrink-0 rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:border-blue-700 hover:text-blue-800"
+              >
+                {term}
+              </button>
+            ))}
+          </div>
 
           <div className="mt-3 overflow-hidden rounded-lg bg-white shadow-sm sm:mt-5">
             <div className="relative min-h-[130px] bg-gray-900 sm:min-h-[220px]">
@@ -122,6 +110,20 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-y border-gray-200 bg-white">
+        <div className="container mx-auto grid grid-cols-2 gap-px bg-gray-200 px-0 text-sm sm:grid-cols-4">
+          {QUICK_ACTIONS.map((action) => (
+            <a
+              key={action.label}
+              href={action.href}
+              className="bg-white px-4 py-3 text-center font-semibold text-blue-900 hover:bg-blue-50"
+            >
+              {action.label}
+            </a>
+          ))}
+        </div>
+      </section>
+
       <section className="py-5 sm:py-12">
         <div className="container mx-auto px-4">
           <div className="mb-3 flex items-end justify-between gap-4 sm:mb-5">
@@ -135,24 +137,24 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4">
-            {categories.map((category) => (
+            {visibleCatalogItems.map((item) => (
               <Link
-                key={category.id}
-                to={getCategoryLink(category)}
+                key={item.category.id}
+                to={getCategoryProductLink(item)}
                 className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="aspect-[4/3] overflow-hidden bg-gray-200">
                   <img
-                    src={getCategoryImage(category)}
-                    alt={category.name}
+                    src={getCategoryImage(item.category)}
+                    alt={item.category.name}
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     loading="lazy"
                   />
                 </div>
                 <div className="p-2 sm:p-3">
-                  <p className="text-center text-xs font-semibold leading-tight text-gray-900 sm:text-left sm:text-sm">{category.name}</p>
-                  {category.children?.length > 0 && (
-                    <p className="mt-1 hidden text-xs text-gray-500 sm:block">{category.children.length} secciones</p>
+                  <p className="text-center text-xs font-semibold leading-tight text-gray-900 sm:text-left sm:text-sm">{item.category.name}</p>
+                  {item.category.children?.length > 0 && (
+                    <p className="mt-1 hidden text-xs text-gray-500 sm:block">{item.category.children.length} secciones</p>
                   )}
                 </div>
               </Link>
@@ -187,6 +189,87 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="quote" className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid gap-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.2fr] lg:p-8">
+            <div>
+              <p className="text-sm font-bold uppercase text-blue-800">Cotizacion rapida</p>
+              <h2 className="mt-2 text-2xl font-bold text-gray-900">Cotiza por SKU, producto o descripcion</h2>
+              <p className="mt-3 text-sm text-gray-600">
+                Envia los datos por WhatsApp y te respondemos con disponibilidad, precio y tiempos de entrega.
+              </p>
+              <div className="mt-5 rounded-lg bg-blue-50 p-4 text-sm text-blue-950">
+                <p className="font-semibold">Tambien puedes llamar:</p>
+                <a href="tel:+5215576881138" className="mt-1 block text-lg font-bold">
+                  +52 1 55 7688 1138
+                </a>
+              </div>
+            </div>
+
+            <form onSubmit={handleQuoteSubmit} className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-sm font-semibold text-gray-700">SKU o producto</label>
+                <input
+                  name="sku"
+                  value={quoteForm.sku}
+                  onChange={handleQuoteChange}
+                  placeholder="Ej. electrodo 6013, regulador, SKU..."
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Cantidad</label>
+                <input
+                  name="quantity"
+                  type="number"
+                  min="1"
+                  value={quoteForm.quantity}
+                  onChange={handleQuoteChange}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Telefono</label>
+                <input
+                  name="phone"
+                  value={quoteForm.phone}
+                  onChange={handleQuoteChange}
+                  placeholder="Tu telefono"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Nombre</label>
+                <input
+                  name="name"
+                  value={quoteForm.name}
+                  onChange={handleQuoteChange}
+                  placeholder="Tu nombre"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-sm font-semibold text-gray-700">Notas</label>
+                <textarea
+                  name="notes"
+                  value={quoteForm.notes}
+                  onChange={handleQuoteChange}
+                  rows={3}
+                  placeholder="Medidas, marca, urgencia o detalles de entrega"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-900 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800 sm:col-span-2"
+              >
+                Enviar cotizacion por WhatsApp
+              </button>
+            </form>
           </div>
         </div>
       </section>

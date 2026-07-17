@@ -1,8 +1,9 @@
-import { Product } from '@/types'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { StarIcon, ShoppingCartIcon } from '@heroicons/react/24/solid'
-import { useCartStore } from '@/store/cartStore'
+import { ShoppingCartIcon, StarIcon } from '@heroicons/react/24/solid'
 import toast from 'react-hot-toast'
+import { Product } from '@/types'
+import { useCartStore } from '@/store/cartStore'
 
 interface ProductCardProps {
   product: Product
@@ -10,9 +11,20 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCartStore()
+  const [quantity, setQuantity] = useState(1)
+
+  const handleQuantityChange = (value: string) => {
+    const parsedValue = Number(value)
+    if (Number.isNaN(parsedValue)) {
+      return
+    }
+
+    const maxQuantity = product.stock > 0 ? product.stock : 1
+    setQuantity(Math.min(Math.max(parsedValue, 1), maxQuantity))
+  }
 
   const handleAddToCart = () => {
-    addToCart(product, 1)
+    addToCart(product, quantity)
     toast.success('Producto agregado al carrito')
   }
 
@@ -21,89 +33,88 @@ export default function ProductCard({ product }: ProductCardProps) {
     : 0
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-      {/* Image */}
-      <div className="relative overflow-hidden bg-gray-200 w-full h-48 max-h-48">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
+      <div className="relative h-40 overflow-hidden bg-gray-100">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover"
         />
         {discountPercent > 0 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-sm font-semibold">
+          <div className="absolute right-2 top-2 rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white">
             -{discountPercent}%
           </div>
         )}
-        {product.stock === 0 && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="text-white font-semibold">Sin stock</span>
-          </div>
-        )}
+        <span
+          className={`absolute left-2 top-2 rounded px-2 py-1 text-xs font-semibold ${
+            product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'
+          }`}
+        >
+          {product.stock > 0 ? 'Disponible' : 'Sin stock'}
+        </span>
       </div>
 
-      {/* Content */}
       <div className="p-4">
-        {/* Category */}
-        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-          {product.subcategory}
-        </p>
-
-        {/* Title */}
-        <Link to={`/products/${product.id}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition">
-            {product.name}
-          </h3>
-        </Link>
-
-        {/* Rating */}
-        <div className="flex items-center mb-3">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
+        <div className="mb-2 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase text-gray-500">
+              {product.subcategory || product.category}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">SKU: {product.sku}</p>
+          </div>
+          <div className="flex shrink-0 items-center">
+            {[...Array(5)].map((_, index) => (
               <StarIcon
-                key={i}
-                className={`w-4 h-4 ${
-                  i < Math.round(product.rating)
-                    ? 'text-yellow-400'
-                    : 'text-gray-300'
+                key={index}
+                className={`h-3.5 w-3.5 ${
+                  index < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'
                 }`}
               />
             ))}
           </div>
-          <span className="text-xs text-gray-600 ml-2">({product.reviews})</span>
         </div>
 
-        {/* Price */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-gray-900">
-              ${product.price.toLocaleString()}
+        <Link to={`/products/${product.id}`}>
+          <h3 className="min-h-[44px] text-sm font-bold leading-snug text-gray-900 hover:text-blue-700">
+            {product.name}
+          </h3>
+        </Link>
+
+        <div className="mt-3 flex items-baseline gap-2">
+          <span className="text-xl font-bold text-gray-900">
+            ${product.price.toLocaleString()}
+          </span>
+          {product.originalPrice && (
+            <span className="text-sm text-gray-500 line-through">
+              ${product.originalPrice.toLocaleString()}
             </span>
-            {product.originalPrice && (
-              <span className="text-sm text-gray-500 line-through">
-                ${product.originalPrice.toLocaleString()}
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Stock Info */}
-        <p className="text-xs text-gray-600 mb-4">
-          {product.stock > 0 ? (
-            <>Stock: {product.stock} unidades</>
-          ) : (
-            <span className="text-red-600">Fuera de stock</span>
-          )}
+        <p className="mt-1 text-xs text-gray-600">
+          {product.stock > 0 ? `${product.stock} unidades disponibles` : 'Fuera de stock'}
         </p>
 
-        {/* Button */}
-        <button
-          onClick={handleAddToCart}
-          disabled={product.stock === 0}
-          className="w-full bg-gray-900 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          <ShoppingCartIcon className="w-5 h-5" />
-          Agregar
-        </button>
+        <div className="mt-4 flex gap-2">
+          <input
+            type="number"
+            min="1"
+            max={Math.max(product.stock, 1)}
+            value={quantity}
+            onChange={(event) => handleQuantityChange(event.target.value)}
+            disabled={product.stock === 0}
+            className="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center text-sm font-semibold disabled:bg-gray-100"
+            aria-label={`Cantidad de ${product.name}`}
+          />
+          <button
+            onClick={handleAddToCart}
+            disabled={product.stock === 0}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+          >
+            <ShoppingCartIcon className="h-5 w-5" />
+            Agregar
+          </button>
+        </div>
       </div>
     </div>
   )

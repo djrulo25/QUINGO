@@ -13,9 +13,10 @@ import { useCartStore } from '@/store/cartStore'
 import { useCustomerStore } from '@/store/customerStore'
 import { useEffect, useMemo, useState } from 'react'
 import { categoryAPI } from '@/api'
+import ProductSearchBox from '@/components/ProductSearchBox'
 import { CategoryTreeNode } from '@/types'
+import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
-import CategoryTreePanel from '@/components/CategoryTreePanel'
 
 export default function Header() {
   const { cart } = useCartStore()
@@ -64,6 +65,7 @@ export default function Header() {
   const mobileCurrentLevel = showProductsExplorer
     ? mobileCurrentCategory?.children || categories
     : []
+  const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
 
   const resetMobileProductsExplorer = () => {
     setShowProductsExplorer(false)
@@ -123,6 +125,27 @@ export default function Header() {
 
   return (
     <header className="bg-gray-900 text-white sticky top-0 z-50 shadow-lg">
+      <div className="hidden border-b border-gray-800 bg-gray-950 text-xs text-gray-300 md:block">
+        <div className="container mx-auto flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-4">
+            <a href="tel:+5215576881138" className="font-semibold text-white hover:text-blue-200">
+              +52 1 55 7688 1138
+            </a>
+            <a href="#contact" className="hover:text-white">
+              Contacto
+            </a>
+            <a href="#shipping" className="hover:text-white">
+              Envio y entrega
+            </a>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="#quote" className="font-semibold text-blue-200 hover:text-white">
+              Cotizacion rapida
+            </a>
+            <span>Español | MXN</span>
+          </div>
+        </div>
+      </div>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -135,12 +158,67 @@ export default function Header() {
             <Link to="/" className="hover:text-gray-300 transition">
               Inicio
             </Link>
-            <div className="group relative">
+            <div className="group relative flex h-16 items-center">
               <Link to="/products" className="hover:text-gray-300 transition">
                 Productos
               </Link>
-              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-white text-gray-900 rounded-lg shadow-xl min-w-[520px] p-3 z-50">
-                <CategoryTreePanel categories={categories} />
+              <div className="absolute left-0 top-full z-50 hidden min-w-[760px] pt-2 group-hover:block group-focus-within:block">
+                <div className="grid grid-cols-[1.5fr_1fr_1fr] gap-5 rounded-lg bg-white p-4 text-gray-900 shadow-xl">
+                  <div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-bold uppercase text-gray-500">Categorias</p>
+                      <Link to="/products" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+                        Ver todo
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      {catalogItems.slice(0, 18).map((item) => (
+                        <Link
+                          key={item.category.id}
+                          to={getCategoryProductLink(item)}
+                          className="text-sm font-medium text-gray-800 hover:text-blue-700"
+                        >
+                          {item.category.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-l border-gray-200 pl-5">
+                    <p className="mb-3 text-sm font-bold uppercase text-gray-500">Compra rapida</p>
+                    <div className="space-y-2">
+                      {['Electrodos', 'Guantes', 'Reguladores', 'Mangueras', 'Caretas'].map((term) => (
+                        <button
+                          key={term}
+                          type="button"
+                          onClick={() => navigate(`/products?search=${encodeURIComponent(term)}`)}
+                          className="block w-full rounded-md px-2 py-1.5 text-left text-sm font-semibold text-gray-800 hover:bg-gray-100"
+                        >
+                          {term}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-l border-gray-200 pl-5">
+                    <p className="mb-3 text-sm font-bold uppercase text-gray-500">Servicios</p>
+                    <div className="space-y-2 text-sm">
+                      <a href="#quote" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                        Solicitar cotizacion
+                      </a>
+                      <a href="#contact" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                        Asesoria tecnica
+                      </a>
+                      <a href="#shipping" className="block rounded-md px-2 py-1.5 font-semibold text-blue-700 hover:bg-blue-50">
+                        Envio industrial
+                      </a>
+                    </div>
+                    <div className="mt-4 rounded-lg bg-gray-100 p-3">
+                      <p className="text-xs font-semibold uppercase text-gray-500">Atencion</p>
+                      <p className="mt-1 text-lg font-bold text-gray-900">+52 1 55 7688 1138</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <a href="#contact" className="hover:text-gray-300 transition">
@@ -148,12 +226,19 @@ export default function Header() {
             </a>
           </nav>
 
+          <ProductSearchBox
+            categories={categories}
+            className="mx-5 hidden max-w-md flex-1 md:block"
+            inputClassName="py-2"
+            buttonClassName="w-11 bg-blue-800 hover:bg-blue-700"
+          />
+
           {/* Right Section */}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
             <button
               type="button"
               onClick={() => navigate('/products')}
-              className="p-2 hover:bg-gray-800 rounded-lg transition"
+              className="p-2 hover:bg-gray-800 rounded-lg transition md:hidden"
               title="Buscar productos"
             >
               <MagnifyingGlassIcon className="w-6 h-6" />

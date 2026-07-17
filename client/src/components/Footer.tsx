@@ -1,105 +1,112 @@
 import { Link } from 'react-router-dom'
 
+const productLinks = [
+  { label: 'Soldadura', to: '/products?category=soldadura' },
+  { label: 'Proteccion industrial', to: '/products?category=proteccion-industrial' },
+  { label: 'Gases', to: '/products?category=gases' },
+  { label: 'Electrodos', to: '/products?category=soldadura&subcategory=electrodos' },
+  { label: 'Reguladores', to: '/products?category=gases&subcategory=reguladores' },
+]
+
+const supportLinks = [
+  { label: 'Cotizacion rapida', href: '#quote' },
+  { label: 'Asesoria tecnica', href: '#contact' },
+  { label: 'Envios', href: '#shipping' },
+  { label: 'Devoluciones', href: '#returns' },
+  { label: 'Facturacion', href: '#billing' },
+]
+
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-gray-900 text-white mt-12">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* Company Info */}
+    <footer className="mt-12 bg-gray-950 text-white">
+      <div className="border-b border-gray-800 bg-blue-950">
+        <div className="container mx-auto grid grid-cols-1 gap-3 px-4 py-4 text-sm sm:grid-cols-3">
+          <a href="tel:+5215576881138" className="font-semibold hover:text-blue-200">
+            Telefono: +52 1 55 7688 1138
+          </a>
+          <a href="#quote" className="font-semibold hover:text-blue-200">
+            Cotiza por WhatsApp o formulario
+          </a>
+          <span className="font-semibold text-blue-100">
+            Entrega y soporte para industria
+          </span>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <h3 className="text-lg font-bold mb-4">QUINGO</h3>
-            <p className="text-gray-400 text-sm">
-              Distribuidor especializado en accesorios para soldar, protección industrial y componentes para gases.
+            <h3 className="text-xl font-bold">QUINGO</h3>
+            <p className="mt-3 text-sm text-gray-400">
+              Suministros industriales para soldadura, proteccion, gases y operacion diaria.
             </p>
+            <div id="contact" className="mt-4 space-y-1 text-sm text-gray-300">
+              <p>Atencion comercial</p>
+              <a href="tel:+5215576881138" className="block font-semibold text-white hover:text-blue-200">
+                +52 1 55 7688 1138
+              </a>
+            </div>
           </div>
 
-          {/* Products */}
           <div>
-            <h4 className="font-semibold mb-4">Productos</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li>
-                <Link to="/products?category=welding" className="hover:text-white transition">
-                  Accesorios de Soldar
-                </Link>
-              </li>
-              <li>
-                <Link to="/products?category=safety" className="hover:text-white transition">
-                  Protección Industrial
-                </Link>
-              </li>
-              <li>
-                <Link to="/products?category=gases" className="hover:text-white transition">
-                  Componentes para Gases
-                </Link>
-              </li>
+            <h4 className="font-semibold">Productos</h4>
+            <ul className="mt-4 space-y-2 text-sm text-gray-400">
+              {productLinks.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="hover:text-white">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Support */}
           <div>
-            <h4 className="font-semibold mb-4">Soporte</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li>
-                <a href="#contact" className="hover:text-white transition">
-                  Contacto
-                </a>
-              </li>
-              <li>
-                <a href="#faq" className="hover:text-white transition">
-                  Preguntas Frecuentes
-                </a>
-              </li>
-              <li>
-                <a href="#shipping" className="hover:text-white transition">
-                  Envíos
-                </a>
-              </li>
-              <li>
-                <a href="#returns" className="hover:text-white transition">
-                  Devoluciones
-                </a>
-              </li>
+            <h4 className="font-semibold">Compra y soporte</h4>
+            <ul className="mt-4 space-y-2 text-sm text-gray-400">
+              {supportLinks.map((link) => (
+                <li key={link.href + link.label}>
+                  <a href={link.href} className="hover:text-white">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Legal */}
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
+            <h4 className="font-semibold">Cuenta y legal</h4>
+            <ul className="mt-4 space-y-2 text-sm text-gray-400">
               <li>
-                <a href="#privacy" className="hover:text-white transition">
-                  Política de Privacidad
+                <Link to="/customer/login" className="hover:text-white">
+                  Iniciar sesion
+                </Link>
+              </li>
+              <li>
+                <Link to="/cart" className="hover:text-white">
+                  Carrito
+                </Link>
+              </li>
+              <li>
+                <a href="#privacy" className="hover:text-white">
+                  Privacidad
                 </a>
               </li>
               <li>
-                <a href="#terms" className="hover:text-white transition">
-                  Términos de Servicio
-                </a>
-              </li>
-              <li>
-                <a href="#cookies" className="hover:text-white transition">
-                  Cookies
+                <a href="#terms" className="hover:text-white">
+                  Terminos
                 </a>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-          <p>&copy; {currentYear} Quingo. Todos los derechos reservados.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#facebook" className="hover:text-white transition">
-              Facebook
-            </a>
-            <a href="#instagram" className="hover:text-white transition">
-              Instagram
-            </a>
-            <a href="#whatsapp" className="hover:text-white transition">
-              WhatsApp
-            </a>
+        <div className="mt-8 border-t border-gray-800 pt-6 text-sm text-gray-400">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p>&copy; {currentYear} Quingo. Todos los derechos reservados.</p>
+            <p>Catalogo industrial en linea | MXN</p>
           </div>
         </div>
       </div>

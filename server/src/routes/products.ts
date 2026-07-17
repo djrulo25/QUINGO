@@ -62,7 +62,12 @@ router.get('/', async (req: Request, res: Response) => {
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
+        { categorySlug: { $regex: search, $options: 'i' } },
+        { subcategory: { $regex: search, $options: 'i' } },
+        { subcategorySlug: { $regex: search, $options: 'i' } }
       ]
     }
     if (priceMin || priceMax) {
