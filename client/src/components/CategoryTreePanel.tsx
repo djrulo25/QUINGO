@@ -5,9 +5,10 @@ import { CategoryTreeNode } from '@/types'
 interface CategoryTreePanelProps {
   categories: CategoryTreeNode[]
   className?: string
+  onNavigate?: () => void
 }
 
-export default function CategoryTreePanel({ categories, className = '' }: CategoryTreePanelProps) {
+export default function CategoryTreePanel({ categories, className = '', onNavigate }: CategoryTreePanelProps) {
   const navigate = useNavigate()
   const [path, setPath] = useState<string[]>([])
 
@@ -35,7 +36,7 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
 
   const currentCategory = breadcrumb[breadcrumb.length - 1] || null
   const currentLevel = currentCategory ? currentCategory.children : categories
-  const currentLevelLabel = currentCategory ? currentCategory.name : 'Categorías'
+  const currentLevelLabel = currentCategory ? currentCategory.name : 'Categorias'
   const rootCategory = path.length > 0 ? categories.find((category) => category.id === path[0]) || null : null
 
   const goToLevel = (levelIndex: number) => {
@@ -50,6 +51,7 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
 
     const selectedCategory = rootCategory?.slug || category.slug
     navigate(`/products?category=${selectedCategory}&subcategory=${category.slug}`)
+    onNavigate?.()
   }
 
   const handleBack = () => {
@@ -61,15 +63,15 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
     : '/products'
 
   return (
-    <div className={`grid grid-cols-[220px_1fr] gap-3 ${className}`}>
-      <div className="border-r border-gray-200 pr-2">
+    <div className={`grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr] ${className}`}>
+      <div className="border-b border-gray-200 pb-2 md:border-b-0 md:border-r md:pb-0 md:pr-2">
         {path.length > 0 && (
           <button
             type="button"
             onClick={handleBack}
-            className="mb-3 block w-full text-left rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            className="mb-3 block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-blue-700 hover:bg-blue-50"
           >
-            ← Regresar
+            Regresar
           </button>
         )}
 
@@ -79,18 +81,18 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
               key={category.id}
               type="button"
               onClick={() => handleSelectCategory(category)}
-              className="mb-2 block w-full text-left rounded-lg px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100 transition"
+              className="mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-100"
             >
               {category.name}
             </button>
           ))
         ) : (
-          <p className="text-sm text-gray-500">No hay subcategorías disponibles.</p>
+          <p className="text-sm text-gray-500">No hay subcategorias disponibles.</p>
         )}
       </div>
 
-      <div className="min-w-[260px]">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <div className="md:min-w-[260px]">
+        <div className="mb-3 text-xs font-semibold uppercase text-gray-500">
           Nivel actual
         </div>
 
@@ -119,10 +121,10 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
 
         <div className="rounded-lg bg-gray-50 p-3">
           <p className="text-sm font-semibold text-gray-900">{currentLevelLabel}</p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-gray-500">
             {currentCategory
               ? `Explorando ${currentCategory.name}`
-              : 'Selecciona una categoría principal para continuar'}
+              : 'Selecciona una categoria principal para continuar'}
           </p>
         </div>
 
@@ -130,6 +132,7 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
           {rootCategory ? (
             <Link
               to={viewAllLink}
+              onClick={onNavigate}
               className="block text-sm font-semibold text-blue-700 hover:text-blue-900"
             >
               Ver todo {rootCategory.name}
@@ -137,6 +140,7 @@ export default function CategoryTreePanel({ categories, className = '' }: Catego
           ) : (
             <Link
               to="/products"
+              onClick={onNavigate}
               className="block text-sm font-semibold text-blue-700 hover:text-blue-900"
             >
               Ver todo Productos

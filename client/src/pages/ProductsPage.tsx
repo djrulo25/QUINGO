@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
-  ChatBubbleLeftRightIcon,
   FunnelIcon,
   Squares2X2Icon,
   TableCellsIcon,
@@ -25,7 +24,6 @@ const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', '
 
 type SortOption = (typeof SORT_OPTIONS)[number]['value']
 type ViewMode = 'grid' | 'list'
-type LocalFilter = 'all' | 'offers'
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -36,14 +34,10 @@ export default function ProductsPage() {
   const [filters, setFilters] = useState<FilterOptions>({
     category: searchParams.get('category') || undefined,
     subcategory: searchParams.get('subcategory') || undefined,
-    inStock: searchParams.get('inStock') === 'true' || undefined,
   })
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [sortBy, setSortBy] = useState<SortOption>('price-asc')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const [localFilter, setLocalFilter] = useState<LocalFilter>('all')
-  const [quoteSku, setQuoteSku] = useState('')
-  const [quoteQuantity, setQuoteQuantity] = useState('1')
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -62,13 +56,11 @@ export default function ProductsPage() {
     const categoryFromQuery = searchParams.get('category') || undefined
     const subcategoryFromQuery = searchParams.get('subcategory') || undefined
     const searchFromQuery = searchParams.get('search') || ''
-    const inStockFromQuery = searchParams.get('inStock') === 'true' || undefined
 
     setFilters((currentFilters) => {
       if (
         currentFilters.category === categoryFromQuery &&
-        currentFilters.subcategory === subcategoryFromQuery &&
-        currentFilters.inStock === inStockFromQuery
+        currentFilters.subcategory === subcategoryFromQuery
       ) {
         return currentFilters
       }
@@ -77,7 +69,6 @@ export default function ProductsPage() {
         ...currentFilters,
         category: categoryFromQuery,
         subcategory: subcategoryFromQuery,
-        inStock: inStockFromQuery,
       }
     })
 
@@ -111,16 +102,17 @@ export default function ProductsPage() {
   }, [filters, searchQuery])
 
   const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
-  const displayedProducts = useMemo(() => {
-    if (localFilter === 'offers') {
-      return products.filter((product) => product.originalPrice && product.originalPrice > product.price)
+  const activeCategorySlug = filters.subcategory || filters.category
+  const activeCategoryName = useMemo(() => {
+    if (!activeCategorySlug) {
+      return ''
     }
 
-    return products
-  }, [localFilter, products])
+    return catalogItems.find((item) => item.category.slug === activeCategorySlug)?.category.name || ''
+  }, [activeCategorySlug, catalogItems])
 
   const sortedProducts = useMemo(() => {
-    const nextProducts = [...displayedProducts]
+    const nextProducts = [...products]
 
     if (sortBy === 'price-asc') {
       nextProducts.sort((a, b) => a.price - b.price)
@@ -131,10 +123,8 @@ export default function ProductsPage() {
     }
 
     return nextProducts
-  }, [displayedProducts, sortBy])
+  }, [products, sortBy])
 
-  const offerCount = products.filter((product) => product.originalPrice && product.originalPrice > product.price).length
-  const inStockCount = products.filter((product) => product.stock > 0).length
   const exactSkuMatch = searchQuery.trim()
     ? sortedProducts.find((product) => product.sku.toLowerCase() === searchQuery.trim().toLowerCase())
     : null
@@ -143,7 +133,6 @@ export default function ProductsPage() {
     setFilters({})
     setSearchQuery('')
     setSortBy('price-asc')
-    setLocalFilter('all')
     setSearchParams(new URLSearchParams())
   }
 
@@ -159,54 +148,54 @@ export default function ProductsPage() {
     setSearchParams(nextParams)
   }
 
-  const updateQueryParam = (key: string, value?: string) => {
-    const nextParams = new URLSearchParams(searchParams)
+  const hasActiveFilters = searchQuery || filters.category || filters.subcategory
+  const renderFilterControls = (closeAfterAction = false) => (
+    <>
+      <div className="grid grid-cols-1 gap-4">
+        <div className="rounded-xl border border-gray-200 bg-white p-3">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            Explorador de categorias
+          </label>
+          <CategoryTreePanel
+            categories={categories}
+            className="w-full"
+            onNavigate={closeAfterAction ? () => setShowFilters(false) : undefined}
+          />
+        </div>
 
-    if (value) {
-      nextParams.set(key, value)
-    } else {
-      nextParams.delete(key)
-    }
-
-    setSearchParams(nextParams)
-  }
-
-  const handleQuickQuoteSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const message = encodeURIComponent(
-      `Hola QUINGO, quiero cotizar:\nSKU/producto: ${quoteSku || 'Por definir'}\nCantidad: ${quoteQuantity || '1'}`
-    )
-    window.location.href = `https://wa.me/5215576881138?text=${message}`
-  }
-
-  const quoteForm = (
-    <form onSubmit={handleQuickQuoteSubmit} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-2">
-        <ChatBubbleLeftRightIcon className="h-5 w-5 text-blue-900" />
-        <h2 className="text-sm font-bold uppercase text-gray-500">Cotizacion rapida</h2>
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">Orden por precio</label>
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as SortOption)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-900"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      <label className="mt-4 block text-xs font-semibold text-gray-600">SKU o producto</label>
-      <input
-        value={quoteSku}
-        onChange={(event) => setQuoteSku(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        placeholder="Ej. electrodo 6013"
-      />
-      <label className="mt-3 block text-xs font-semibold text-gray-600">Cantidad</label>
-      <input
-        type="number"
-        min="1"
-        value={quoteQuantity}
-        onChange={(event) => setQuoteQuantity(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-      />
-      <button type="submit" className="mt-4 w-full rounded-lg bg-blue-900 px-3 py-2 text-sm font-bold text-white hover:bg-blue-800">
-        Enviar por WhatsApp
-      </button>
-    </form>
-  )
 
-  const hasActiveFilters = searchQuery || filters.category || filters.subcategory || filters.inStock || localFilter !== 'all'
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            clearFilters()
+            if (closeAfterAction) {
+              setShowFilters(false)
+            }
+          }}
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+        >
+          <XMarkIcon className="h-4 w-4" />
+          Limpiar filtros
+        </button>
+      </div>
+    </>
+  )
 
   return (
     <div className="py-8">
@@ -214,38 +203,7 @@ export default function ProductsPage() {
         <div className="mb-6">
           <p className="text-sm font-bold uppercase text-blue-800">Catalogo industrial</p>
           <h1 className="mt-1 text-3xl font-bold text-gray-900">Catalogo de Productos</h1>
-          <p className="mt-2 text-gray-600">Busca por producto, categoria o SKU. Compra rapido o solicita cotizacion.</p>
-        </div>
-
-        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-gray-500">Resultados</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{products.length}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => updateQueryParam('inStock', filters.inStock ? undefined : 'true')}
-            className={`rounded-lg border p-4 text-left shadow-sm ${
-              filters.inStock ? 'border-blue-800 bg-blue-50' : 'border-gray-200 bg-white'
-            }`}
-          >
-            <p className="text-xs font-semibold uppercase text-gray-500">Disponibles</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{inStockCount}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocalFilter((current) => (current === 'offers' ? 'all' : 'offers'))}
-            className={`rounded-lg border p-4 text-left shadow-sm ${
-              localFilter === 'offers' ? 'border-blue-800 bg-blue-50' : 'border-gray-200 bg-white'
-            }`}
-          >
-            <p className="text-xs font-semibold uppercase text-gray-500">Ofertas</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{offerCount}</p>
-          </button>
-          <a href="#catalog-quote" className="rounded-lg border border-blue-200 bg-blue-950 p-4 text-white shadow-sm">
-            <p className="text-xs font-semibold uppercase text-blue-200">Compra por SKU</p>
-            <p className="mt-1 text-lg font-bold">Cotizar rapido</p>
-          </a>
+          <p className="mt-2 text-gray-600">Busca por producto, categoria o SKU.</p>
         </div>
 
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -270,44 +228,36 @@ export default function ProductsPage() {
           </div>
 
           {showFilters && (
-            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="rounded-xl border border-gray-200 bg-white p-3">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Explorador de categorias
-                  </label>
-                  <CategoryTreePanel categories={categories} className="w-full" />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">Orden por precio</label>
-                  <select
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value as SortOption)}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                  Limpiar filtros
-                </button>
-              </div>
+            <div className="mt-4 hidden rounded-xl border border-gray-200 bg-gray-50 p-4 md:block">
+              {renderFilterControls()}
             </div>
           )}
         </div>
+
+        {showFilters && (
+          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Filtros">
+            <button
+              type="button"
+              className="absolute inset-0 h-full w-full bg-black/40"
+              onClick={() => setShowFilters(false)}
+              aria-label="Cerrar filtros"
+            />
+            <div className="absolute inset-x-0 bottom-0 max-h-[86vh] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-bold text-gray-900">Filtros</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowFilters(false)}
+                  className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
+                  aria-label="Cerrar filtros"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+              {renderFilterControls(true)}
+            </div>
+          </div>
+        )}
 
         {hasActiveFilters && (
           <div className="mb-4 flex flex-wrap gap-2">
@@ -318,26 +268,6 @@ export default function ProductsPage() {
                 className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-sm font-semibold text-white"
               >
                 Busqueda: {searchQuery}
-                <XMarkIcon className="h-4 w-4" />
-              </button>
-            )}
-            {filters.inStock && (
-              <button
-                type="button"
-                onClick={() => updateQueryParam('inStock')}
-                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-900"
-              >
-                Solo disponibles
-                <XMarkIcon className="h-4 w-4" />
-              </button>
-            )}
-            {localFilter === 'offers' && (
-              <button
-                type="button"
-                onClick={() => setLocalFilter('all')}
-                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-900"
-              >
-                Ofertas
                 <XMarkIcon className="h-4 w-4" />
               </button>
             )}
@@ -368,15 +298,9 @@ export default function ProductsPage() {
           </div>
         )}
 
-        <div id="catalog-quote" className="scroll-mt-28" />
-
-        <div className="mb-6 lg:hidden">
-          {quoteForm}
-        </div>
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="hidden lg:block">
-            <div className="sticky top-28 space-y-4">
+            <div className="sticky top-28">
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-sm font-bold uppercase text-gray-500">Comprar por categoria</h2>
@@ -385,30 +309,48 @@ export default function ProductsPage() {
                   </Link>
                 </div>
                 <div className="space-y-1">
-                  {catalogItems.slice(0, 24).map((item) => (
-                    <Link
-                      key={item.category.id}
-                      to={getCategoryProductLink(item)}
-                      className={`block rounded-md py-1.5 pr-2 text-sm font-medium hover:bg-gray-100 hover:text-blue-700 ${
-                        item.depth > 0 ? 'pl-5 text-gray-600' : 'pl-2 text-gray-900'
-                      }`}
-                    >
-                      {item.category.name}
-                    </Link>
-                  ))}
+                  {catalogItems.slice(0, 24).map((item) => {
+                    const isActive = item.category.slug === activeCategorySlug
+
+                    return (
+                      <Link
+                        key={item.category.id}
+                        to={getCategoryProductLink(item)}
+                        className={`block rounded-md border-l-2 py-1.5 pr-2 text-sm font-medium transition ${
+                          isActive
+                            ? 'border-blue-800 bg-blue-50 text-blue-900'
+                            : `border-transparent hover:bg-gray-100 hover:text-blue-700 ${
+                                item.depth > 0 ? 'text-gray-600' : 'text-gray-900'
+                              }`
+                        } ${item.depth > 0 ? 'pl-5' : 'pl-2'}`}
+                      >
+                        {item.category.name}
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
-              {quoteForm}
             </div>
           </aside>
 
           <section>
-            <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  {loading ? 'Cargando productos...' : `${sortedProducts.length} productos encontrados`}
-                </p>
-                <p className="text-xs text-gray-500">SKU, precio y disponibilidad visibles para compra rapida.</p>
+            <div className="mb-4 flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-base font-bold text-gray-900">
+                    {loading ? 'Cargando productos...' : `${sortedProducts.length} productos encontrados`}
+                  </p>
+                  {activeCategoryName && (
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-900">
+                      {activeCategoryName}
+                    </span>
+                  )}
+                </div>
+                {searchQuery && (
+                  <p className="mt-1 truncate text-sm text-gray-500">
+                    Busqueda: {searchQuery}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="inline-flex rounded-lg border border-gray-300 bg-gray-50 p-1">
@@ -467,7 +409,7 @@ export default function ProductsPage() {
                     <span>Producto</span>
                     <span>Stock</span>
                     <span>Precio</span>
-                    <span>Compra rapida</span>
+                    <span>Acciones</span>
                   </div>
                   {sortedProducts.map((product) => (
                     <ProductListRow key={product.id} product={product} />
