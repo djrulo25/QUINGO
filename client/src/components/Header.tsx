@@ -40,27 +40,67 @@ export default function Header() {
     loadCategories()
   }, [])
 
-  const mobileRootCategory = mobilePath.length > 0 ? categories.find((category) => category.id === mobilePath[0]) || null : null
-
-  const mobileCurrentLevel = useMemo(() => {
-    if (!showProductsExplorer) {
-      return []
-    }
-
+  const mobileBreadcrumb = useMemo(() => {
+    const trail: CategoryTreeNode[] = []
     let currentNodes = categories
 
     for (const id of mobilePath) {
       const nextNode = currentNodes.find((node) => node.id === id)
 
       if (!nextNode) {
-        return []
+        break
       }
 
+      trail.push(nextNode)
       currentNodes = nextNode.children || []
     }
 
-    return currentNodes
-  }, [categories, mobilePath, showProductsExplorer])
+    return trail
+  }, [categories, mobilePath])
+
+  const mobileCurrentCategory = mobileBreadcrumb[mobileBreadcrumb.length - 1] || null
+  const mobileRootCategory = mobileBreadcrumb[0] || null
+  const mobileCurrentLevel = showProductsExplorer
+    ? mobileCurrentCategory?.children || categories
+    : []
+
+  const resetMobileProductsExplorer = () => {
+    setShowProductsExplorer(false)
+    setMobilePath([])
+  }
+
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false)
+    resetMobileProductsExplorer()
+  }
+
+  const handleMobileMenuToggle = () => {
+    if (isMenuOpen) {
+      resetMobileProductsExplorer()
+    }
+
+    setIsMenuOpen((currentValue) => !currentValue)
+  }
+
+  const buildProductsPath = (category?: CategoryTreeNode | null, includeSubcategory = true) => {
+    if (!category) {
+      return '/products'
+    }
+
+    const rootCategory = mobileRootCategory || category
+    const params = new URLSearchParams({ category: rootCategory.slug })
+
+    if (includeSubcategory && category.id !== rootCategory.id) {
+      params.set('subcategory', category.slug)
+    }
+
+    return `/products?${params.toString()}`
+  }
+
+  const navigateFromMobileMenu = (path: string) => {
+    closeMobileMenu()
+    navigate(path)
+  }
 
   const handleMobileBack = () => {
     if (mobilePath.length > 0) {
@@ -77,9 +117,7 @@ export default function Header() {
       return
     }
 
-    const selectedRootCategory = mobileRootCategory?.slug || category.slug
-    setIsMenuOpen(false)
-    navigate(`/products?category=${selectedRootCategory}&subcategory=${category.slug}`)
+    navigateFromMobileMenu(buildProductsPath(category))
   }
 
   return (
@@ -185,21 +223,10 @@ export default function Header() {
             {/* Mobile Menu Button */}
             <button
               className="md:hidden p-2 hover:bg-gray-800 rounded-lg"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={handleMobileMenuToggle}
+              aria-label={isMenuOpen ? 'Cerrar menu' : 'Abrir menu'}
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              {isMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -212,7 +239,7 @@ export default function Header() {
                 <Link
                   to="/"
                   className="block py-2 hover:text-gray-300 transition"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={closeMobileMenu}
                 >
                   Inicio
                 </Link>
@@ -226,7 +253,7 @@ export default function Header() {
                 >
                   Productos
                 </button>
-                <a href="#contact" className="block py-2 hover:text-gray-300 transition">
+                <a href="#contact" className="block py-2 hover:text-gray-300 transition" onClick={closeMobileMenu}>
                   Contacto
                 </a>
                 <div className="border-t border-gray-800 my-2 py-2">
@@ -235,21 +262,21 @@ export default function Header() {
                       <Link
                         to="/customer/profile"
                         className="block py-2 hover:text-gray-300 transition"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={closeMobileMenu}
                       >
                         Mi Perfil
                       </Link>
                       <Link
                         to="/customer/orders"
                         className="block py-2 hover:text-gray-300 transition"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={closeMobileMenu}
                       >
                         Mis Órdenes
                       </Link>
                       <button
                         onClick={() => {
                           logout()
-                          setIsMenuOpen(false)
+                          closeMobileMenu()
                           navigate('/')
                         }}
                         className="block w-full text-left py-2 hover:text-red-400 transition text-red-400"
@@ -261,7 +288,7 @@ export default function Header() {
                     <Link
                       to="/customer/login"
                       className="block py-2 hover:text-gray-300 transition"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={closeMobileMenu}
                     >
                       Iniciar Sesión
                     </Link>
@@ -269,14 +296,53 @@ export default function Header() {
                 </div>
               </>
             ) : (
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={handleMobileBack}
-                  className="block w-full text-left py-2 text-sm font-semibold text-blue-300"
-                >
-                  ← Regresar
-                </button>
+              <div className="space-y-3 pt-3">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={handleMobileBack}
+                    className="inline-flex items-center gap-2 py-2 text-sm font-semibold text-blue-300"
+                  >
+                    <ChevronLeftIcon className="h-4 w-4" />
+                    Regresar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateFromMobileMenu(buildProductsPath(mobileCurrentCategory, false))}
+                    className="text-sm font-semibold text-gray-200 hover:text-white"
+                  >
+                    Ver todo
+                  </button>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase text-gray-500">Productos</p>
+                  <p className="text-base font-bold text-white">
+                    {mobileCurrentCategory?.name || 'Todas las categorias'}
+                  </p>
+                </div>
+
+                {mobileBreadcrumb.length > 0 && (
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                    <button
+                      type="button"
+                      onClick={() => setMobilePath([])}
+                      className="font-semibold text-blue-300"
+                    >
+                      Productos
+                    </button>
+                    {mobileBreadcrumb.map((category, index) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => setMobilePath((currentPath) => currentPath.slice(0, index + 1))}
+                        className="font-semibold text-blue-300"
+                      >
+                        / {category.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {mobileCurrentLevel.length > 0 ? (
                   mobileCurrentLevel.map((category) => (
@@ -284,13 +350,14 @@ export default function Header() {
                       key={category.id}
                       type="button"
                       onClick={() => handleMobileCategorySelect(category)}
-                      className="block w-full rounded-lg border border-gray-800 px-3 py-2 text-left text-sm font-semibold text-gray-200"
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-800 px-3 py-2 text-left text-sm font-semibold text-gray-200 hover:border-gray-700 hover:bg-gray-800"
                     >
-                      {category.name}
+                      <span>{category.name}</span>
+                      {category.children?.length > 0 && <ChevronRightIcon className="h-4 w-4 text-gray-500" />}
                     </button>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-400">No hay subcategorías disponibles.</p>
+                  <p className="text-sm text-gray-400">No hay subcategorias disponibles.</p>
                 )}
               </div>
             )}
