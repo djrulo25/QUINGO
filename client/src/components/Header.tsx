@@ -18,6 +18,13 @@ import { CategoryTreeNode } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 
+const MOBILE_QUICK_ACTIONS = [
+  { label: 'Cotizacion rapida', href: '/#quote' },
+  { label: 'Solicitar factura', href: '#contact' },
+  { label: 'Asesoria tecnica', href: '#contact' },
+  { label: 'Entrega industrial', href: '/#shipping' },
+]
+
 export default function Header() {
   const { cart } = useCartStore()
   const { isLoggedIn, customer, logout } = useCustomerStore()
@@ -351,6 +358,21 @@ export default function Header() {
                 <a href="#contact" className="block py-2 hover:text-gray-300 transition" onClick={closeMobileMenu}>
                   Contacto
                 </a>
+                <div className="my-3 rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase text-gray-500">Accesos rapidos</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {MOBILE_QUICK_ACTIONS.map((action) => (
+                      <a
+                        key={action.label}
+                        href={action.href}
+                        onClick={closeMobileMenu}
+                        className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800"
+                      >
+                        {action.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
                 <div className="border-t border-gray-800 my-2 py-2">
                   {isLoggedIn ? (
                     <>

@@ -16,13 +16,6 @@ import { getTopLevelCategories } from '@/utils/categories'
 
 const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
 
-const QUICK_ACTIONS = [
-  { label: 'Cotizacion rapida', href: '#quote' },
-  { label: 'Solicitar factura', href: '#contact' },
-  { label: 'Entrega industrial', href: '#shipping' },
-  { label: 'Asesoria tecnica', href: '#contact' },
-]
-
 const TRUST_SIGNALS = [
   {
     title: 'Pago seguro',
@@ -176,7 +169,7 @@ export default function HomePage() {
             buttonClassName="sm:w-14"
           />
 
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 text-xs sm:text-sm">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-4 pt-1 text-xs sm:text-sm">
             {POPULAR_SEARCHES.map((term) => (
               <button
                 key={term}
@@ -211,39 +204,6 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-gray-200 bg-white">
-        <div className="container mx-auto grid grid-cols-2 gap-px bg-gray-200 px-0 text-sm sm:grid-cols-4">
-          {QUICK_ACTIONS.map((action) => (
-            <a
-              key={action.label}
-              href={action.href}
-              className="bg-white px-4 py-3 text-center font-semibold text-blue-900 hover:bg-blue-50"
-            >
-              {action.label}
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white py-5">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {TRUST_SIGNALS.map((signal) => {
-              const Icon = signal.icon
-              return (
-                <div key={signal.title} className="flex gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <Icon className="h-6 w-6 shrink-0 text-blue-900" />
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{signal.title}</p>
-                    <p className="mt-1 text-xs text-gray-600">{signal.description}</p>
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
       </section>
@@ -283,6 +243,25 @@ export default function HomePage() {
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="shipping" className="bg-white py-5">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {TRUST_SIGNALS.map((signal) => {
+              const Icon = signal.icon
+              return (
+                <div key={signal.title} className="flex gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <Icon className="h-6 w-6 shrink-0 text-blue-900" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{signal.title}</p>
+                    <p className="mt-1 text-xs text-gray-600">{signal.description}</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
