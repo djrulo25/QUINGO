@@ -13,8 +13,7 @@ import ProductSearchBox from '@/components/ProductSearchBox'
 import { CategoryTreeNode, Product } from '@/types'
 import { flattenCategoryCatalog, getCategoryImage, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
-
-const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 type ProductRailVariant = 'offers' | 'new' | 'top'
 
 const TRUST_SIGNALS = [
@@ -46,6 +45,7 @@ const TRUST_SIGNALS = [
 ]
 
 export default function HomePage() {
+  const { settings } = useStoreSettings()
   const navigate = useNavigate()
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -67,6 +67,9 @@ export default function HomePage() {
     () => [...products].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4),
     [products]
   )
+  const trustSignals = TRUST_SIGNALS.map((signal) => signal.title === 'Horario comercial'
+    ? { ...signal, description: settings.contact.businessHours }
+    : signal.title === 'Zona de servicio' ? { ...signal, description: settings.contact.serviceArea } : signal)
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -108,7 +111,7 @@ export default function HomePage() {
   const handleQuoteSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const message = [
-      'Hola QUINGO, quiero una cotizacion.',
+      `Hola ${settings.name}, quiero una cotización.`,
       `SKU/producto: ${quoteForm.sku || 'Por definir'}`,
       `Cantidad: ${quoteForm.quantity || '1'}`,
       `Nombre: ${quoteForm.name || 'No indicado'}`,
@@ -116,7 +119,7 @@ export default function HomePage() {
       quoteForm.notes ? `Notas: ${quoteForm.notes}` : '',
     ].filter(Boolean).join('\n')
 
-    window.location.href = `https://wa.me/5215576881138?text=${encodeURIComponent(message)}`
+    window.location.href = `https://wa.me/${settings.contact.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
   }
 
   const renderProductRail = (title: string, subtitle: string, items: Product[], variant: ProductRailVariant) => {
@@ -213,7 +216,7 @@ export default function HomePage() {
           />
 
           <div className="mt-2 flex gap-2 overflow-x-auto pb-4 pt-1 text-xs sm:text-sm">
-            {POPULAR_SEARCHES.map((term) => (
+            {settings.home.popularSearches.map((term) => (
               <button
                 key={term}
                 type="button"
@@ -228,16 +231,17 @@ export default function HomePage() {
           <div className="mt-3 overflow-hidden rounded-lg bg-white shadow-sm sm:mt-5">
             <div className="relative min-h-[130px] bg-gray-900 sm:min-h-[220px]">
               <img
-                src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=1200&q=80"
-                alt="Suministros industriales"
+                src={settings.home.heroImageUrl}
+                alt={settings.home.heroTitle}
                 className="absolute inset-0 h-full w-full object-cover opacity-75"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-gray-950/85 via-gray-950/45 to-transparent" />
               <div className="relative flex min-h-[130px] max-w-xl flex-col justify-center px-4 py-4 text-white sm:min-h-[220px] sm:px-8 sm:py-6">
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-200 sm:text-sm">QUINGO</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-200 sm:text-sm">{settings.home.heroEyebrow || settings.name}</p>
                 <h1 className="mt-1 text-xl font-bold leading-tight sm:mt-2 sm:text-4xl">
-                  Suministros industriales para trabajar sin pausas
+                  {settings.home.heroTitle}
                 </h1>
+                {settings.home.heroSubtitle && <p className="mt-2 hidden text-sm text-gray-100 sm:block">{settings.home.heroSubtitle}</p>}
                 <Link
                   to="/products"
                   className="mt-3 inline-flex w-fit items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 transition hover:bg-gray-100 sm:mt-5 sm:px-4 sm:py-2 sm:text-sm"
@@ -255,8 +259,8 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="mb-3 flex items-end justify-between gap-4 sm:mb-5">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">Categorias</h2>
-              <p className="hidden text-sm text-gray-600 sm:block">Soldadura, proteccion, gases y mas.</p>
+              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{settings.home.categoriesTitle}</h2>
+              <p className="hidden text-sm text-gray-600 sm:block">{settings.home.categoriesSubtitle}</p>
             </div>
             <Link to="/products" className="hidden text-sm font-semibold text-blue-700 hover:text-blue-900 sm:block">
               Ver todo
@@ -290,23 +294,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {renderProductRail('Ofertas y oportunidades', 'Productos con precio especial o promoción activa.', offerProducts, 'offers')}
-      {renderProductRail('Nuevos productos', 'Últimas altas en el catálogo para surtir tu operación.', newProducts, 'new')}
-      {renderProductRail('Más vendidos y destacados', 'Productos con mejor calificación y mayor movimiento.', topProducts, 'top')}
+      {renderProductRail(settings.home.offersTitle, settings.home.offersSubtitle, offerProducts, 'offers')}
+      {renderProductRail(settings.home.newTitle, settings.home.newSubtitle, newProducts, 'new')}
+      {renderProductRail(settings.home.topTitle, settings.home.topSubtitle, topProducts, 'top')}
 
       <section id="quote" className="py-12">
         <div className="container mx-auto px-4">
           <div className="grid gap-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.2fr] lg:p-8">
             <div>
               <p className="text-sm font-bold uppercase text-blue-800">Cotizacion rapida</p>
-              <h2 className="mt-2 text-2xl font-bold text-gray-900">Cotiza por SKU, producto o descripcion</h2>
+              <h2 className="mt-2 text-2xl font-bold text-gray-900">{settings.home.quoteTitle}</h2>
               <p className="mt-3 text-sm text-gray-600">
-                Envia los datos por WhatsApp y te respondemos con disponibilidad, precio y tiempos de entrega.
+                {settings.home.quoteDescription}
               </p>
               <div className="mt-5 rounded-lg bg-blue-50 p-4 text-sm text-blue-950">
                 <p className="font-semibold">Tambien puedes llamar:</p>
-                <a href="tel:+5215576881138" className="mt-1 block text-lg font-bold">
-                  +52 1 55 7688 1138
+                <a href={`tel:${settings.contact.phone.replace(/[^\d+]/g, '')}`} className="mt-1 block text-lg font-bold">
+                  {settings.contact.phone}
                 </a>
               </div>
             </div>
@@ -366,7 +370,7 @@ export default function HomePage() {
               </div>
               <button
                 type="submit"
-                className="rounded-lg bg-blue-900 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800 sm:col-span-2"
+                className="store-primary-bg rounded-lg px-4 py-3 text-sm font-bold text-white sm:col-span-2"
               >
                 Enviar cotizacion por WhatsApp
               </button>
@@ -378,7 +382,7 @@ export default function HomePage() {
       <section id="shipping" className="bg-white py-5">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {TRUST_SIGNALS.map((signal) => {
+            {trustSignals.map((signal) => {
               const Icon = signal.icon
               return (
                 <div key={signal.title} className="flex gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">

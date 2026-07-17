@@ -4,12 +4,14 @@ import { ChatBubbleLeftRightIcon, ShoppingCartIcon } from '@heroicons/react/24/o
 import toast from 'react-hot-toast'
 import { Product } from '@/types'
 import { useCartStore } from '@/store/cartStore'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 interface ProductListRowProps {
   product: Product
 }
 
 export default function ProductListRow({ product }: ProductListRowProps) {
+  const { settings } = useStoreSettings()
   const { addToCart } = useCartStore()
   const [quantity, setQuantity] = useState(1)
 
@@ -29,7 +31,7 @@ export default function ProductListRow({ product }: ProductListRowProps) {
   }
 
   const quoteMessage = encodeURIComponent(
-    `Hola QUINGO, quiero cotizar:\nSKU: ${product.sku}\nProducto: ${product.name}\nCantidad: ${quantity}`
+    `Hola ${settings.name}, quiero cotizar:\nSKU: ${product.sku}\nProducto: ${product.name}\nCantidad: ${quantity}`
   )
 
   return (
@@ -98,7 +100,7 @@ export default function ProductListRow({ product }: ProductListRowProps) {
           Agregar
         </button>
         <a
-          href={`https://wa.me/5215576881138?text=${quoteMessage}`}
+          href={`https://wa.me/${settings.contact.whatsapp.replace(/\D/g, '')}?text=${quoteMessage}`}
           className="flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50"
           aria-label={`Cotizar ${product.name}`}
         >

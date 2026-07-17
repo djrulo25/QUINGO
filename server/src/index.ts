@@ -14,6 +14,8 @@ import uploadRoutes from './routes/uploads.js'
 import paymentRoutes from './routes/payments.js'
 import debugRoutes from './routes/debug.js'
 import { authMiddleware } from './middleware/auth.js'
+import storeSettingsRoutes from './routes/storeSettings.js'
+import catalogImportRoutes from './routes/catalogImport.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -61,6 +63,8 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/customers', customerRoutes)
 app.use('/api/categories', categoryRoutes)
+app.use('/api/store-settings', storeSettingsRoutes)
+app.use('/api/import', catalogImportRoutes)
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

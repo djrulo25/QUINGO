@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer'
 import sgMail, { MailDataRequired } from '@sendgrid/mail'
+import StoreSettings, { DEFAULT_STORE_SETTINGS } from '../models/StoreSettings.js'
 
 const getSendGridApiKey = () => process.env.SENDGRID_API_KEY?.trim()
 const getUseSendGrid = () => Boolean(getSendGridApiKey())
@@ -28,8 +29,24 @@ const createTransporter = () => {
   })
 }
 
+export const sendTransactionalEmail = async (to: string, subject: string, html: string) => {
+  if (getUseSendGrid()) {
+    const apiKey = getSendGridApiKey()
+    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER
+    if (!apiKey || !fromEmail) throw new Error('SendGrid no está configurado completamente')
+    sgMail.setApiKey(apiKey)
+    await sgMail.send({ to, from: fromEmail, subject, html } as MailDataRequired)
+    return
+  }
+  const transporter = createTransporter()
+  const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER
+  if (!transporter || !fromEmail) throw new Error('El servicio de correo no está configurado')
+  await transporter.sendMail({ from: fromEmail, to, subject, html })
+}
+
 export const sendOrderEmail = async (order: any, options?: { subject?: string; showVoucher?: boolean }) => {
-  const subject = options?.subject || `Confirmación de Pedido ${order.orderNumber}`
+  const settings: any = await StoreSettings.findOne({ storeKey: 'default' }).select('name currency').lean() || DEFAULT_STORE_SETTINGS
+  const subject = options?.subject || `${settings.name} - Confirmación de Pedido ${order.orderNumber}`
   const showVoucher = options?.showVoucher ?? (order.paymentMethod === 'oxxo' && order.paymentStatus === 'pending')
 
   const itemsHtml = (order.items || []).map((it: any) => `
@@ -43,7 +60,7 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string; s
   ` : ''
 
   const html = `
-    <h2>Gracias por tu compra — ${order.orderNumber}</h2>
+    <h2>Gracias por comprar en ${settings.name} — ${order.orderNumber}</h2>
     <p>Hola ${order.customer.firstName} ${order.customer.lastName},</p>
     <p>Recibimos tu pedido. A continuación los detalles:</p>
     <h3>Resumen</h3>

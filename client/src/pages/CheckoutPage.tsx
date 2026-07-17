@@ -8,8 +8,10 @@ import { StripeProvider } from '@/components/StripeProvider'
 import { StripePaymentForm } from '@/components/StripePaymentForm'
 import { OXXOPaymentForm } from '@/components/OXXOPaymentForm'
 import toast from 'react-hot-toast'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 export default function CheckoutPage() {
+  const { settings } = useStoreSettings()
   const navigate = useNavigate()
   const { cart, clearCart } = useCartStore()
   const { customer, isLoggedIn } = useCustomerStore()
@@ -75,6 +77,13 @@ export default function CheckoutPage() {
     }
   }, [addresses])
 
+  const activeShippingMethods = settings.shippingMethods.filter((method) => method.enabled)
+  useEffect(() => {
+    if (activeShippingMethods.length && !activeShippingMethods.some((method) => method.id === formData.shippingMethod)) {
+      setFormData((current) => ({ ...current, shippingMethod: activeShippingMethods[0].id }))
+    }
+  }, [settings.shippingMethods])
+
   const loadAddresses = async () => {
     try {
       const response = await customerAPI.getAddresses()
@@ -123,7 +132,8 @@ export default function CheckoutPage() {
     )
   }
 
-  const shippingCost = formData.shippingMethod === 'express' ? 50 : 20
+  const selectedShipping = activeShippingMethods.find((method) => method.id === formData.shippingMethod)
+  const shippingCost = selectedShipping?.price || 0
   const total = cart.totalPrice + shippingCost
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -209,14 +219,14 @@ export default function CheckoutPage() {
           price: item.product.price,
         })),
         shippingMethod: formData.shippingMethod,
-        shippingCost: formData.shippingMethod === 'express' ? 50 : 20,
+        shippingCost,
         paymentMethod: formData.paymentMethod,
         status: normalizedStatus,
         paymentStatus: normalizedPaymentStatus,
         paymentIntentId: options?.paymentIntentId || paymentIntentId || undefined,
         oxxoVoucherUrl: options?.oxxoVoucherUrl,
         subtotal: cart.totalPrice,
-        total: cart.totalPrice + (formData.shippingMethod === 'express' ? 50 : 20),
+        total: cart.totalPrice + shippingCost,
       } as any
 
       const response = await orderAPI.create(orderData)
@@ -448,36 +458,11 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">Método de Envío</h2>
               <div className="space-y-3">
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="shippingMethod"
-                    value="standard"
-                    checked={formData.shippingMethod === 'standard'}
-                    onChange={handleChange}
-                    className="w-4 h-4"
-                  />
-                  <span className="ml-3">
-                    <span className="font-semibold">Envío Estándar</span>
-                    <span className="text-gray-600 text-sm ml-2">5-7 días</span>
-                    <span className="float-right font-semibold">$20</span>
-                  </span>
-                </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="shippingMethod"
-                    value="express"
-                    checked={formData.shippingMethod === 'express'}
-                    onChange={handleChange}
-                    className="w-4 h-4"
-                  />
-                  <span className="ml-3">
-                    <span className="font-semibold">Envío Express</span>
-                    <span className="text-gray-600 text-sm ml-2">2-3 días</span>
-                    <span className="float-right font-semibold">$50</span>
-                  </span>
-                </label>
+                {activeShippingMethods.map((method) => <label key={method.id} className="flex cursor-pointer items-center rounded-lg border border-gray-300 p-4 hover:bg-gray-50">
+                  <input type="radio" name="shippingMethod" value={method.id} checked={formData.shippingMethod === method.id} onChange={handleChange} className="h-4 w-4" />
+                  <span className="ml-3 flex min-w-0 flex-1 items-center justify-between gap-3"><span><span className="block font-semibold">{method.name}</span><span className="text-sm text-gray-600">{method.description}{method.estimatedDays ? ` · ${method.estimatedDays}` : ''}</span></span><span className="shrink-0 font-semibold">${method.price.toLocaleString()}</span></span>
+                </label>)}
+                {!activeShippingMethods.length && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">No hay métodos de envío habilitados.</p>}
               </div>
             </div>
 

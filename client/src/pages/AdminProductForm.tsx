@@ -31,6 +31,10 @@ export default function AdminProductForm() {
     subcategory: '',
     stock: 0,
     sku: '',
+    satProductCode: '',
+    satUnitCode: '',
+    taxObject: '02',
+    ivaRate: 16,
     image: '',
     images: [],
     rating: 0,
@@ -357,6 +361,16 @@ export default function AdminProductForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Código SKU único"
               />
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <h2 className="mb-3 font-bold text-gray-900">Información fiscal del producto</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div><label className="mb-2 block text-sm font-medium text-gray-700">Clave de producto SAT</label><input name="satProductCode" value={product.satProductCode || ''} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2" placeholder="Ej. 27112703" /></div>
+                <div><label className="mb-2 block text-sm font-medium text-gray-700">Clave de unidad SAT</label><input name="satUnitCode" value={product.satUnitCode || ''} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2" placeholder="Ej. H87" /></div>
+                <div><label className="mb-2 block text-sm font-medium text-gray-700">Objeto de impuesto</label><select name="taxObject" value={product.taxObject || '02'} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2"><option value="01">01 - No objeto</option><option value="02">02 - Sí objeto</option><option value="03">03 - Sí objeto, no obligado al desglose</option></select></div>
+                <div><label className="mb-2 block text-sm font-medium text-gray-700">Tasa IVA (%)</label><input type="number" min="0" max="100" step="0.01" name="ivaRate" value={product.ivaRate ?? 16} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2" /></div>
+              </div>
             </div>
 
             {/* Precios */}

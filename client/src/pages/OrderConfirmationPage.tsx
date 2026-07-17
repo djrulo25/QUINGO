@@ -3,8 +3,10 @@ import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 import { orderAPI } from '@/api'
 import { Order } from '@/types'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 export default function OrderConfirmationPage() {
+  const { settings } = useStoreSettings()
   const { orderId } = useParams<{ orderId: string }>()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || ''
@@ -148,7 +150,7 @@ export default function OrderConfirmationPage() {
             Continuar Comprando
           </Link>
           <a
-            href="mailto:info@quingo.com"
+            href={`mailto:${settings.contact.supportEmail}`}
             className="bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-800 transition"
           >
             Contactar Soporte

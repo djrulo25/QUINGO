@@ -1,15 +1,14 @@
 import Product from '../models/Product.js'
-
-export const SHIPPING_RATES: Record<string, number> = {
-  standard: 20,
-  express: 50,
-}
+import StoreSettings, { DEFAULT_STORE_SETTINGS } from '../models/StoreSettings.js'
 
 const money = (value: number) => Math.round(value * 100) / 100
 
 export async function calculateOrder(items: any[], shippingMethod: string) {
   if (!Array.isArray(items) || items.length === 0) throw new Error('El pedido no contiene productos')
-  if (!(shippingMethod in SHIPPING_RATES)) throw new Error('Método de envío no válido')
+  const settings: any = await StoreSettings.findOne({ storeKey: 'default' }).select('shippingMethods').lean()
+  const methods = settings?.shippingMethods?.length ? settings.shippingMethods : DEFAULT_STORE_SETTINGS.shippingMethods
+  const selectedShipping = methods.find((method: any) => method.id === shippingMethod && method.enabled !== false)
+  if (!selectedShipping) throw new Error('Método de envío no válido')
 
   const normalized = items.map((item) => ({ productId: String(item.productId || ''), quantity: Number(item.quantity) }))
   if (normalized.some((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1)) {
@@ -30,6 +29,6 @@ export async function calculateOrder(items: any[], shippingMethod: string) {
   })
 
   const subtotal = money(pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0))
-  const shippingCost = SHIPPING_RATES[shippingMethod]
+  const shippingCost = money(Number(selectedShipping.price))
   return { items: pricedItems, subtotal, shippingCost, total: money(subtotal + shippingCost) }
 }

@@ -15,7 +15,9 @@ export async function deleteCloudinaryAsset(url?: string) {
     const resourceType = prefix.includes('/raw/') ? 'raw' : 'image'
     let publicId = decodeURIComponent(tailValue).replace(/^v\d+\//, '')
     if (resourceType === 'image') publicId = publicId.replace(/\.[^.]+$/, '')
-    if (!publicId.startsWith('quingo-products/') && !publicId.startsWith('quingo-documents/')) return
+    const folderPrefix = (process.env.CLOUDINARY_FOLDER || 'quingo').replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase()
+    const allowedFolders = [`${folderPrefix}-products/`, `${folderPrefix}-documents/`, `${folderPrefix}-branding/`, 'quingo-products/', 'quingo-documents/', 'quingo-branding/']
+    if (!allowedFolders.some((folder) => publicId.startsWith(folder))) return
     await cloudinary.uploader.destroy(publicId, { resource_type: resourceType })
   } catch (error) {
     console.error('Cloudinary cleanup error:', error)

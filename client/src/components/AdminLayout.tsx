@@ -11,8 +11,10 @@ import {
   ChartBarIcon,
   ChevronDownIcon,
   ArrowLeftOnRectangleIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -26,13 +28,14 @@ interface AdminMenuItem {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const { settings } = useStoreSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedMenu, setExpandedMenu] = useState<string | null>(() =>
     location.pathname.startsWith('/admin/categories') || location.pathname.startsWith('/admin/attributes')
       ? '/admin/categories'
-      : null
+      : location.pathname.startsWith('/admin/settings') ? '/admin/settings' : null
   )
 
   const menuItems: AdminMenuItem[] = [
@@ -75,6 +78,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       path: '/admin/reports',
       icon: ChartBarIcon,
     },
+    {
+      label: 'Configuración',
+      path: '/admin/settings',
+      icon: Cog6ToothIcon,
+      children: [
+        { label: 'Configuración de tienda', path: '/admin/settings' },
+        { label: 'Importar catálogo', path: '/admin/settings/import' },
+      ],
+    },
   ]
 
   const handleLogout = () => {
@@ -110,11 +122,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             ? 'w-full max-h-[520px] lg:max-h-screen lg:w-64'
             : 'w-auto max-h-20 lg:max-h-screen lg:w-20'
         } self-start bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-lg overflow-hidden lg:h-screen lg:sticky lg:top-0`}
+        style={{ backgroundColor: settings.colors.secondary }}
       >
         {/* Logo/Header */}
         <div className="p-4 sm:p-6 border-b border-blue-800 flex items-center justify-between">
-          <h1 className={`font-bold text-xl ${!sidebarOpen && 'hidden'}`}>QUINGO</h1>
-          <h2 className={`font-bold text-sm ${sidebarOpen && 'hidden'}`}>Q</h2>
+          <div className={`min-w-0 ${!sidebarOpen && 'hidden'}`}>{settings.logoUrl ? <img src={settings.logoUrl} alt={settings.name} className="h-10 max-w-[150px] object-contain" /> : <h1 className="truncate text-xl font-bold">{settings.name}</h1>}</div>
+          <h2 className={`font-bold text-sm ${sidebarOpen && 'hidden'}`}>{settings.name.slice(0, 1).toUpperCase()}</h2>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-1 hover:bg-blue-800 rounded transition"

@@ -16,6 +16,10 @@ export interface Product {
   rating: number
   reviews: number
   sku: string
+  satProductCode?: string
+  satUnitCode?: string
+  taxObject?: string
+  ivaRate?: number
   specifications?: Record<string, string>
   attributes?: Record<string, string | number | boolean>
   volumePricing?: { minQuantity: number; discountPercent: number }[]
@@ -95,6 +99,61 @@ export interface CategoryTreeNode {
   path: string
   children: CategoryTreeNode[]
   attributes?: CategoryAttribute[]
+}
+
+export interface ShippingMethod {
+  id: string
+  name: string
+  description: string
+  price: number
+  estimatedDays: string
+  enabled: boolean
+}
+
+export interface StoreSettings {
+  name: string
+  logoUrl: string
+  description: string
+  currency: string
+  colors: { primary: string; secondary: string; accent: string; header: string }
+  contact: {
+    phone: string
+    whatsapp: string
+    salesEmail: string
+    supportEmail: string
+    billingEmail: string
+    businessHours: string
+    address: string
+    serviceArea: string
+  }
+  social: { facebook: string; instagram: string; linkedin: string; tiktok: string; youtube: string }
+  home: {
+    heroEyebrow: string
+    heroTitle: string
+    heroSubtitle: string
+    heroImageUrl: string
+    categoriesTitle: string
+    categoriesSubtitle: string
+    quoteTitle: string
+    quoteDescription: string
+    offersTitle: string
+    offersSubtitle: string
+    newTitle: string
+    newSubtitle: string
+    topTitle: string
+    topSubtitle: string
+    popularSearches: string[]
+    footerTagline: string
+  }
+  fiscal: {
+    legalName: string
+    rfc: string
+    taxRegime: string
+    postalCode: string
+    fiscalAddress: string
+    invoiceEmail: string
+  }
+  shippingMethods: ShippingMethod[]
 }
 
 export type AttributeType = 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'textarea'

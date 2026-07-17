@@ -18,6 +18,7 @@ import BrandLogo from '@/components/BrandLogo'
 import { CategoryTreeNode } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 const SERVICES = [
   { label: 'Cotizacion rapida', href: '/#quote' },
@@ -26,6 +27,7 @@ const SERVICES = [
 ]
 
 export default function Header() {
+  const { settings } = useStoreSettings()
   const { cart } = useCartStore()
   const { isLoggedIn, customer, logout } = useCustomerStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -40,6 +42,7 @@ export default function Header() {
   const servicesMenuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const location = useLocation()
+  const phoneHref = `tel:${settings.contact.phone.replace(/[^\d+]/g, '')}`
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -168,12 +171,12 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-gray-900 text-white sticky top-0 z-50 shadow-lg">
+    <header className="text-white sticky top-0 z-50 shadow-lg" style={{ backgroundColor: settings.colors.header }}>
       <div className="hidden border-b border-gray-800 bg-gray-950 text-xs text-gray-300 md:block">
         <div className="container mx-auto flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
-            <a href="tel:+5215576881138" className="font-semibold text-white hover:text-blue-200">
-              +52 1 55 7688 1138
+            <a href={phoneHref} className="font-semibold text-white hover:text-blue-200">
+              {settings.contact.phone}
             </a>
             <Link to="/contacto" className="hover:text-white">
               Contacto
@@ -186,7 +189,7 @@ export default function Header() {
             <a href="/#quote" className="font-semibold text-blue-200 hover:text-white">
               Cotizacion rapida
             </a>
-            <span>Español | MXN</span>
+            <span>Español | {settings.currency}</span>
           </div>
         </div>
       </div>
@@ -194,7 +197,9 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" aria-label="Ir al inicio" className="text-white">
-            <BrandLogo variant="compact" />
+            {settings.logoUrl
+              ? <img src={settings.logoUrl} alt={settings.name} className="h-12 max-w-[120px] object-contain" />
+              : settings.name.toUpperCase() === 'QUINGO' ? <BrandLogo variant="compact" /> : <span className="text-xl font-bold">{settings.name}</span>}
           </Link>
 
           {/* Navigation */}
@@ -305,7 +310,7 @@ export default function Header() {
             categories={categories}
             className="mx-5 hidden max-w-md flex-1 md:block"
             inputClassName="py-2"
-            buttonClassName="w-11 bg-blue-800 hover:bg-blue-700"
+            buttonClassName="w-11 store-primary-bg"
           />
 
           {/* Right Section */}
@@ -331,10 +336,10 @@ export default function Header() {
             </Link>
 
             <a
-              href="tel:+5215576881138"
+              href={phoneHref}
               className="md:hidden p-2 hover:bg-gray-800 rounded-lg transition"
-              aria-label="Llamar a QUINGO"
-              title="Llamar a QUINGO"
+              aria-label={`Llamar a ${settings.name}`}
+              title={`Llamar a ${settings.name}`}
             >
               <PhoneIcon className="w-6 h-6" />
             </a>

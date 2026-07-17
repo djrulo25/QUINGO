@@ -100,3 +100,16 @@
 .transition {
   transition: all 0.3s ease;
 }
+
+:root {
+  --store-primary: #1e3a8a;
+  --store-secondary: #172554;
+  --store-accent: #f59e0b;
+  --store-header: #111827;
+}
+
+.store-primary-bg { background-color: var(--store-primary); }
+.store-primary-bg:hover { filter: brightness(1.12); }
+.store-secondary-bg { background-color: var(--store-secondary); }
+.store-primary-text { color: var(--store-primary); }
+.store-primary-border { border-color: var(--store-primary); }

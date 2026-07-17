@@ -7,6 +7,7 @@ import { Readable } from 'stream'
 import { authMiddleware } from '../middleware/auth.js'
 
 const router = Router()
+const cloudinaryPrefix = (process.env.CLOUDINARY_FOLDER || 'quingo').replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase()
 
 // Configure Cloudinary
 cloudinary.config({
@@ -39,9 +40,9 @@ const documentUpload = multer({
   }
 })
 
-const uploadToCloudinary = (file: Express.Multer.File) => new Promise<any>((resolve, reject) => {
+const uploadToCloudinary = (file: Express.Multer.File, folder = `${cloudinaryPrefix}-products`) => new Promise<any>((resolve, reject) => {
   const uploadStream = cloudinary.uploader.upload_stream(
-    { folder: 'quingo-products', resource_type: 'image' },
+    { folder, resource_type: 'image' },
     (error, result) => error ? reject(error) : resolve(result)
   )
   Readable.from(file.buffer).pipe(uploadStream)
@@ -49,7 +50,7 @@ const uploadToCloudinary = (file: Express.Multer.File) => new Promise<any>((reso
 
 const uploadDocumentToCloudinary = (file: Express.Multer.File) => new Promise<any>((resolve, reject) => {
   const uploadStream = cloudinary.uploader.upload_stream(
-    { folder: 'quingo-documents', resource_type: 'raw', public_id: `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '-')}` },
+    { folder: `${cloudinaryPrefix}-documents`, resource_type: 'raw', public_id: `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '-')}` },
     (error, result) => error ? reject(error) : resolve(result)
   )
   Readable.from(file.buffer).pipe(uploadStream)
@@ -73,6 +74,16 @@ router.post('/uploads', authMiddleware, upload.single('image'), async (req: Requ
   }
 })
 
+router.post('/uploads/branding', authMiddleware, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No se recibió ninguna imagen' })
+    const result = await uploadToCloudinary(req.file, `${cloudinaryPrefix}-branding`)
+    res.status(201).json({ url: result.secure_url, publicId: result.public_id, width: result.width, height: result.height })
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'No se pudo subir el logotipo' })
+  }
+})
+
 // POST /api/uploads/multiple - Upload a product gallery to Cloudinary
 router.post('/uploads/multiple', authMiddleware, upload.array('images'), async (req: Request, res: Response) => {
   try {
@@ -81,7 +92,7 @@ router.post('/uploads/multiple', authMiddleware, upload.array('images'), async (
       return res.status(400).json({ error: 'No se recibieron imágenes' })
     }
 
-    const results = await Promise.all(files.map(uploadToCloudinary))
+    const results = await Promise.all(files.map((file) => uploadToCloudinary(file)))
     res.status(201).json({
       images: results.map((result) => ({
         url: result.secure_url,

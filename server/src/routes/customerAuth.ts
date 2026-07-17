@@ -2,22 +2,14 @@ import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
 import Customer from '../models/Customer.js'
-import nodemailer from 'nodemailer'
+import { sendTransactionalEmail } from '../utils/email.js'
+import StoreSettings, { DEFAULT_STORE_SETTINGS } from '../models/StoreSettings.js'
 
 const router = Router()
 const JWT_SECRET = (() => {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is required')
   return process.env.JWT_SECRET
 })()
-
-// Email transporter for password recovery
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-})
 
 // Register new customer
 router.post(
@@ -173,23 +165,15 @@ router.post(
         { expiresIn: '1h' }
       )
 
-      // In production, send email with reset link
-      if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-        const resetLink = `${process.env.FRONTEND_URL}/customer/reset-password?token=${resetToken}`
-
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER,
-          to: email,
-          subject: 'QUINGO - Recuperar Contraseña',
-          html: `
-            <h2>Recuperar Contraseña</h2>
-            <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
-            <a href="${resetLink}">${resetLink}</a>
-            <p>Este enlace es válido por 1 hora.</p>
-            <p>Si no solicitaste este cambio, ignora este correo.</p>
-          `,
-        })
-      }
+      const resetLink = `${process.env.FRONTEND_URL}/customer/reset-password?token=${resetToken}`
+      const settings: any = await StoreSettings.findOne({ storeKey: 'default' }).select('name').lean() || DEFAULT_STORE_SETTINGS
+      await sendTransactionalEmail(email, `${settings.name} - Recuperar contraseña`, `
+        <h2>Recuperar contraseña</h2>
+        <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>Este enlace es válido por 1 hora.</p>
+        <p>Si no solicitaste este cambio, ignora este correo.</p>
+      `)
 
       res.json({ message: 'If email exists, recovery link has been sent' })
     } catch (error) {

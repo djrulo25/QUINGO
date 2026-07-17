@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { API_BASE_URL } from '@/api/config'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 export default function AdminLoginPage() {
+  const { settings } = useStoreSettings()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,10 +38,10 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: `linear-gradient(135deg, ${settings.colors.primary}, ${settings.colors.secondary})` }}>
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">QUINGO Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{settings.name} Admin</h1>
           <p className="text-gray-600">Panel de administración</p>
         </div>
 
@@ -55,7 +57,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="admin@quingo.com"
+              placeholder="admin@empresa.com"
             />
           </div>
 

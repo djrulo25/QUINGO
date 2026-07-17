@@ -27,10 +27,14 @@ import OrderHistoryPage from '@/pages/OrderHistoryPage'
 import ContactPage from '@/pages/ContactPage'
 import InformationPage from '@/pages/InformationPage'
 import AdminReportsPage from '@/pages/AdminReportsPage'
+import { StoreSettingsProvider } from '@/store/StoreSettingsContext'
+import AdminStoreSettingsPage from '@/pages/AdminStoreSettingsPage'
+import AdminCatalogImportPage from '@/pages/AdminCatalogImportPage'
 
 function App() {
   return (
     <Router>
+      <StoreSettingsProvider>
       <Routes>
         {/* Admin Routes (without Layout) */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -53,6 +57,8 @@ function App() {
                 <Route path="/orders" element={<AdminOrdersPage />} />
                 <Route path="/orders/:id" element={<AdminOrderDetail />} />
                 <Route path="/reports" element={<AdminReportsPage />} />
+                <Route path="/settings" element={<AdminStoreSettingsPage />} />
+                <Route path="/settings/import" element={<AdminCatalogImportPage />} />
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
             </AdminLayout>
@@ -89,6 +95,7 @@ function App() {
         />
       </Routes>
       <Toaster position="bottom-right" />
+      </StoreSettingsProvider>
     </Router>
   )
 }

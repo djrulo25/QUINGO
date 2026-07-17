@@ -16,6 +16,10 @@ export interface IProduct extends Document {
   rating: number
   reviews: number
   sku: string
+  satProductCode?: string
+  satUnitCode?: string
+  taxObject?: string
+  ivaRate?: number
   specifications?: Record<string, string>
   attributes?: Record<string, unknown>
   volumePricing?: { minQuantity: number; discountPercent: number }[]
@@ -99,6 +103,10 @@ const productSchema = new Schema<IProduct>(
       unique: true,
       trim: true
     },
+    satProductCode: { type: String, default: '', trim: true },
+    satUnitCode: { type: String, default: '', trim: true },
+    taxObject: { type: String, default: '02', trim: true },
+    ivaRate: { type: Number, default: 16, min: 0, max: 100 },
     specifications: {
       type: Map,
       of: String

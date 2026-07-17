@@ -7,8 +7,10 @@ import toast from 'react-hot-toast'
 import { ChatBubbleLeftRightIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
 import ProductCard from '@/components/ProductCard'
 import ProductDetailExtras from '@/components/ProductDetailExtras'
+import { useStoreSettings } from '@/store/StoreSettingsContext'
 
 export default function ProductDetailPage() {
+  const { settings } = useStoreSettings()
   const { id } = useParams<{ id: string }>()
   const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -141,7 +143,7 @@ export default function ProductDetailPage() {
   }
 
   const gallery = Array.from(new Set([product.image, ...(product.images || [])].filter(Boolean)))
-  const quoteMessage = encodeURIComponent(`Hola QUINGO, quiero cotizar:\nProducto: ${product.name}\nSKU: ${product.sku}\nCantidad: ${quantity}`)
+  const quoteMessage = encodeURIComponent(`Hola ${settings.name}, quiero cotizar:\nProducto: ${product.name}\nSKU: ${product.sku}\nCantidad: ${quantity}`)
   const volumePricing = [...(product.volumePricing || [])].sort((a, b) => a.minQuantity - b.minQuantity)
 
   return (
@@ -246,7 +248,7 @@ export default function ProductDetailPage() {
               Agregar al Carrito
             </button>
 
-            <a href={`https://wa.me/5215576881138?text=${quoteMessage}`} target="_blank" rel="noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-green-600 bg-white py-3 font-bold text-green-700 transition hover:bg-green-50">
+            <a href={`https://wa.me/${settings.contact.whatsapp.replace(/\D/g, '')}?text=${quoteMessage}`} target="_blank" rel="noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-green-600 bg-white py-3 font-bold text-green-700 transition hover:bg-green-50">
               <ChatBubbleLeftRightIcon className="h-5 w-5" /> Cotizar por WhatsApp
             </a>
             <p className="mt-3 text-center text-xs text-gray-500">¿Necesitas muchas piezas? Solicita precio empresarial y disponibilidad.</p>

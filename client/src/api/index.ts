@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Product, Order, Customer, Address, CategoryAttribute } from '@/types'
+import { Product, Order, Customer, Address, CategoryAttribute, StoreSettings } from '@/types'
 
 const rawApiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://quingo-api.onrender.com/api'
 const normalizedApiUrl = rawApiUrl.trim().replace(/\/+$/, '')
@@ -103,6 +103,21 @@ export const categoryAPI = {
   create: (data: Record<string, any>) => apiClient.post('/categories', data, getAdminAuthConfig()),
   update: (id: string, data: Record<string, any>) => apiClient.put(`/categories/${id}`, data, getAdminAuthConfig()),
   delete: (id: string) => apiClient.delete(`/categories/${id}`, getAdminAuthConfig()),
+}
+
+export const storeSettingsAPI = {
+  getPublic: () => apiClient.get<StoreSettings>('/store-settings'),
+  getAdmin: () => apiClient.get<StoreSettings>('/store-settings/admin', getAdminAuthConfig()),
+  update: (data: StoreSettings) => apiClient.put<StoreSettings>('/store-settings', data, getAdminAuthConfig()),
+  uploadLogo: (formData: FormData) => {
+    const auth = getAdminAuthConfig()
+    return apiClient.post('/uploads/branding', formData, { headers: { ...(auth?.headers || {}), 'Content-Type': 'multipart/form-data' } })
+  },
+}
+
+export const catalogImportAPI = {
+  validate: (data: object) => apiClient.post('/import/catalog', { ...data, dryRun: true }, getAdminAuthConfig()),
+  commit: (data: object) => apiClient.post('/import/catalog', { ...data, dryRun: false }, getAdminAuthConfig()),
 }
 
 export default apiClient
