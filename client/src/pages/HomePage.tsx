@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRightIcon } from '@heroicons/react/24/outline'
-import { categoryAPI } from '@/api'
+import {
+  ArrowRightIcon,
+  ClockIcon,
+  CreditCardIcon,
+  DocumentTextIcon,
+  MapPinIcon,
+  TruckIcon,
+} from '@heroicons/react/24/outline'
+import { categoryAPI, productAPI } from '@/api'
 import ProductSearchBox from '@/components/ProductSearchBox'
-import { CategoryTreeNode } from '@/types'
+import { CategoryTreeNode, Product } from '@/types'
 import { flattenCategoryCatalog, getCategoryImage, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 
@@ -16,9 +23,38 @@ const QUICK_ACTIONS = [
   { label: 'Asesoria tecnica', href: '#contact' },
 ]
 
+const TRUST_SIGNALS = [
+  {
+    title: 'Pago seguro',
+    description: 'Tarjeta, transferencia y opciones empresariales.',
+    icon: CreditCardIcon,
+  },
+  {
+    title: 'Facturacion',
+    description: 'Datos fiscales y comprobantes para empresas.',
+    icon: DocumentTextIcon,
+  },
+  {
+    title: 'Entrega nacional',
+    description: 'Cobertura para operaciones y talleres.',
+    icon: TruckIcon,
+  },
+  {
+    title: 'Horario comercial',
+    description: 'Atencion Lun-Vie 9:00 a 18:00.',
+    icon: ClockIcon,
+  },
+  {
+    title: 'Zona de servicio',
+    description: 'CDMX, area metropolitana y envios foraneos.',
+    icon: MapPinIcon,
+  },
+]
+
 export default function HomePage() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [quoteForm, setQuoteForm] = useState({
     sku: '',
     quantity: '1',
@@ -28,6 +64,18 @@ export default function HomePage() {
   })
   const catalogItems = flattenCategoryCatalog(categories)
   const visibleCatalogItems = catalogItems.slice(0, 12)
+  const offerProducts = useMemo(
+    () => products.filter((product) => product.originalPrice && product.originalPrice > product.price).slice(0, 4),
+    [products]
+  )
+  const newProducts = useMemo(
+    () => [...products].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4),
+    [products]
+  )
+  const topProducts = useMemo(
+    () => [...products].sort((a, b) => (b.rating * 10 + b.reviews) - (a.rating * 10 + a.reviews)).slice(0, 4),
+    [products]
+  )
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -40,6 +88,19 @@ export default function HomePage() {
     }
 
     loadCategories()
+  }, [])
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await productAPI.getAll()
+        setProducts(response.data)
+      } catch (error) {
+        console.error('Error loading featured products', error)
+      }
+    }
+
+    loadProducts()
   }, [])
 
   const handleQuoteChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -59,6 +120,50 @@ export default function HomePage() {
     ].filter(Boolean).join('\n')
 
     window.location.href = `https://wa.me/5215576881138?text=${encodeURIComponent(message)}`
+  }
+
+  const renderProductRail = (title: string, subtitle: string, items: Product[]) => {
+    if (items.length === 0) {
+      return null
+    }
+
+    return (
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{title}</h2>
+              <p className="text-sm text-gray-600">{subtitle}</p>
+            </div>
+            <Link to="/products" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
+              Ver todo
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {items.map((product) => (
+              <Link
+                key={`${title}-${product.id}`}
+                to={`/products/${product.id}`}
+                className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="aspect-square overflow-hidden rounded-md bg-gray-100">
+                  <img src={product.image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+                </div>
+                <p className="mt-3 line-clamp-2 min-h-[40px] text-sm font-semibold leading-tight text-gray-900">{product.name}</p>
+                <p className="mt-1 text-xs text-gray-500">SKU: {product.sku}</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="font-bold text-gray-900">${product.price.toLocaleString()}</span>
+                  {product.originalPrice && (
+                    <span className="text-xs text-gray-500 line-through">${product.originalPrice.toLocaleString()}</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -121,6 +226,25 @@ export default function HomePage() {
               {action.label}
             </a>
           ))}
+        </div>
+      </section>
+
+      <section className="bg-white py-5">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {TRUST_SIGNALS.map((signal) => {
+              const Icon = signal.icon
+              return (
+                <div key={signal.title} className="flex gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <Icon className="h-6 w-6 shrink-0 text-blue-900" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{signal.title}</p>
+                    <p className="mt-1 text-xs text-gray-600">{signal.description}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </section>
 
@@ -192,6 +316,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {renderProductRail('Ofertas y oportunidades', 'Productos con precio especial o promocion activa.', offerProducts)}
+      {renderProductRail('Nuevos productos', 'Ultimas altas en el catalogo para surtir tu operacion.', newProducts)}
+      {renderProductRail('Mas vendidos y destacados', 'Productos con mejor calificacion y mayor movimiento.', topProducts)}
 
       <section id="quote" className="py-12">
         <div className="container mx-auto px-4">

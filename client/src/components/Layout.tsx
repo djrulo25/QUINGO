@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react'
 import Header from './Header'
 import Footer from './Footer'
+import FloatingContact from './FloatingContact'
 import { useCustomerStore } from '@/store/customerStore'
 import { useCartStore } from '@/store/cartStore'
 
@@ -25,6 +26,7 @@ export default function Layout({ children }: LayoutProps) {
       <main className="flex-1">
         {children}
       </main>
+      <FloatingContact />
       <Footer />
     </div>
   )

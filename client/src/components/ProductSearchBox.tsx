@@ -5,6 +5,8 @@ import { productAPI } from '@/api'
 import { CategoryTreeNode, Product } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 
+const DEFAULT_POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
+
 interface ProductSearchBoxProps {
   categories?: CategoryTreeNode[]
   initialValue?: string
@@ -12,6 +14,7 @@ interface ProductSearchBoxProps {
   className?: string
   inputClassName?: string
   buttonClassName?: string
+  popularSearches?: string[]
   onQueryChange?: (query: string) => void
   onSearch?: (query: string) => void
 }
@@ -23,6 +26,7 @@ export default function ProductSearchBox({
   className = '',
   inputClassName = '',
   buttonClassName = '',
+  popularSearches = DEFAULT_POPULAR_SEARCHES,
   onQueryChange,
   onSearch,
 }: ProductSearchBoxProps) {
@@ -41,6 +45,9 @@ export default function ProductSearchBox({
         })
         .slice(0, 5)
     : []
+  const exactSkuMatch = trimmedQuery
+    ? productSuggestions.find((product) => product.sku?.toLowerCase() === trimmedQuery.toLowerCase())
+    : null
 
   useEffect(() => {
     setQuery(initialValue)
@@ -89,6 +96,20 @@ export default function ProductSearchBox({
   }
 
   const hasSuggestions = productSuggestions.length > 0 || categorySuggestions.length > 0
+  const showSearchPanel = showSuggestions && (hasSuggestions || trimmedQuery.length > 0 || popularSearches.length > 0)
+
+  const runSuggestedSearch = (term: string) => {
+    setQuery(term)
+    onQueryChange?.(term)
+    setShowSuggestions(false)
+
+    if (onSearch) {
+      onSearch(term)
+      return
+    }
+
+    navigate(`/products?search=${encodeURIComponent(term)}`)
+  }
 
   return (
     <div className={`relative ${className}`}>
@@ -128,8 +149,20 @@ export default function ProductSearchBox({
         </button>
       </form>
 
-      {showSuggestions && hasSuggestions && (
+      {showSearchPanel && (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 text-gray-900 shadow-lg">
+          {exactSkuMatch && (
+            <Link
+              to={`/products/${exactSkuMatch.id}`}
+              onClick={() => setShowSuggestions(false)}
+              className="mb-2 block rounded-md border border-blue-200 bg-blue-50 px-3 py-2 hover:bg-blue-100"
+            >
+              <span className="block text-xs font-bold uppercase text-blue-700">Coincidencia exacta de SKU</span>
+              <span className="mt-1 block text-sm font-semibold text-gray-900">{exactSkuMatch.name}</span>
+              <span className="text-xs text-gray-600">SKU: {exactSkuMatch.sku}</span>
+            </Link>
+          )}
+
           {productSuggestions.length > 0 && (
             <div>
               <p className="px-3 py-1 text-xs font-bold uppercase text-gray-500">Productos</p>
@@ -141,9 +174,14 @@ export default function ProductSearchBox({
                   className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-gray-100"
                 >
                   <img src={product.image} alt={product.name} className="h-10 w-10 rounded object-cover" />
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{product.name}</span>
-                    <span className="block text-xs text-gray-500">SKU: {product.sku}</span>
+                    <span className="block text-xs text-gray-500">
+                      SKU: {product.sku} | {product.stock > 0 ? `${product.stock} disp.` : 'Sin stock'}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm font-bold text-gray-900">
+                    ${product.price.toLocaleString()}
                   </span>
                 </Link>
               ))}
@@ -163,6 +201,34 @@ export default function ProductSearchBox({
                   {item.category.name}
                 </Link>
               ))}
+            </div>
+          )}
+
+          {trimmedQuery && (
+            <button
+              type="button"
+              onClick={() => runSuggestedSearch(trimmedQuery)}
+              className="mt-2 block w-full rounded-md border border-gray-200 px-3 py-2 text-left text-sm font-semibold text-blue-800 hover:bg-blue-50"
+            >
+              Buscar "{trimmedQuery}" en todo el catalogo
+            </button>
+          )}
+
+          {!trimmedQuery && (
+            <div>
+              <p className="px-3 py-1 text-xs font-bold uppercase text-gray-500">Busquedas populares</p>
+              <div className="flex flex-wrap gap-2 px-3 py-2">
+                {popularSearches.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => runSuggestedSearch(term)}
+                    className="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-blue-700 hover:text-blue-800"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
