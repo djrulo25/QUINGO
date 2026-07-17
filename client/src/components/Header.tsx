@@ -194,7 +194,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" aria-label="Ir al inicio" className="text-white">
-            <BrandLogo />
+            <BrandLogo variant="compact" />
           </Link>
 
           {/* Navigation */}

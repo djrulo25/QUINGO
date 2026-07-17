@@ -10,11 +10,28 @@ const maskBase: CSSProperties = {
 }
 
 interface BrandLogoProps {
-  variant?: 'horizontal' | 'vertical'
+  variant?: 'horizontal' | 'vertical' | 'compact'
   className?: string
 }
 
 export default function BrandLogo({ variant = 'horizontal', className = '' }: BrandLogoProps) {
+  if (variant === 'compact') {
+    return (
+      <span
+        role="img"
+        aria-label="QUINGO"
+        className={`block shrink-0 ${className}`}
+        style={{
+          ...maskBase,
+          width: 64,
+          height: 52,
+          maskSize: '85px 85px',
+          maskPosition: '-12px -11px',
+        }}
+      />
+    )
+  }
+
   if (variant === 'vertical') {
     return (
       <span
