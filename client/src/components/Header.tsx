@@ -1,8 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingCartIcon, MagnifyingGlassIcon, UserIcon } from '@heroicons/react/24/outline'
+import {
+  Bars3Icon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MagnifyingGlassIcon,
+  ShoppingCartIcon,
+  UserIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline'
 import { useCartStore } from '@/store/cartStore'
 import { useCustomerStore } from '@/store/customerStore'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { categoryAPI } from '@/api'
 import { CategoryTreeNode } from '@/types'
 import { getTopLevelCategories } from '@/utils/categories'
@@ -14,6 +22,8 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
+  const [mobilePath, setMobilePath] = useState<string[]>([])
+  const [showProductsExplorer, setShowProductsExplorer] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -29,6 +39,48 @@ export default function Header() {
 
     loadCategories()
   }, [])
+
+  const mobileRootCategory = mobilePath.length > 0 ? categories.find((category) => category.id === mobilePath[0]) || null : null
+
+  const mobileCurrentLevel = useMemo(() => {
+    if (!showProductsExplorer) {
+      return []
+    }
+
+    let currentNodes = categories
+
+    for (const id of mobilePath) {
+      const nextNode = currentNodes.find((node) => node.id === id)
+
+      if (!nextNode) {
+        return []
+      }
+
+      currentNodes = nextNode.children || []
+    }
+
+    return currentNodes
+  }, [categories, mobilePath, showProductsExplorer])
+
+  const handleMobileBack = () => {
+    if (mobilePath.length > 0) {
+      setMobilePath((currentPath) => currentPath.slice(0, -1))
+      return
+    }
+
+    setShowProductsExplorer(false)
+  }
+
+  const handleMobileCategorySelect = (category: CategoryTreeNode) => {
+    if (category.children?.length > 0) {
+      setMobilePath((currentPath) => [...currentPath, category.id])
+      return
+    }
+
+    const selectedRootCategory = mobileRootCategory?.slug || category.slug
+    setIsMenuOpen(false)
+    navigate(`/products?category=${selectedRootCategory}&subcategory=${category.slug}`)
+  }
 
   return (
     <header className="bg-gray-900 text-white sticky top-0 z-50 shadow-lg">
@@ -155,74 +207,93 @@ export default function Header() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <nav className="md:hidden pb-4 border-t border-gray-800">
-            <Link
-              to="/"
-              className="block py-2 hover:text-gray-300 transition"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Inicio
-            </Link>
-            <Link
-              to="/products"
-              className="block py-2 hover:text-gray-300 transition"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Productos
-            </Link>
-            <div className="space-y-2">
-              {categories.map((category) => (
-                <div key={category.id} className="rounded-lg border border-gray-800 px-3 py-2">
-                  <Link
-                    to={`/products?category=${category.slug}`}
-                    className="block text-sm font-semibold text-gray-200"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {category.name}
-                  </Link>
-                </div>
-              ))}
-            </div>
-            <a href="#contact" className="block py-2 hover:text-gray-300 transition">
-              Contacto
-            </a>
-            <div className="border-t border-gray-800 my-2 py-2">
-              {isLoggedIn ? (
-                <>
-                  <Link
-                    to="/customer/profile"
-                    className="block py-2 hover:text-gray-300 transition"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Mi Perfil
-                  </Link>
-                  <Link
-                    to="/customer/orders"
-                    className="block py-2 hover:text-gray-300 transition"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Mis Órdenes
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout()
-                      setIsMenuOpen(false)
-                      navigate('/')
-                    }}
-                    className="block w-full text-left py-2 hover:text-red-400 transition text-red-400"
-                  >
-                    Cerrar Sesión
-                  </button>
-                </>
-              ) : (
+            {!showProductsExplorer ? (
+              <>
                 <Link
-                  to="/customer/login"
+                  to="/"
                   className="block py-2 hover:text-gray-300 transition"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Iniciar Sesión
+                  Inicio
                 </Link>
-              )}
-            </div>
+                <button
+                  type="button"
+                  className="block w-full text-left py-2 hover:text-gray-300 transition"
+                  onClick={() => {
+                    setShowProductsExplorer(true)
+                    setMobilePath([])
+                  }}
+                >
+                  Productos
+                </button>
+                <a href="#contact" className="block py-2 hover:text-gray-300 transition">
+                  Contacto
+                </a>
+                <div className="border-t border-gray-800 my-2 py-2">
+                  {isLoggedIn ? (
+                    <>
+                      <Link
+                        to="/customer/profile"
+                        className="block py-2 hover:text-gray-300 transition"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Mi Perfil
+                      </Link>
+                      <Link
+                        to="/customer/orders"
+                        className="block py-2 hover:text-gray-300 transition"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Mis Órdenes
+                      </Link>
+                      <button
+                        onClick={() => {
+                          logout()
+                          setIsMenuOpen(false)
+                          navigate('/')
+                        }}
+                        className="block w-full text-left py-2 hover:text-red-400 transition text-red-400"
+                      >
+                        Cerrar Sesión
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to="/customer/login"
+                      className="block py-2 hover:text-gray-300 transition"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Iniciar Sesión
+                    </Link>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={handleMobileBack}
+                  className="block w-full text-left py-2 text-sm font-semibold text-blue-300"
+                >
+                  ← Regresar
+                </button>
+
+                {mobileCurrentLevel.length > 0 ? (
+                  mobileCurrentLevel.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => handleMobileCategorySelect(category)}
+                      className="block w-full rounded-lg border border-gray-800 px-3 py-2 text-left text-sm font-semibold text-gray-200"
+                    >
+                      {category.name}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400">No hay subcategorías disponibles.</p>
+                )}
+              </div>
+            )}
           </nav>
         )}
       </div>
