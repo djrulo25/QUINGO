@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { FunnelIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Product, FilterOptions, CategoryTreeNode } from '@/types'
 import ProductCard from '@/components/ProductCard'
+import CategoryTreePanel from '@/components/CategoryTreePanel'
 import { productAPI, categoryAPI } from '@/api'
 import { getTopLevelCategories } from '@/utils/categories'
 
@@ -88,54 +89,6 @@ export default function ProductsPage() {
     return nextProducts
   }, [products, sortBy])
 
-  const selectedCategory = categories.find((category) => category.slug === filters.category)
-  const availableSubcategories = selectedCategory?.children || []
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextCategory = e.target.value || undefined
-
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      category: nextCategory,
-      subcategory: undefined,
-    }))
-
-    setSearchParams((currentParams) => {
-      const nextParams = new URLSearchParams(currentParams)
-
-      if (nextCategory) {
-        nextParams.set('category', nextCategory)
-        nextParams.delete('subcategory')
-      } else {
-        nextParams.delete('category')
-        nextParams.delete('subcategory')
-      }
-
-      return nextParams
-    })
-  }
-
-  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextSubcategory = e.target.value || undefined
-
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      subcategory: nextSubcategory,
-    }))
-
-    setSearchParams((currentParams) => {
-      const nextParams = new URLSearchParams(currentParams)
-
-      if (nextSubcategory) {
-        nextParams.set('subcategory', nextSubcategory)
-      } else {
-        nextParams.delete('subcategory')
-      }
-
-      return nextParams
-    })
-  }
-
   const clearFilters = () => {
     setFilters({})
     setSearchQuery('')
@@ -176,38 +129,12 @@ export default function ProductsPage() {
 
           {showFilters && (
             <div className="mt-4 rounded-xl bg-gray-50 p-4 border border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-                  <select
-                    value={filters.category || ''}
-                    onChange={handleCategoryChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  >
-                    <option value="">Todas las categorías</option>
-                    {categories.map((option) => (
-                      <option key={option.id} value={option.slug}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Subcategoría</label>
-                  <select
-                    value={filters.subcategory || ''}
-                    onChange={handleSubcategoryChange}
-                    disabled={!filters.category}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:bg-gray-100"
-                  >
-                    <option value="">Todas las subcategorías</option>
-                    {availableSubcategories.map((option) => (
-                      <option key={option.id} value={option.slug}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="rounded-xl border border-gray-200 bg-white p-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Explorador de categorías
+                  </label>
+                  <CategoryTreePanel categories={categories} className="w-full" />
                 </div>
 
                 <div>

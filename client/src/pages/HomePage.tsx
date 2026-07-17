@@ -4,6 +4,7 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { categoryAPI } from '@/api'
 import { CategoryTreeNode } from '@/types'
 import { getTopLevelCategories } from '@/utils/categories'
+import CategoryTreePanel from '@/components/CategoryTreePanel'
 
 export default function HomePage() {
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
@@ -56,36 +57,8 @@ export default function HomePage() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Nuestras Categorías</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {categories.map((category) => (
-              <div key={category.id} className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition group">
-                <Link to={`/products?category=${category.slug}`} className="block">
-                  <div className="text-5xl mb-4">📦</div>
-                  <h3 className="text-xl font-semibold mb-3 group-hover:text-blue-600 transition">
-                    {category.name}
-                  </h3>
-                  <p className="text-gray-600 mb-4">{category.description}</p>
-                  <div className="flex items-center text-blue-600 font-semibold">
-                    Ver productos
-                    <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition" />
-                  </div>
-                </Link>
-
-                {category.children?.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {category.children.map((child) => (
-                      <Link
-                        key={child.id}
-                        to={`/products?category=${category.slug}&subcategory=${child.slug}`}
-                        className="text-sm bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 px-3 py-1 rounded-full transition"
-                      >
-                        {child.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="rounded-2xl bg-white shadow-md p-6">
+            <CategoryTreePanel categories={categories} className="w-full" />
           </div>
         </div>
       </section>
