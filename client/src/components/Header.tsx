@@ -18,7 +18,7 @@ import { CategoryTreeNode } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 
-const MOBILE_QUICK_ACTIONS = [
+const MOBILE_SERVICES = [
   { label: 'Cotizacion rapida', href: '/#quote' },
   { label: 'Solicitar factura', href: '/facturacion' },
   { label: 'Asesoria tecnica', href: '/contacto' },
@@ -33,6 +33,7 @@ export default function Header() {
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [mobilePath, setMobilePath] = useState<string[]>([])
   const [showProductsExplorer, setShowProductsExplorer] = useState(false)
+  const [showServicesExplorer, setShowServicesExplorer] = useState(false)
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false)
   const productsMenuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -102,6 +103,7 @@ export default function Header() {
 
   const resetMobileProductsExplorer = () => {
     setShowProductsExplorer(false)
+    setShowServicesExplorer(false)
     setMobilePath([])
   }
 
@@ -387,7 +389,7 @@ export default function Header() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <nav className="md:hidden pb-4 border-t border-gray-800">
-            {!showProductsExplorer ? (
+            {!showProductsExplorer && !showServicesExplorer ? (
               <>
                 <Link
                   to="/"
@@ -406,24 +408,17 @@ export default function Header() {
                 >
                   Productos
                 </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between py-2 text-left hover:text-gray-300 transition"
+                  onClick={() => setShowServicesExplorer(true)}
+                >
+                  <span>Servicios</span>
+                  <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+                </button>
                 <Link to="/contacto" className="block py-2 hover:text-gray-300 transition" onClick={closeMobileMenu}>
                   Contacto
                 </Link>
-                <div className="my-3 rounded-lg border border-gray-800 bg-gray-950/60 p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase text-gray-500">Accesos rapidos</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {MOBILE_QUICK_ACTIONS.map((action) => (
-                      <a
-                        key={action.label}
-                        href={action.href}
-                        onClick={closeMobileMenu}
-                        className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800"
-                      >
-                        {action.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
                 <div className="border-t border-gray-800 my-2 py-2">
                   {isLoggedIn ? (
                     <>
@@ -463,7 +458,7 @@ export default function Header() {
                   )}
                 </div>
               </>
-            ) : (
+            ) : showProductsExplorer ? (
               <div className="space-y-3 pt-3">
                 <div className="flex items-center justify-between gap-3">
                   <button
@@ -527,6 +522,36 @@ export default function Header() {
                 ) : (
                   <p className="text-sm text-gray-400">No hay subcategorias disponibles.</p>
                 )}
+              </div>
+            ) : (
+              <div className="space-y-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowServicesExplorer(false)}
+                  className="inline-flex items-center gap-2 py-2 text-sm font-semibold text-blue-300"
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                  Regresar
+                </button>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase text-gray-500">Menu</p>
+                  <p className="text-base font-bold text-white">Servicios</p>
+                </div>
+
+                <div className="space-y-2">
+                  {MOBILE_SERVICES.map((service) => (
+                    <a
+                      key={service.label}
+                      href={service.href}
+                      onClick={closeMobileMenu}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-800 px-3 py-3 text-sm font-semibold text-gray-200 hover:border-gray-700 hover:bg-gray-800"
+                    >
+                      <span>{service.label}</span>
+                      <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </nav>
