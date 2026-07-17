@@ -100,6 +100,7 @@ export interface CategoryAttribute {
   type: AttributeType
   options: string[]
   required: boolean
+  filterable?: boolean
   unit?: string
   placeholder?: string
   order: number

@@ -266,36 +266,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-gray-100 py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                title: 'Productos certificados',
-                description: 'Inventario para soldadura, seguridad y gases industriales.',
-              },
-              {
-                title: 'Entrega rapida',
-                description: 'Opciones de envio para mantener tu operacion en movimiento.',
-              },
-              {
-                title: 'Soporte tecnico',
-                description: 'Asesoria para elegir el producto correcto.',
-              },
-              {
-                title: 'Precios competitivos',
-                description: 'Suministros confiables sin comprometer la calidad.',
-              },
-            ].map((feature) => (
-              <div key={feature.title} className="rounded-lg bg-white p-5 shadow-sm">
-                <h3 className="font-semibold text-gray-900">{feature.title}</h3>
-                <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {renderProductRail('Ofertas y oportunidades', 'Productos con precio especial o promocion activa.', offerProducts)}
       {renderProductRail('Nuevos productos', 'Ultimas altas en el catalogo para surtir tu operacion.', newProducts)}
       {renderProductRail('Mas vendidos y destacados', 'Productos con mejor calificacion y mayor movimiento.', topProducts)}

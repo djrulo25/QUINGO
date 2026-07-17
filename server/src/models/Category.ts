@@ -8,6 +8,7 @@ export interface ICategoryAttribute {
   type: AttributeType
   options: string[]
   required: boolean
+  filterable: boolean
   unit?: string
   placeholder?: string
   order: number
@@ -85,6 +86,7 @@ const categorySchema = new Schema<ICategory>(
       },
       options: { type: [String], default: [] },
       required: { type: Boolean, default: false },
+      filterable: { type: Boolean, default: true },
       unit: { type: String, default: '', trim: true },
       placeholder: { type: String, default: '', trim: true },
       order: { type: Number, default: 0 },

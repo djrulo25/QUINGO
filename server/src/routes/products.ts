@@ -34,7 +34,7 @@ function transformProduct(doc: any) {
 // Get all products with filters
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { category, subcategory, priceMin, priceMax, search, inStock } = req.query
+    const { category, subcategory, priceMin, priceMax, search, inStock, attributeFilters } = req.query
 
     let query: any = {}
     const conditions: any[] = []
@@ -78,6 +78,29 @@ router.get('/', async (req: Request, res: Response) => {
       if (priceMax) query.price.$lte = Number(priceMax)
     }
     if (inStock === 'true') query.stock = { $gt: 0 }
+
+    if (typeof attributeFilters === 'string' && attributeFilters) {
+      const parsedFilters = JSON.parse(attributeFilters)
+      if (!parsedFilters || typeof parsedFilters !== 'object' || Array.isArray(parsedFilters)) {
+        return res.status(400).json({ error: 'Invalid attribute filters' })
+      }
+
+      for (const [key, value] of Object.entries(parsedFilters)) {
+        if (!/^[a-z0-9_]+$/.test(key)) continue
+        const field = `attributes.${key}`
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const range = value as { min?: unknown; max?: unknown }
+          const numericRange: Record<string, number> = {}
+          if (range.min !== undefined && range.min !== '') numericRange.$gte = Number(range.min)
+          if (range.max !== undefined && range.max !== '') numericRange.$lte = Number(range.max)
+          if (Object.values(numericRange).every(Number.isFinite)) query[field] = numericRange
+        } else if (typeof value === 'boolean') {
+          query[field] = value
+        } else if (typeof value === 'string' && value.trim()) {
+          query[field] = value.trim()
+        }
+      }
+    }
 
     const products = await Product.find(query).limit(100)
     res.json(products.map(transformProduct))

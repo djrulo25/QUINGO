@@ -6,11 +6,10 @@ import {
   TableCellsIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
-import { Product, FilterOptions, CategoryTreeNode } from '@/types'
+import { Product, FilterOptions, CategoryAttribute, CategoryTreeNode } from '@/types'
 import ProductCard from '@/components/ProductCard'
 import ProductListRow from '@/components/ProductListRow'
 import ProductSearchBox from '@/components/ProductSearchBox'
-import CategoryTreePanel from '@/components/CategoryTreePanel'
 import { productAPI, categoryAPI } from '@/api'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
@@ -24,6 +23,46 @@ const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', '
 
 type SortOption = (typeof SORT_OPTIONS)[number]['value']
 type ViewMode = 'grid' | 'list'
+type AttributeFilterValues = Record<string, string>
+
+const buildAttributeFilters = (definitions: CategoryAttribute[], values: AttributeFilterValues) => {
+  const filters: Record<string, string | boolean | { min?: number; max?: number }> = {}
+  for (const attribute of definitions) {
+    if (attribute.type === 'number') {
+      const min = values[`${attribute.key}__min`]
+      const max = values[`${attribute.key}__max`]
+      if (min || max) filters[attribute.key] = {
+        ...(min ? { min: Number(min) } : {}),
+        ...(max ? { max: Number(max) } : {}),
+      }
+    } else {
+      const value = values[attribute.key]
+      if (value) filters[attribute.key] = attribute.type === 'checkbox' ? value === 'true' : value
+    }
+  }
+  return Object.keys(filters).length > 0 ? JSON.stringify(filters) : undefined
+}
+
+const formatFilterValue = (attribute: CategoryAttribute, value: string) => {
+  if (attribute.type === 'checkbox') return value === 'true' ? 'Sí' : 'No'
+  return `${value}${attribute.unit ? ` ${attribute.unit}` : ''}`
+}
+
+const renderAttributeFilter = (
+  attribute: CategoryAttribute,
+  values: AttributeFilterValues,
+  onChange: (key: string, value: string) => void
+) => {
+  const label = <span className="mb-2 block text-sm font-bold text-gray-800">{attribute.name}{attribute.unit ? ` (${attribute.unit})` : ''}</span>
+
+  if (attribute.type === 'number') return <div key={attribute.key}>{label}<div className="grid grid-cols-2 gap-2"><input type="number" value={values[`${attribute.key}__min`] || ''} onChange={(event) => onChange(`${attribute.key}__min`, event.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm" placeholder="Mínimo" /><input type="number" value={values[`${attribute.key}__max`] || ''} onChange={(event) => onChange(`${attribute.key}__max`, event.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm" placeholder="Máximo" /></div></div>
+
+  if (attribute.type === 'select') return <div key={attribute.key}>{label}<div className="flex flex-wrap gap-2"><button type="button" onClick={() => onChange(attribute.key, '')} className={`rounded-full border px-3 py-1.5 text-sm font-medium ${!values[attribute.key] ? 'border-blue-800 bg-blue-900 text-white' : 'border-gray-300 bg-white text-gray-700'}`}>Todos</button>{attribute.options.map((option) => <button key={option} type="button" onClick={() => onChange(attribute.key, option)} className={`rounded-full border px-3 py-1.5 text-sm font-medium ${values[attribute.key] === option ? 'border-blue-800 bg-blue-900 text-white' : 'border-gray-300 bg-white text-gray-700 hover:border-blue-500'}`}>{option}</button>)}</div></div>
+
+  if (attribute.type === 'checkbox') return <div key={attribute.key}>{label}<select value={values[attribute.key] || ''} onChange={(event) => onChange(attribute.key, event.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"><option value="">Todos</option><option value="true">Sí</option><option value="false">No</option></select></div>
+
+  return <label key={attribute.key} className="block">{label}<input type={attribute.type === 'date' ? 'date' : 'text'} value={values[attribute.key] || ''} onChange={(event) => onChange(attribute.key, event.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm" placeholder={attribute.placeholder || `Filtrar por ${attribute.name.toLowerCase()}`} /></label>
+}
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -38,6 +77,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [sortBy, setSortBy] = useState<SortOption>('price-asc')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [attributeFilterValues, setAttributeFilterValues] = useState<AttributeFilterValues>({})
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -51,6 +91,17 @@ export default function ProductsPage() {
 
     loadCategories()
   }, [])
+
+  const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
+  const activeCategorySlug = filters.subcategory || filters.category
+  const activeCategory = useMemo(
+    () => catalogItems.find((item) => item.category.slug === activeCategorySlug)?.category,
+    [activeCategorySlug, catalogItems]
+  )
+  const filterableAttributes = useMemo(
+    () => (activeCategory?.attributes || []).filter((attribute) => attribute.filterable !== false).slice(0, 8),
+    [activeCategory]
+  )
 
   useEffect(() => {
     const categoryFromQuery = searchParams.get('category') || undefined
@@ -82,12 +133,17 @@ export default function ProductsPage() {
   }, [searchParams])
 
   useEffect(() => {
+    setAttributeFilterValues({})
+  }, [activeCategorySlug])
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true)
         const { data } = await productAPI.getAll({
           ...filters,
           search: searchQuery.trim() || undefined,
+          attributeFilters: buildAttributeFilters(filterableAttributes, attributeFilterValues),
         })
         setProducts(data)
       } catch (error) {
@@ -99,10 +155,8 @@ export default function ProductsPage() {
 
     const debounceTimer = window.setTimeout(fetchProducts, 400)
     return () => window.clearTimeout(debounceTimer)
-  }, [filters, searchQuery])
+  }, [filters, searchQuery, filterableAttributes, attributeFilterValues])
 
-  const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
-  const activeCategorySlug = filters.subcategory || filters.category
   const activeCategoryName = useMemo(() => {
     if (!activeCategorySlug) {
       return ''
@@ -129,13 +183,6 @@ export default function ProductsPage() {
     ? sortedProducts.find((product) => product.sku.toLowerCase() === searchQuery.trim().toLowerCase())
     : null
 
-  const clearFilters = () => {
-    setFilters({})
-    setSearchQuery('')
-    setSortBy('price-asc')
-    setSearchParams(new URLSearchParams())
-  }
-
   const handleCatalogSearch = (query: string) => {
     const nextParams = new URLSearchParams(searchParams)
 
@@ -148,42 +195,41 @@ export default function ProductsPage() {
     setSearchParams(nextParams)
   }
 
-  const hasActiveFilters = searchQuery || filters.category || filters.subcategory
+  const activeAttributeFilterCount = Object.values(attributeFilterValues).filter(Boolean).length
+  const hasActiveFilters = searchQuery || filters.category || filters.subcategory || activeAttributeFilterCount > 0
+
+  const setAttributeFilter = (key: string, value: string) => {
+    setAttributeFilterValues((current) => ({ ...current, [key]: value }))
+  }
+
   const renderFilterControls = (closeAfterAction = false) => (
     <>
-      <div className="grid grid-cols-1 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            Explorador de categorias
-          </label>
-          <CategoryTreePanel
-            categories={categories}
-            className="w-full"
-            onNavigate={closeAfterAction ? () => setShowFilters(false) : undefined}
-          />
-        </div>
-
+      {activeCategory ? (
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">Orden por precio</label>
-          <select
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value as SortOption)}
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-900"
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-700">Filtros para</p>
+            <h2 className="text-lg font-bold text-gray-900">{activeCategory.name}</h2>
+          </div>
+          {filterableAttributes.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filterableAttributes.map((attribute) => renderAttributeFilter(attribute, attributeFilterValues, setAttributeFilter))}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-600">Esta categoría todavía no tiene características marcadas como filtros.</p>
+          )}
         </div>
-      </div>
+      ) : (
+        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+          <p className="font-semibold text-blue-950">Selecciona una categoría</p>
+          <p className="mt-1 text-sm text-blue-800">Los filtros mostrarán automáticamente las características relevantes para ese tipo de producto.</p>
+        </div>
+      )}
 
       <div className="mt-4 flex justify-end">
         <button
           type="button"
           onClick={() => {
-            clearFilters()
+            setAttributeFilterValues({})
             if (closeAfterAction) {
               setShowFilters(false)
             }
@@ -191,7 +237,7 @@ export default function ProductsPage() {
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
         >
           <XMarkIcon className="h-4 w-4" />
-          Limpiar filtros
+          Limpiar características
         </button>
       </div>
     </>
@@ -224,6 +270,7 @@ export default function ProductsPage() {
             >
               <FunnelIcon className="h-5 w-5" />
               <span className="font-medium">Filtros</span>
+              {activeAttributeFilterCount > 0 && <span className="rounded-full bg-blue-900 px-2 py-0.5 text-xs font-bold text-white">{activeAttributeFilterCount}</span>}
             </button>
           </div>
 
@@ -286,6 +333,15 @@ export default function ProductsPage() {
                 <XMarkIcon className="h-4 w-4" />
               </button>
             )}
+            {Object.entries(attributeFilterValues).filter(([, value]) => value).map(([key, value]) => {
+              const baseKey = key.replace(/__(min|max)$/, '')
+              const attribute = filterableAttributes.find((item) => item.key === baseKey)
+              if (!attribute) return null
+              const suffix = key.endsWith('__min') ? 'desde' : key.endsWith('__max') ? 'hasta' : ''
+              return <button key={key} type="button" onClick={() => setAttributeFilter(key, '')} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-900">
+                {attribute.name} {suffix}: {formatFilterValue(attribute, value)} <XMarkIcon className="h-4 w-4" />
+              </button>
+            })}
           </div>
         )}
 

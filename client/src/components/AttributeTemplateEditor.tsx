@@ -29,6 +29,7 @@ export default function AttributeTemplateEditor({ value, onChange }: Props) {
     type: 'text',
     options: [],
     required: false,
+    filterable: true,
     unit: '',
     placeholder: '',
     order: value.length,
@@ -72,8 +73,11 @@ export default function AttributeTemplateEditor({ value, onChange }: Props) {
               <input value={attribute.placeholder || ''} onChange={(e) => update(index, { placeholder: e.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" />
             </label>
           </div>
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={attribute.required} onChange={(e) => update(index, { required: e.target.checked })} /> Obligatorio</label>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={attribute.required} onChange={(e) => update(index, { required: e.target.checked })} /> Obligatorio</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-blue-800"><input type="checkbox" checked={attribute.filterable !== false} onChange={(e) => update(index, { filterable: e.target.checked })} /> Usar como filtro</label>
+            </div>
             <button type="button" onClick={() => onChange(value.filter((_, current) => current !== index).map((item, order) => ({ ...item, order })))} className="inline-flex items-center gap-1 text-sm font-medium text-red-600"><TrashIcon className="h-4 w-4" /> Eliminar</button>
           </div>
         </div>
