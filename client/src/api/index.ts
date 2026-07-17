@@ -12,8 +12,20 @@ const apiClient = axios.create({
   },
 })
 
+const getAdminAuthConfig = () => {
+  const token = localStorage.getItem('adminToken')
+
+  return token
+    ? { headers: { Authorization: `Bearer ${token}` } }
+    : undefined
+}
+
 // Add token to requests if it exists
 apiClient.interceptors.request.use((config) => {
+  if (config.headers.Authorization) {
+    return config
+  }
+
   let token: string | null = null
   const customerStore = localStorage.getItem('customer-store')
   if (customerStore) {
@@ -92,10 +104,10 @@ export const addressAPI = {
 // Categories
 export const categoryAPI = {
   getAll: () => apiClient.get('/categories'),
-  getAllAdmin: () => apiClient.get('/categories/admin'),
-  create: (data: Record<string, any>) => apiClient.post('/categories', data),
-  update: (id: string, data: Record<string, any>) => apiClient.put(`/categories/${id}`, data),
-  delete: (id: string) => apiClient.delete(`/categories/${id}`),
+  getAllAdmin: () => apiClient.get('/categories/admin', getAdminAuthConfig()),
+  create: (data: Record<string, any>) => apiClient.post('/categories', data, getAdminAuthConfig()),
+  update: (id: string, data: Record<string, any>) => apiClient.put(`/categories/${id}`, data, getAdminAuthConfig()),
+  delete: (id: string) => apiClient.delete(`/categories/${id}`, getAdminAuthConfig()),
 }
 
 export default apiClient

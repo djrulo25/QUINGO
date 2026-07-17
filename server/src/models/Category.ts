@@ -89,7 +89,7 @@ const syncCategoryTreeMeta = async (category: any) => {
   }
 }
 
-categorySchema.pre('save', async function (next) {
+categorySchema.pre('validate', async function (next) {
   await syncCategoryTreeMeta(this)
   next()
 })

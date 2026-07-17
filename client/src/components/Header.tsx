@@ -4,6 +4,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MagnifyingGlassIcon,
+  PhoneIcon,
   ShoppingCartIcon,
   UserIcon,
   XMarkIcon
@@ -168,6 +169,15 @@ export default function Header() {
                 </span>
               )}
             </Link>
+
+            <a
+              href="tel:+5215576881138"
+              className="md:hidden p-2 hover:bg-gray-800 rounded-lg transition"
+              aria-label="Llamar a QUINGO"
+              title="Llamar a QUINGO"
+            >
+              <PhoneIcon className="w-6 h-6" />
+            </a>
 
             {/* User Menu */}
             <div className="relative">
