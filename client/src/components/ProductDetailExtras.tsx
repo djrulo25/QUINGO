@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  CheckBadgeIcon,
   CreditCardIcon,
   DocumentArrowDownIcon,
-  ReceiptPercentIcon,
-  ShieldCheckIcon,
   TruckIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
@@ -53,33 +50,24 @@ export default function ProductDetailExtras({ product, attributeDefinitions, rel
   ]
   const faqs = product.faqs?.length ? product.faqs : defaultFaqs
 
-  return <div className="mt-12 space-y-12 border-t border-gray-200 pt-10">
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {[
-        { icon: ShieldCheckIcon, title: 'Compra segura', text: 'Pago protegido y atención personalizada.' },
-        { icon: ReceiptPercentIcon, title: 'Facturación', text: 'Comprobantes fiscales para personas y empresas.' },
-        { icon: TruckIcon, title: 'Entrega nacional', text: 'Cobertura en México según producto y destino.' },
-        { icon: CheckBadgeIcon, title: 'Soporte técnico', text: 'Asesoría para confirmar compatibilidad y aplicación.' },
-      ].map((item) => { const Icon = item.icon; return <div key={item.title} className="flex gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"><Icon className="h-7 w-7 shrink-0 text-blue-800" /><div><h3 className="font-bold text-gray-900">{item.title}</h3><p className="mt-1 text-sm text-gray-600">{item.text}</p></div></div> })}
-    </section>
-
-    <section className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+  return <div className="mt-8 space-y-12 border-t border-gray-200 pt-8">
+    <section className="grid min-w-0 gap-6 lg:grid-cols-2">
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-xl font-bold text-gray-900">Características técnicas</h2>
         <p className="mt-1 text-sm text-gray-600">Información configurada específicamente para este producto.</p>
         {technicalRows.length > 0 || (product.specifications && Object.keys(product.specifications).length > 0) ? <dl className="mt-5 divide-y divide-gray-100">
-          {technicalRows.map((row) => <div key={row.key} className="grid grid-cols-2 gap-4 py-3"><dt className="text-sm text-gray-600">{row.label}</dt><dd className="text-sm font-semibold text-gray-900">{row.value}</dd></div>)}
-          {Object.entries(product.specifications || {}).map(([key, value]) => <div key={key} className="grid grid-cols-2 gap-4 py-3"><dt className="text-sm text-gray-600">{key}</dt><dd className="text-sm font-semibold text-gray-900">{value}</dd></div>)}
+          {technicalRows.map((row) => <div key={row.key} className="grid min-w-0 gap-1 py-3 sm:grid-cols-2 sm:gap-4"><dt className="min-w-0 break-words text-sm text-gray-600">{row.label}</dt><dd className="min-w-0 break-words text-sm font-semibold text-gray-900 [overflow-wrap:anywhere]">{row.value}</dd></div>)}
+          {Object.entries(product.specifications || {}).map(([key, value]) => <div key={key} className="grid min-w-0 gap-1 py-3 sm:grid-cols-2 sm:gap-4"><dt className="min-w-0 break-words text-sm text-gray-600">{key}</dt><dd className="min-w-0 break-words text-sm font-semibold text-gray-900 [overflow-wrap:anywhere]">{value}</dd></div>)}
         </dl> : <p className="mt-5 rounded-lg bg-gray-50 p-4 text-sm text-gray-500">La ficha técnica detallada está disponible mediante cotización.</p>}
       </div>
 
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-gray-200 bg-blue-950 p-5 text-white shadow-sm">
+      <div className="min-w-0 space-y-5">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-blue-950 p-4 text-white shadow-sm sm:p-5">
           <TruckIcon className="h-8 w-8 text-blue-200" />
           <h2 className="mt-3 text-xl font-bold">Consulta entrega en tu zona</h2>
           <p className="mt-1 text-sm text-blue-100">Ingresa tu código postal para preparar una consulta de cobertura.</p>
-          <div className="mt-4 flex gap-2"><input inputMode="numeric" maxLength={5} value={postalCode} onChange={(event) => { setPostalCode(event.target.value.replace(/\D/g, '')); setShowDeliveryMessage(false) }} placeholder="Código postal" className="min-w-0 flex-1 rounded-lg border-0 px-3 py-2 text-gray-900" /><button type="button" disabled={postalCode.length !== 5} onClick={() => setShowDeliveryMessage(true)} className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-950 disabled:opacity-50">Consultar</button></div>
-          {showDeliveryMessage && <p className="mt-3 rounded-lg bg-white/10 p-3 text-sm">Tenemos cobertura nacional. Confirma costo y tiempo para el C.P. {postalCode} mediante la cotización del producto.</p>}
+          <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row"><input inputMode="numeric" maxLength={5} value={postalCode} onChange={(event) => { setPostalCode(event.target.value.replace(/\D/g, '')); setShowDeliveryMessage(false) }} placeholder="Código postal" className="w-full min-w-0 flex-1 rounded-lg border-0 px-3 py-2 text-gray-900" /><button type="button" disabled={postalCode.length !== 5} onClick={() => setShowDeliveryMessage(true)} className="w-full rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-950 disabled:opacity-50 sm:w-auto">Consultar</button></div>
+          {showDeliveryMessage && <p className="mt-3 break-words rounded-lg bg-white/10 p-3 text-sm [overflow-wrap:anywhere]">Tenemos cobertura nacional. Confirma costo y tiempo para el C.P. {postalCode} mediante la cotización del producto.</p>}
         </div>
 
         {product.documents && product.documents.length > 0 && <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="text-xl font-bold text-gray-900">Documentos y descargas</h2><div className="mt-4 space-y-2">{product.documents.map((document) => <a key={`${document.name}-${document.url}`} href={document.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 font-semibold text-blue-800 hover:bg-blue-50"><span className="flex items-center gap-2"><DocumentArrowDownIcon className="h-5 w-5" />{document.name}</span><span className="text-xs">Abrir</span></a>)}</div></div>}

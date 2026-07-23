@@ -5,8 +5,6 @@ import { productAPI } from '@/api'
 import { CategoryTreeNode, Product } from '@/types'
 import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
 
-const DEFAULT_POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
-
 interface ProductSearchBoxProps {
   categories?: CategoryTreeNode[]
   initialValue?: string
@@ -14,7 +12,6 @@ interface ProductSearchBoxProps {
   className?: string
   inputClassName?: string
   buttonClassName?: string
-  popularSearches?: string[]
   onQueryChange?: (query: string) => void
   onSearch?: (query: string) => void
 }
@@ -26,7 +23,6 @@ export default function ProductSearchBox({
   className = '',
   inputClassName = '',
   buttonClassName = '',
-  popularSearches = DEFAULT_POPULAR_SEARCHES,
   onQueryChange,
   onSearch,
 }: ProductSearchBoxProps) {
@@ -35,6 +31,7 @@ export default function ProductSearchBox({
   const [productSuggestions, setProductSuggestions] = useState<Product[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
+  const quickCategories = useMemo(() => categories.slice(0, 6), [categories])
   const trimmedQuery = query.trim()
 
   const categorySuggestions = trimmedQuery
@@ -96,7 +93,7 @@ export default function ProductSearchBox({
   }
 
   const hasSuggestions = productSuggestions.length > 0 || categorySuggestions.length > 0
-  const showSearchPanel = showSuggestions && (hasSuggestions || trimmedQuery.length > 0 || popularSearches.length > 0)
+  const showSearchPanel = showSuggestions && (hasSuggestions || trimmedQuery.length > 0 || quickCategories.length > 0)
 
   const runSuggestedSearch = (term: string) => {
     setQuery(term)
@@ -216,17 +213,17 @@ export default function ProductSearchBox({
 
           {!trimmedQuery && (
             <div>
-              <p className="px-3 py-1 text-xs font-bold uppercase text-gray-500">Busquedas populares</p>
+              <p className="px-3 py-1 text-xs font-bold uppercase text-gray-500">Categorías</p>
               <div className="flex flex-wrap gap-2 px-3 py-2">
-                {popularSearches.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => runSuggestedSearch(term)}
+                {quickCategories.map((category) => (
+                  <Link
+                    key={category.id}
+                    to={getCategoryProductLink(category)}
+                    onClick={() => setShowSuggestions(false)}
                     className="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-blue-700 hover:text-blue-800"
                   >
-                    {term}
-                  </button>
+                    {category.name}
+                  </Link>
                 ))}
               </div>
             </div>

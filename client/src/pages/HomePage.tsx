@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   ArrowRightIcon,
   ClockIcon,
@@ -46,7 +46,6 @@ const TRUST_SIGNALS = [
 
 export default function HomePage() {
   const { settings } = useStoreSettings()
-  const navigate = useNavigate()
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [topProducts, setTopProducts] = useState<Product[]>([])
@@ -216,15 +215,14 @@ export default function HomePage() {
           />
 
           <div className="mt-2 flex gap-2 overflow-x-auto pb-4 pt-1 text-xs sm:text-sm">
-            {settings.home.popularSearches.map((term) => (
-              <button
-                key={term}
-                type="button"
-                onClick={() => navigate(`/products?search=${encodeURIComponent(term)}`)}
+            {categories.slice(0, 6).map((category) => (
+              <Link
+                key={category.id}
+                to={getCategoryProductLink(category)}
                 className="shrink-0 rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:border-blue-700 hover:text-blue-800"
               >
-                {term}
-              </button>
+                {category.name}
+              </Link>
             ))}
           </div>
 

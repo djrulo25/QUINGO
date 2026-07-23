@@ -21,7 +21,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     offersTitle: 'Ofertas y oportunidades', offersSubtitle: 'Productos con precio especial o promoción activa.',
     newTitle: 'Nuevos productos', newSubtitle: 'Últimas altas en el catálogo.',
     topTitle: 'Más vendidos y destacados', topSubtitle: 'Los productos con mayor movimiento.',
-    popularSearches: ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura'],
+    popularSearches: [],
     footerTagline: 'Suministros industriales para soldadura, protección, gases y operación diaria.',
   },
   fiscal: { legalName: '', rfc: '', taxRegime: '', postalCode: '', fiscalAddress: '', invoiceEmail: '' },

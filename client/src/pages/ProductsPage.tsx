@@ -19,8 +19,6 @@ const SORT_OPTIONS = [
   { value: 'price-desc', label: 'Precio: mayor a menor' },
 ] as const
 
-const POPULAR_SEARCHES = ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura']
-
 type SortOption = (typeof SORT_OPTIONS)[number]['value']
 type ViewMode = 'grid' | 'list'
 type AttributeFilterValues = Record<string, string>
@@ -476,15 +474,14 @@ export default function ProductsPage() {
               <div className="rounded-lg bg-white py-12 text-center shadow-sm">
                 <p className="text-lg text-gray-600">No hay productos que coincidan con tus criterios</p>
                 <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-2">
-                  {POPULAR_SEARCHES.map((term) => (
-                    <button
-                      key={term}
-                      type="button"
-                      onClick={() => handleCatalogSearch(term)}
+                  {categories.slice(0, 6).map((category) => (
+                    <Link
+                      key={category.id}
+                      to={getCategoryProductLink(category)}
                       className="rounded-full border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:border-blue-700 hover:text-blue-800"
                     >
-                      Buscar {term}
-                    </button>
+                      Ver {category.name}
+                    </Link>
                   ))}
                 </div>
                 {catalogItems.length > 0 && (
