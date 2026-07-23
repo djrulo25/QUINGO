@@ -11,7 +11,7 @@ import {
 import { categoryAPI, productAPI } from '@/api'
 import ProductSearchBox from '@/components/ProductSearchBox'
 import { CategoryTreeNode, Product } from '@/types'
-import { flattenCategoryCatalog, getCategoryImage, getCategoryProductLink } from '@/utils/categoryCatalog'
+import { getCategoryImage, getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 import { useStoreSettings } from '@/store/StoreSettingsContext'
 type ProductRailVariant = 'offers' | 'new' | 'top'
@@ -56,8 +56,7 @@ export default function HomePage() {
     phone: '',
     notes: '',
   })
-  const catalogItems = flattenCategoryCatalog(categories)
-  const visibleCatalogItems = catalogItems.slice(0, 12)
+  const visibleCategories = categories.slice(0, 12)
   const offerProducts = useMemo(
     () => products.filter((product) => product.originalPrice && product.originalPrice > product.price).slice(0, 4),
     [products]
@@ -266,24 +265,24 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4">
-            {visibleCatalogItems.map((item) => (
+            {visibleCategories.map((category) => (
               <Link
-                key={item.category.id}
-                to={getCategoryProductLink(item)}
+                key={category.id}
+                to={getCategoryProductLink(category)}
                 className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="aspect-[4/3] overflow-hidden bg-gray-200">
                   <img
-                    src={getCategoryImage(item.category)}
-                    alt={item.category.name}
+                    src={getCategoryImage(category)}
+                    alt={category.name}
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     loading="lazy"
                   />
                 </div>
                 <div className="p-2 sm:p-3">
-                  <p className="text-center text-xs font-semibold leading-tight text-gray-900 sm:text-left sm:text-sm">{item.category.name}</p>
-                  {item.category.children?.length > 0 && (
-                    <p className="mt-1 hidden text-xs text-gray-500 sm:block">{item.category.children.length} secciones</p>
+                  <p className="text-center text-xs font-semibold leading-tight text-gray-900 sm:text-left sm:text-sm">{category.name}</p>
+                  {category.children?.length > 0 && (
+                    <p className="mt-1 hidden text-xs text-gray-500 sm:block">{category.children.length} secciones</p>
                   )}
                 </div>
               </Link>
