@@ -245,17 +245,16 @@ export default function ProductsPage() {
     <div className="py-8">
       <div className="container mx-auto px-4">
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase text-blue-800">Catalogo industrial</p>
-          <h1 className="mt-1 text-3xl font-bold text-gray-900">Catalogo de Productos</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Catalogo de Productos</h1>
           <p className="mt-2 text-gray-600">Busca por producto, categoria o SKU.</p>
         </div>
 
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <ProductSearchBox
               categories={categories}
               initialValue={searchQuery}
-              className="flex-1"
+              className="min-w-0 flex-1"
               inputClassName="py-3"
               onQueryChange={setSearchQuery}
               onSearch={handleCatalogSearch}
@@ -264,11 +263,17 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setShowFilters((current) => !current)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 transition-colors hover:bg-gray-100"
+              className={`relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-semibold transition-colors sm:px-3 ${
+                showFilters || activeAttributeFilterCount > 0
+                  ? 'border-blue-700 bg-blue-50 text-blue-900'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-800'
+              }`}
+              aria-label="Mostrar filtros"
+              title="Filtros"
             >
-              <FunnelIcon className="h-5 w-5" />
-              <span className="font-medium">Filtros</span>
-              {activeAttributeFilterCount > 0 && <span className="rounded-full bg-blue-900 px-2 py-0.5 text-xs font-bold text-white">{activeAttributeFilterCount}</span>}
+              <FunnelIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Filtros</span>
+              {activeAttributeFilterCount > 0 && <span className="min-w-5 rounded-full bg-blue-900 px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">{activeAttributeFilterCount}</span>}
             </button>
           </div>
 

@@ -364,7 +364,8 @@ export default function Header() {
                 <>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="p-2 hover:bg-gray-800 rounded-lg transition flex items-center space-x-2"
+                    className="inline-flex min-h-10 items-center justify-center space-x-2 rounded-lg p-2 transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    aria-label="Abrir menú de cuenta"
                   >
                     <UserIcon className="w-6 h-6" />
                     <span className="hidden sm:inline text-sm">{customer?.firstName}</span>
@@ -401,8 +402,9 @@ export default function Header() {
               ) : (
                 <Link
                   to="/customer/login"
-                  className="p-2 hover:bg-gray-800 rounded-lg transition"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                   title="Inicia sesión"
+                  aria-label="Iniciar sesión"
                 >
                   <UserIcon className="w-6 h-6" />
                 </Link>
