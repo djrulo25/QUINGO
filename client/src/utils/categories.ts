@@ -4,7 +4,16 @@ export const ROOT_CATEGORY_SLUG = 'todos-los-productos'
 
 export const getTopLevelCategories = (categories: CategoryTreeNode[]) => {
   const rootCategory = findCategoryBySlug(categories, ROOT_CATEGORY_SLUG)
-  return rootCategory?.children || []
+  if (!rootCategory) {
+    return categories
+  }
+
+  const importedRootCategories = categories.filter((category) => category.id !== rootCategory.id)
+  const visibleCategories = [...(rootCategory.children || []), ...importedRootCategories]
+
+  return visibleCategories.filter(
+    (category, index) => visibleCategories.findIndex((item) => item.id === category.id) === index
+  )
 }
 
 export const findCategoryBySlug = (categories: CategoryTreeNode[], slug: string): CategoryTreeNode | undefined => {
