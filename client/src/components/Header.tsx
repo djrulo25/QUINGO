@@ -16,7 +16,7 @@ import { categoryAPI } from '@/api'
 import ProductSearchBox from '@/components/ProductSearchBox'
 import BrandLogo from '@/components/BrandLogo'
 import { CategoryTreeNode } from '@/types'
-import { flattenCategoryCatalog, getCategoryProductLink } from '@/utils/categoryCatalog'
+import { getCategoryProductLink } from '@/utils/categoryCatalog'
 import { getTopLevelCategories } from '@/utils/categories'
 import { useStoreSettings } from '@/store/StoreSettingsContext'
 
@@ -111,7 +111,6 @@ export default function Header() {
   const mobileCurrentLevel = showProductsExplorer
     ? mobileCurrentCategory?.children || categories
     : []
-  const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
 
   const resetMobileProductsExplorer = () => {
     setShowProductsExplorer(false)
@@ -244,16 +243,31 @@ export default function Header() {
                         Ver todo
                       </Link>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                      {catalogItems.slice(0, 18).map((item) => (
-                        <Link
-                          key={item.category.id}
-                          to={getCategoryProductLink(item)}
-                          className="text-sm font-medium text-gray-800 hover:text-blue-700"
-                          onClick={() => setIsProductsMenuOpen(false)}
-                        >
-                          {item.category.name}
-                        </Link>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                      {categories.map((category) => (
+                        <div key={category.id} className="min-w-0">
+                          <Link
+                            to={getCategoryProductLink(category)}
+                            className="block text-sm font-bold text-gray-950 hover:text-blue-700"
+                            onClick={() => setIsProductsMenuOpen(false)}
+                          >
+                            {category.name}
+                          </Link>
+                          {category.children?.length > 0 && (
+                            <div className="mt-1.5 space-y-1 border-l-2 border-gray-200 pl-3">
+                              {category.children.map((subcategory) => (
+                                <Link
+                                  key={subcategory.id}
+                                  to={getCategoryProductLink({ category: subcategory, root: category, depth: 1 })}
+                                  className="block text-sm font-medium leading-snug text-gray-600 hover:text-blue-700"
+                                  onClick={() => setIsProductsMenuOpen(false)}
+                                >
+                                  {subcategory.name}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
