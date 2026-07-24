@@ -52,6 +52,14 @@ export default function AdminStoreSettingsPage() {
   const handleBrandImage = async (index: number, file?: File) => {
     if (!file) return
     const brand = settings.homeBrands[index]
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecciona un archivo de imagen válido')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('La imagen supera el límite de 10 MB')
+      return
+    }
     const formData = new FormData()
     formData.append('image', file)
     try {
@@ -60,7 +68,10 @@ export default function AdminStoreSettingsPage() {
       updateHomeBrand(index, { imageUrl: data.url })
       toast.success(`Imagen de ${brand.name} cargada; guarda los cambios para aplicarla`)
     } catch (error: any) {
-      toast.error(error.response?.data?.error || `No se pudo subir la imagen de ${brand.name}`)
+      const message = error.response?.data?.error
+        || (error.code === 'ERR_NETWORK' ? 'No se pudo conectar con el servidor de imágenes. Intenta nuevamente.' : '')
+        || `No se pudo subir la imagen de ${brand.name}`
+      toast.error(message)
     } finally {
       setUploadingBrand(null)
     }

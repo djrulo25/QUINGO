@@ -111,7 +111,7 @@ export const storeSettingsAPI = {
   update: (data: StoreSettings) => apiClient.put<StoreSettings>('/store-settings', data, getAdminAuthConfig()),
   uploadLogo: (formData: FormData) => {
     const auth = getAdminAuthConfig()
-    return apiClient.post('/uploads/branding', formData, { headers: { ...(auth?.headers || {}), 'Content-Type': 'multipart/form-data' } })
+    return apiClient.post('/uploads/branding', formData, { headers: { ...(auth?.headers || {}) } })
   },
 }
 

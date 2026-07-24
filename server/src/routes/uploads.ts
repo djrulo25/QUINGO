@@ -4,7 +4,7 @@ import type { FileFilterCallback } from 'multer'
 import type { Request as ExpressRequest } from 'express'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requirePermission } from '../middleware/auth.js'
 
 const router = Router()
 const cloudinaryPrefix = (process.env.CLOUDINARY_FOLDER || 'quingo').replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase()
@@ -74,12 +74,23 @@ router.post('/uploads', authMiddleware, upload.single('image'), async (req: Requ
   }
 })
 
-router.post('/uploads/branding', authMiddleware, upload.single('image'), async (req: Request, res: Response) => {
+const receiveBrandingImage = (req: Request, res: Response, next: (error?: any) => void) => {
+  upload.single('image')(req, res, (error: any) => {
+    if (!error) return next()
+    if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'La imagen supera el límite de 10 MB' })
+    }
+    return res.status(400).json({ error: error.message || 'No se pudo leer la imagen seleccionada' })
+  })
+}
+
+router.post('/uploads/branding', authMiddleware, requirePermission('settings'), receiveBrandingImage, async (req: Request, res: Response) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No se recibió ninguna imagen' })
     const result = await uploadToCloudinary(req.file, `${cloudinaryPrefix}-branding`)
     res.status(201).json({ url: result.secure_url, publicId: result.public_id, width: result.width, height: result.height })
   } catch (error: any) {
+    console.error('Branding upload error:', error)
     res.status(500).json({ error: error.message || 'No se pudo subir el logotipo' })
   }
 })
