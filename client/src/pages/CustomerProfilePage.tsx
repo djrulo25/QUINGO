@@ -14,13 +14,17 @@ export default function CustomerProfilePage() {
   const [addresses, setAddresses] = useState<IAddress[]>([])
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [editingAddress, setEditingAddress] = useState<IAddress | null>(null)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
 
   const [formData, setFormData] = useState({
     firstName: customer?.firstName || '',
+    email: customer?.email || '',
     lastName: customer?.lastName || '',
     phone: customer?.phone || '',
     company: customer?.company || '',
     dateOfBirth: customer?.dateOfBirth ? customer.dateOfBirth.split('T')[0] : '',
+    currentPassword: '',
   })
 
   useEffect(() => {
@@ -56,6 +60,28 @@ export default function CustomerProfilePage() {
       setEditing(false)
     } catch (error: any) {
       toast.error(error.message || 'Error al actualizar perfil')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Las contraseñas nuevas no coinciden')
+      return
+    }
+    try {
+      setLoading(true)
+      await customerAPI.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      })
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setChangingPassword(false)
+      toast.success('Contraseña actualizada')
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'No se pudo cambiar la contraseña')
     } finally {
       setLoading(false)
     }
@@ -158,6 +184,26 @@ export default function CustomerProfilePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formData.email.trim().toLowerCase() !== customer.email.toLowerCase() && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña actual para confirmar el correo</label>
+                      <input type="password" name="currentPassword" value={formData.currentPassword} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Teléfono
                   </label>
                   <input
@@ -235,6 +281,27 @@ export default function CustomerProfilePage() {
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex flex-wrap justify-between items-center gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Seguridad</h2>
+                <p className="mt-1 text-sm text-gray-600">Actualiza la contraseña de acceso a tu cuenta.</p>
+              </div>
+              {!changingPassword && <button onClick={() => setChangingPassword(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">Cambiar contraseña</button>}
+            </div>
+            {changingPassword && (
+              <form onSubmit={handlePasswordChange} className="mt-6 grid gap-4">
+                <input required type="password" minLength={6} placeholder="Contraseña actual" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <input required type="password" minLength={8} placeholder="Nueva contraseña (mínimo 8 caracteres)" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <input required type="password" minLength={8} placeholder="Confirmar nueva contraseña" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <div className="flex gap-2">
+                  <button disabled={loading} className="px-4 py-2 bg-blue-700 text-white font-semibold rounded-lg disabled:bg-gray-400">{loading ? 'Guardando...' : 'Guardar contraseña'}</button>
+                  <button type="button" onClick={() => setChangingPassword(false)} className="px-4 py-2 border rounded-lg">Cancelar</button>
+                </div>
+              </form>
             )}
           </div>
 

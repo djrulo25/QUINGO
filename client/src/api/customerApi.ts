@@ -24,6 +24,8 @@ export const customerAPI = {
   // Profile
   getProfile: () => api.get<ICustomer>('/customers/profile'),
   updateProfile: (data: Partial<ICustomer>) => api.put('/customers/profile', data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.put('/customers/profile/password', data),
 
   // Addresses
   getAddresses: () => api.get<IAddress[]>('/customers/addresses'),

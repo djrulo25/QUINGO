@@ -40,6 +40,7 @@ export interface ICart {
 
 export interface ICustomer extends Document {
   email: string
+  previousEmails?: string[]
   password: string
   firstName: string
   lastName: string
@@ -118,6 +119,7 @@ const customerSchema = new Schema<ICustomer>(
       lowercase: true,
       trim: true,
     },
+    previousEmails: [{ type: String, lowercase: true, trim: true }],
     password: {
       type: String,
       required: true,

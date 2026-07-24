@@ -4,8 +4,13 @@ import Customer from '../models/Customer.js'
 import { customerAuthMiddleware } from '../middleware/customerAuth.js'
 import { IAddress } from '../models/Customer.js'
 import { sendServiceRequestNotification } from '../utils/email.js'
+import jwt from 'jsonwebtoken'
 
 const router = Router()
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is required')
+  return process.env.JWT_SECRET
+})()
 
 // Get customer profile (protected)
 router.get('/profile', customerAuthMiddleware, async (req: Request, res: Response) => {
@@ -30,6 +35,7 @@ router.put(
     body('firstName').optional().trim().notEmpty(),
     body('lastName').optional().trim().notEmpty(),
     body('phone').optional().trim().notEmpty(),
+    body('email').optional().isEmail().normalizeEmail(),
     body('dateOfBirth').optional().isISO8601(),
     body('cpf').optional().trim(),
     body('company').optional().trim(),
@@ -42,27 +48,37 @@ router.put(
       }
 
       const { firstName, lastName, phone, dateOfBirth, cpf, company } = req.body
-
-      const customer = await Customer.findByIdAndUpdate(
-        req.customer?.id,
-        {
-          firstName,
-          lastName,
-          phone,
-          dateOfBirth,
-          cpf,
-          company,
-        },
-        { new: true }
-      ).select('-password')
+      const requestedEmail = String(req.body.email || '').trim().toLowerCase()
+      const customer = await Customer.findById(req.customer?.id)
 
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' })
       }
+      if (requestedEmail && requestedEmail !== customer.email) {
+        if (!req.body.currentPassword || !(await customer.comparePassword(req.body.currentPassword))) {
+          return res.status(400).json({ error: 'La contraseña actual no es correcta' })
+        }
+        if (await Customer.exists({ email: requestedEmail, _id: { $ne: customer._id } })) {
+          return res.status(409).json({ error: 'Ese correo ya está registrado' })
+        }
+        customer.previousEmails = Array.from(new Set([...(customer.previousEmails || []), customer.email]))
+        customer.email = requestedEmail
+      }
+      if (firstName !== undefined) customer.firstName = firstName
+      if (lastName !== undefined) customer.lastName = lastName
+      if (phone !== undefined) customer.phone = phone
+      if (dateOfBirth !== undefined) customer.dateOfBirth = dateOfBirth || undefined
+      if (cpf !== undefined) customer.cpf = cpf
+      if (company !== undefined) customer.company = company
+      await customer.save()
+      const token = jwt.sign({ id: customer._id, email: customer.email }, JWT_SECRET, { expiresIn: '30d' })
+      const safeCustomer = customer.toObject() as any
+      delete safeCustomer.password
 
       res.json({
         message: 'Profile updated successfully',
-        customer,
+        customer: safeCustomer,
+        token,
       })
     } catch (error: any) {
       console.error('Update profile error:', error)
@@ -72,6 +88,34 @@ router.put(
       res.status(500).json({ error: 'Error updating profile' })
     }
   }
+)
+
+router.put(
+  '/profile/password',
+  customerAuthMiddleware,
+  [
+    body('currentPassword').notEmpty(),
+    body('newPassword').isLength({ min: 8 }),
+  ],
+  async (req: Request, res: Response) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' })
+      if (req.body.currentPassword === req.body.newPassword) {
+        return res.status(400).json({ error: 'La contraseña nueva debe ser diferente' })
+      }
+      const customer = await Customer.findById(req.customer?.id)
+      if (!customer) return res.status(404).json({ error: 'Cliente no encontrado' })
+      if (!(await customer.comparePassword(req.body.currentPassword))) {
+        return res.status(400).json({ error: 'La contraseña actual no es correcta' })
+      }
+      customer.password = req.body.newPassword
+      await customer.save()
+      res.json({ message: 'Contraseña actualizada correctamente' })
+    } catch (error) {
+      res.status(500).json({ error: 'No se pudo cambiar la contraseña' })
+    }
+  },
 )
 
 // Add new address (protected)
@@ -358,9 +402,9 @@ router.get('/orders', customerAuthMiddleware, async (req: Request, res: Response
   try {
     const Order = (await import('../models/Order.js')).default
 
-    const orders = await Order.find({
-      'customer.email': req.customer?.email,
-    })
+    const customer = await Customer.findById(req.customer?.id).select('email previousEmails')
+    const emails = customer ? [customer.email, ...(customer.previousEmails || [])] : [req.customer?.email]
+    const orders = await Order.find({ 'customer.email': { $in: emails } })
       .sort({ createdAt: -1 })
       .limit(50)
 
@@ -382,7 +426,9 @@ router.get('/orders/:orderId', customerAuthMiddleware, async (req: Request, res:
     }
 
     // Verify order belongs to customer
-    if (order.customer.email !== req.customer?.email) {
+    const customer = await Customer.findById(req.customer?.id).select('email previousEmails')
+    const allowedEmails = customer ? [customer.email, ...(customer.previousEmails || [])] : [req.customer?.email]
+    if (!allowedEmails.includes(order.customer.email)) {
       return res.status(403).json({ error: 'Unauthorized' })
     }
 
@@ -399,7 +445,9 @@ router.post('/orders/:orderId/request', customerAuthMiddleware, async (req: Requ
     const Order = (await import('../models/Order.js')).default
     const order: any = await Order.findById(req.params.orderId)
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado' })
-    if (order.customer.email !== req.customer?.email) return res.status(403).json({ error: 'No autorizado' })
+    const customer = await Customer.findById(req.customer?.id).select('email previousEmails')
+    const allowedEmails = customer ? [customer.email, ...(customer.previousEmails || [])] : [req.customer?.email]
+    if (!allowedEmails.includes(order.customer.email)) return res.status(403).json({ error: 'No autorizado' })
 
     const type = String(req.body.type || '')
     const reason = String(req.body.reason || '').trim()

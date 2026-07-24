@@ -166,11 +166,13 @@ export const useCustomerStore = create<CustomerStore>()(
           })
 
           if (!response.ok) {
-            throw new Error('Error updating profile')
+            const errorData = await response.json().catch(() => null)
+            throw new Error(errorData?.error || 'Error updating profile')
           }
 
           const result = await response.json()
-          set({ customer: result.customer, isLoading: false })
+          set({ customer: result.customer, token: result.token || state.token, isLoading: false })
+          if (result.token) localStorage.setItem('authToken', result.token)
         } catch (error: any) {
           const errorMsg = error.message || 'Error updating profile'
           set({ error: errorMsg, isLoading: false })
