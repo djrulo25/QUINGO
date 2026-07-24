@@ -6,6 +6,7 @@ import { sendOrderEmail } from '../utils/email.js'
 import { sendOrderWhatsApp } from '../utils/whatsapp.js'
 import { authMiddleware, requireAnyPermission } from '../middleware/auth.js'
 import { calculateOrder } from '../services/commerce.js'
+import { sendServiceRequestResolution } from '../utils/email.js'
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-04-10' as any })
@@ -86,12 +87,47 @@ router.get('/:id', authMiddleware, requireAnyPermission('orders', 'deliveries', 
 
 router.put('/:id', authMiddleware, requireAnyPermission('orders', 'deliveries', 'returns'), async (req: Request, res: Response) => {
   try {
-    const allowed = ['status', 'paymentStatus', 'paymentIntentId', 'oxxoVoucherUrl', 'notes']
+    const allowed = ['status', 'paymentStatus', 'paymentIntentId', 'oxxoVoucherUrl', 'notes', 'trackingNumber', 'returnReason']
     const update = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)))
+    if (update.status === 'delivered') update.deliveredAt = new Date()
     const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true })
     if (!order) return res.status(404).json({ error: 'Order not found' })
     res.json(order)
   } catch { res.status(400).json({ error: 'Error updating order' }) }
+})
+
+router.post('/:id/resolve-request', authMiddleware, requireAnyPermission('orders', 'returns'), async (req: Request, res: Response) => {
+  try {
+    const order: any = await Order.findById(req.params.id)
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado' })
+    if (!order.serviceRequest || order.serviceRequest.status !== 'pending') {
+      return res.status(400).json({ error: 'El pedido no tiene una solicitud pendiente' })
+    }
+    const decision = req.body.decision
+    if (!['approved', 'rejected'].includes(decision)) {
+      return res.status(400).json({ error: 'Resolución no válida' })
+    }
+    order.serviceRequest.status = decision
+    order.serviceRequest.resolutionNotes = String(req.body.notes || '').trim()
+    order.serviceRequest.resolvedAt = new Date()
+    if (decision === 'approved') {
+      order.status = order.serviceRequest.type === 'cancellation' ? 'cancelled' : 'returned'
+      if (order.serviceRequest.type === 'return') order.returnReason = order.serviceRequest.reason
+      if (order.serviceRequest.type === 'cancellation' && order.paymentStatus === 'pending' && order.paymentIntentId) {
+        try {
+          await stripe.paymentIntents.cancel(order.paymentIntentId)
+          order.paymentStatus = 'failed'
+        } catch (error) {
+          console.error('Could not cancel pending Stripe payment:', error)
+        }
+      }
+    }
+    await order.save()
+    sendServiceRequestResolution(order).catch((error) => console.error('Service resolution email failed:', error))
+    res.json(order)
+  } catch (error) {
+    res.status(500).json({ error: 'No se pudo resolver la solicitud' })
+  }
 })
 
 export default router

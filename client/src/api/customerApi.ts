@@ -36,6 +36,8 @@ export const customerAPI = {
   // Orders
   getOrders: () => api.get<IOrder[]>('/customers/orders'),
   getOrder: (orderId: string) => api.get<IOrder>(`/customers/orders/${orderId}`),
+  requestOrderService: (orderId: string, data: { type: 'cancellation' | 'return'; reason: string; comments?: string }) =>
+    api.post<IOrder>(`/customers/orders/${orderId}/request`, data),
 }
 
 export default api

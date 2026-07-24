@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCustomerStore } from '@/store/customerStore'
 import { customerAPI } from '@/api/customerApi'
 import { IOrder } from '@/types/customer'
+import toast from 'react-hot-toast'
 
 export default function OrderHistoryPage() {
   const navigate = useNavigate()
@@ -10,6 +11,10 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<IOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null)
+  const [requestType, setRequestType] = useState<'cancellation' | 'return' | null>(null)
+  const [requestReason, setRequestReason] = useState('')
+  const [requestComments, setRequestComments] = useState('')
+  const [submittingRequest, setSubmittingRequest] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -44,6 +49,8 @@ export default function OrderHistoryPage() {
         return 'bg-green-100 text-green-800'
       case 'cancelled':
         return 'bg-red-100 text-red-800'
+      case 'returned':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -56,8 +63,31 @@ export default function OrderHistoryPage() {
       shipped: 'Enviado',
       delivered: 'Entregado',
       cancelled: 'Cancelado',
+      returned: 'Devuelto',
     }
     return labels[status] || status
+  }
+
+  const submitServiceRequest = async () => {
+    if (!selectedOrder || !requestType || !requestReason) return
+    try {
+      setSubmittingRequest(true)
+      const response = await customerAPI.requestOrderService(selectedOrder._id, {
+        type: requestType,
+        reason: requestReason,
+        comments: requestComments,
+      })
+      setSelectedOrder(response.data)
+      setOrders((current) => current.map((order) => order._id === response.data._id ? response.data : order))
+      setRequestType(null)
+      setRequestReason('')
+      setRequestComments('')
+      toast.success('Solicitud enviada. Puedes consultar su estado aquí.')
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'No se pudo enviar la solicitud')
+    } finally {
+      setSubmittingRequest(false)
+    }
   }
 
   return (
@@ -124,6 +154,7 @@ export default function OrderHistoryPage() {
                       <p>{order.shippingAddress.city}, {order.shippingAddress.state}</p>
                     </div>
                   </div>
+
                 </div>
               ))}
             </div>
@@ -188,6 +219,44 @@ export default function OrderHistoryPage() {
                       <span className="text-gray-800">${selectedOrder.total.toFixed(2)}</span>
                     </div>
                   </div>
+
+                  {selectedOrder.serviceRequest && (
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-left">
+                      <h3 className="font-semibold text-blue-950">{selectedOrder.serviceRequest.type === 'cancellation' ? 'Solicitud de cancelación' : 'Solicitud de devolución'}</h3>
+                      <p className="mt-1 text-sm text-blue-900">Estado: <strong>{selectedOrder.serviceRequest.status === 'pending' ? 'En revisión' : selectedOrder.serviceRequest.status === 'approved' ? 'Aprobada' : 'Rechazada'}</strong></p>
+                      <p className="mt-1 text-sm text-blue-900">Motivo: {selectedOrder.serviceRequest.reason}</p>
+                      {selectedOrder.serviceRequest.resolutionNotes && <p className="mt-2 text-sm text-blue-900">Respuesta: {selectedOrder.serviceRequest.resolutionNotes}</p>}
+                    </div>
+                  )}
+
+                  {selectedOrder.serviceRequest?.status !== 'pending' && (
+                    <div className="border-t pt-4">
+                      {!requestType ? (
+                        <div className="grid gap-2">
+                          {['pending', 'confirmed'].includes(selectedOrder.status) && <button onClick={() => setRequestType('cancellation')} className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700">Solicitar cancelación</button>}
+                          {selectedOrder.status === 'delivered' && <button onClick={() => setRequestType('return')} className="rounded-lg border border-orange-300 px-3 py-2 text-sm font-semibold text-orange-700">Solicitar devolución</button>}
+                        </div>
+                      ) : (
+                        <div className="space-y-3 text-left">
+                          <h3 className="font-semibold">{requestType === 'cancellation' ? 'Solicitar cancelación' : 'Solicitar devolución'}</h3>
+                          <select value={requestReason} onChange={(e) => setRequestReason(e.target.value)} className="w-full rounded-lg border px-3 py-2">
+                            <option value="">Selecciona el motivo</option>
+                            <option value="Compra por error">Compra por error</option>
+                            <option value="Necesito cambiar el pedido">Necesito cambiar el pedido</option>
+                            <option value="Producto dañado">Producto dañado</option>
+                            <option value="Producto incorrecto">Producto incorrecto</option>
+                            <option value="No cumple con lo esperado">No cumple con lo esperado</option>
+                            <option value="Otro">Otro</option>
+                          </select>
+                          <textarea value={requestComments} onChange={(e) => setRequestComments(e.target.value)} placeholder="Describe los detalles de tu solicitud" rows={3} className="w-full rounded-lg border px-3 py-2" />
+                          <div className="flex gap-2">
+                            <button disabled={!requestReason || submittingRequest} onClick={submitServiceRequest} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:bg-gray-400">{submittingRequest ? 'Enviando...' : 'Enviar solicitud'}</button>
+                            <button onClick={() => setRequestType(null)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-6 border-t bg-gray-50 sticky bottom-0">

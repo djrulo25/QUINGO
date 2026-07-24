@@ -40,8 +40,17 @@ export interface IOrder {
   }>
   shippingAddress: IAddress
   total: number
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-  paymentStatus: 'pending' | 'completed' | 'failed'
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'returned'
+  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded'
+  serviceRequest?: {
+    type: 'cancellation' | 'return'
+    status: 'pending' | 'approved' | 'rejected'
+    reason: string
+    customerComments?: string
+    resolutionNotes?: string
+    requestedAt: string
+    resolvedAt?: string
+  }
   createdAt: string
   updatedAt: string
 }

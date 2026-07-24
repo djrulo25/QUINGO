@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import Order from '../models/Order.js'
 import { sendOrderEmail } from '../utils/email.js'
 import { sendOrderWhatsApp } from '../utils/whatsapp.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requireAnyPermission } from '../middleware/auth.js'
 import { calculateOrder } from '../services/commerce.js'
 
 const router = Router()
@@ -135,18 +135,26 @@ router.post('/confirm', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Refund Payment
-router.post('/refund', authMiddleware, async (req: Request, res: Response) => {
+router.post('/refund', authMiddleware, requireAnyPermission('orders', 'returns'), async (req: Request, res: Response) => {
   try {
-    const { paymentIntentId } = req.body
+    const { paymentIntentId, orderId } = req.body
 
     if (!paymentIntentId) {
       return res.status(400).json({ error: 'Payment Intent ID is required' })
     }
 
+    const order: any = orderId
+      ? await Order.findOne({ _id: orderId, paymentIntentId })
+      : await Order.findOne({ paymentIntentId })
+    if (!order) return res.status(404).json({ error: 'Pedido o pago no encontrado' })
+    if (order.paymentStatus === 'refunded') return res.status(409).json({ error: 'Este pedido ya fue reembolsado' })
+
     // Create a refund for the payment intent
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId
     })
+    order.paymentStatus = 'refunded'
+    await order.save()
 
     res.json({
       success: true,

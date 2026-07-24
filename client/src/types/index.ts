@@ -77,9 +77,9 @@ export interface Order {
   subtotal: number
   tax: number
   total: number
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'returned'
   paymentMethod: string
-  paymentStatus: 'pending' | 'completed' | 'failed'
+  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded'
   paymentIntentId?: string
   oxxoVoucherUrl?: string
   notes?: string

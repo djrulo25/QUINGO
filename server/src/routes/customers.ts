@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator'
 import Customer from '../models/Customer.js'
 import { customerAuthMiddleware } from '../middleware/customerAuth.js'
 import { IAddress } from '../models/Customer.js'
+import { sendServiceRequestNotification } from '../utils/email.js'
 
 const router = Router()
 
@@ -389,6 +390,51 @@ router.get('/orders/:orderId', customerAuthMiddleware, async (req: Request, res:
   } catch (error) {
     console.error('Get order error:', error)
     res.status(500).json({ error: 'Error fetching order' })
+  }
+})
+
+// Request a cancellation or return (protected)
+router.post('/orders/:orderId/request', customerAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const Order = (await import('../models/Order.js')).default
+    const order: any = await Order.findById(req.params.orderId)
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado' })
+    if (order.customer.email !== req.customer?.email) return res.status(403).json({ error: 'No autorizado' })
+
+    const type = String(req.body.type || '')
+    const reason = String(req.body.reason || '').trim()
+    const comments = String(req.body.comments || '').trim()
+    if (!['cancellation', 'return'].includes(type) || !reason) {
+      return res.status(400).json({ error: 'Selecciona el tipo y el motivo de la solicitud' })
+    }
+    if (order.serviceRequest?.status === 'pending') {
+      return res.status(409).json({ error: 'Este pedido ya tiene una solicitud pendiente' })
+    }
+    if (type === 'cancellation' && !['pending', 'confirmed'].includes(order.status)) {
+      return res.status(400).json({ error: 'Solo se puede cancelar antes de que el pedido sea enviado' })
+    }
+    if (type === 'return') {
+      if (order.status !== 'delivered') {
+        return res.status(400).json({ error: 'La devolución se solicita después de que el pedido fue entregado' })
+      }
+      const deliveredReference = order.deliveredAt || order.updatedAt || order.createdAt
+      const days = (Date.now() - new Date(deliveredReference).getTime()) / 86400000
+      if (days > 30) return res.status(400).json({ error: 'El periodo de devolución de 30 días terminó' })
+    }
+
+    order.serviceRequest = {
+      type,
+      status: 'pending',
+      reason,
+      customerComments: comments,
+      requestedAt: new Date(),
+    }
+    await order.save()
+    sendServiceRequestNotification(order).catch((error) => console.error('Service request email failed:', error))
+    res.json(order)
+  } catch (error) {
+    console.error('Order request error:', error)
+    res.status(500).json({ error: 'No se pudo registrar la solicitud' })
   }
 })
 

@@ -38,10 +38,19 @@ interface Order {
   total: number
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'returned'
   paymentMethod: string
-  paymentStatus: 'pending' | 'completed' | 'failed'
+  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded'
+  paymentIntentId?: string
   notes?: string
   trackingNumber?: string
   returnReason?: string
+  serviceRequest?: {
+    type: 'cancellation' | 'return'
+    status: 'pending' | 'approved' | 'rejected'
+    reason: string
+    customerComments?: string
+    resolutionNotes?: string
+    requestedAt: string
+  }
   createdAt: string
   updatedAt: string
 }
@@ -73,6 +82,7 @@ export default function AdminOrderDetail() {
   const [trackingNumber, setTrackingNumber] = useState('')
   const [returnReason, setReturnReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
+  const [resolutionNotes, setResolutionNotes] = useState('')
 
   useEffect(() => {
     checkAuth()
@@ -161,6 +171,33 @@ export default function AdminOrderDetail() {
       toast.success('Notas actualizadas')
     } catch (error: any) {
       toast.error('Error actualizando notas')
+    }
+  }
+
+  const resolveServiceRequest = async (decision: 'approved' | 'rejected', refund = false) => {
+    if (!order) return
+    try {
+      setUpdatingStatus(true)
+      const token = localStorage.getItem('adminToken')
+      if (refund) {
+        if (!order.paymentIntentId) throw new Error('El pedido no tiene una referencia de pago para reembolsar')
+        await axios.post(
+          `${API_BASE_URL}/payments/refund`,
+          { paymentIntentId: order.paymentIntentId, orderId: order._id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      }
+      const response = await axios.post(
+        `${API_BASE_URL}/orders/${id}/resolve-request`,
+        { decision, notes: resolutionNotes },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setOrder(response.data)
+      toast.success(refund ? 'Solicitud aprobada y reembolso enviado' : decision === 'approved' ? 'Solicitud aprobada' : 'Solicitud rechazada')
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || error.message || 'No se pudo resolver la solicitud')
+    } finally {
+      setUpdatingStatus(false)
     }
   }
 
@@ -361,6 +398,33 @@ export default function AdminOrderDetail() {
                   )}
                 </div>
               </div>
+
+              {order.serviceRequest && (
+                <div className={`rounded-lg border p-4 sm:p-6 ${order.serviceRequest.status === 'pending' ? 'border-orange-300 bg-orange-50' : 'border-gray-200 bg-white'}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {order.serviceRequest.type === 'cancellation' ? 'Solicitud de cancelación' : 'Solicitud de devolución'}
+                    </h2>
+                    <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold">
+                      {order.serviceRequest.status === 'pending' ? 'Pendiente de revisión' : order.serviceRequest.status === 'approved' ? 'Aprobada' : 'Rechazada'}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm"><strong>Motivo:</strong> {order.serviceRequest.reason}</p>
+                  {order.serviceRequest.customerComments && <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Detalles del cliente:</strong> {order.serviceRequest.customerComments}</p>}
+                  {order.serviceRequest.status === 'pending' && (
+                    <div className="mt-4 space-y-3">
+                      <textarea value={resolutionNotes} onChange={(e) => setResolutionNotes(e.target.value)} placeholder="Respuesta para el cliente e instrucciones a seguir" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2" />
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <button onClick={() => resolveServiceRequest('approved')} disabled={updatingStatus} className="rounded-lg bg-green-700 px-4 py-2 font-semibold text-white disabled:bg-gray-400">Aprobar sin reembolso</button>
+                        {order.paymentStatus === 'completed' && order.paymentIntentId && <button onClick={() => { if (confirm('¿Confirmas que deseas aprobar y enviar el reembolso completo por Stripe?')) resolveServiceRequest('approved', true) }} disabled={updatingStatus} className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white disabled:bg-gray-400">Aprobar y reembolsar</button>}
+                        <button onClick={() => resolveServiceRequest('rejected')} disabled={updatingStatus || !resolutionNotes.trim()} className="rounded-lg bg-red-700 px-4 py-2 font-semibold text-white disabled:bg-gray-400">Rechazar con explicación</button>
+                      </div>
+                      {order.paymentStatus === 'completed' && <p className="text-xs text-orange-800">Elige “Aprobar y reembolsar” únicamente cuando corresponda devolver el pago completo.</p>}
+                    </div>
+                  )}
+                  {order.serviceRequest.resolutionNotes && <p className="mt-3 rounded-lg bg-gray-50 p-3 text-sm"><strong>Respuesta:</strong> {order.serviceRequest.resolutionNotes}</p>}
+                </div>
+              )}
 
               {/* Información del Cliente */}
               <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 min-w-0">

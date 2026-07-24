@@ -26,9 +26,13 @@ interface Order {
   items: OrderItem[]
   total: number
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'returned'
-  paymentStatus: 'pending' | 'completed' | 'failed'
+  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded'
   shippingMethod: string
   createdAt: string
+  serviceRequest?: {
+    type: 'cancellation' | 'return'
+    status: 'pending' | 'approved' | 'rejected'
+  }
 }
 
 type OrderStatus = 'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'returned'
@@ -240,12 +244,17 @@ export default function AdminOrdersPage() {
                   <span className={`px-2 py-1 rounded text-xs font-medium self-start ${statusColors[order.status]}`}>
                     {statusLabels[order.status]}
                   </span>
+                  {order.serviceRequest?.status === 'pending' && (
+                    <span className="self-start rounded bg-orange-600 px-2 py-1 text-xs font-bold text-white">
+                      {order.serviceRequest.type === 'cancellation' ? 'Cancelación solicitada' : 'Devolución solicitada'}
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-sm text-gray-600 mb-3 space-y-1">
                   <p className="break-words">{order.customer.firstName} {order.customer.lastName}</p>
                   <p>Total: ${order.total.toFixed(2)}</p>
-                  <p>Pago: {order.paymentStatus === 'completed' ? 'Pagado' : 'Pendiente'}</p>
+                  <p>Pago: {order.paymentStatus === 'completed' ? 'Pagado' : order.paymentStatus === 'refunded' ? 'Reembolsado' : 'Pendiente'}</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t">

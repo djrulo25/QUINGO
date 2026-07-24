@@ -128,3 +128,31 @@ export const sendOrderEmail = async (order: any, options?: { subject?: string; s
     console.error('Failed to send order email:', error.message || error)
   }
 }
+
+export const sendServiceRequestNotification = async (order: any) => {
+  const settings: any = await StoreSettings.findOne({ storeKey: 'default' }).lean() || DEFAULT_STORE_SETTINGS
+  const recipient = settings.contact?.supportEmail || settings.contact?.salesEmail || process.env.EMAIL_FROM
+  if (!recipient) return
+  const label = order.serviceRequest.type === 'cancellation' ? 'cancelación' : 'devolución'
+  await sendTransactionalEmail(
+    recipient,
+    `Nueva solicitud de ${label} - ${order.orderNumber}`,
+    `<h2>Nueva solicitud de ${label}</h2>
+     <p>Pedido: <strong>${order.orderNumber}</strong></p>
+     <p>Cliente: ${order.customer.firstName} ${order.customer.lastName} (${order.customer.email})</p>
+     <p>Motivo: ${order.serviceRequest.reason}</p>
+     <p>${order.serviceRequest.customerComments || ''}</p>`,
+  )
+}
+
+export const sendServiceRequestResolution = async (order: any) => {
+  const label = order.serviceRequest.type === 'cancellation' ? 'cancelación' : 'devolución'
+  const result = order.serviceRequest.status === 'approved' ? 'aprobada' : 'rechazada'
+  await sendTransactionalEmail(
+    order.customer.email,
+    `Tu solicitud de ${label} fue ${result} - ${order.orderNumber}`,
+    `<h2>Solicitud ${result}</h2>
+     <p>Tu solicitud de ${label} para el pedido <strong>${order.orderNumber}</strong> fue ${result}.</p>
+     <p>${order.serviceRequest.resolutionNotes || 'Consulta el estado desde tu perfil.'}</p>`,
+  )
+}
