@@ -110,9 +110,20 @@ export const storeSettingsAPI = {
   getPublic: () => apiClient.get<StoreSettings>('/store-settings'),
   getAdmin: () => apiClient.get<StoreSettings>('/store-settings/admin', getAdminAuthConfig()),
   update: (data: StoreSettings) => apiClient.put<StoreSettings>('/store-settings', data, getAdminAuthConfig()),
-  uploadLogo: (formData: FormData) => {
-    const auth = getAdminAuthConfig()
-    return apiClient.post('/uploads/branding', formData, { headers: { ...(auth?.headers || {}) } })
+  uploadLogo: async (formData: FormData) => {
+    const token = localStorage.getItem('adminToken')
+    const response = await fetch(`${API_BASE_URL}/uploads/branding`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      const error = new Error(data.error || 'No se pudo subir la imagen') as Error & { response?: { data: any } }
+      error.response = { data }
+      throw error
+    }
+    return { data }
   },
 }
 
