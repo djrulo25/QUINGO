@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import {
   CreditCardIcon,
   DocumentArrowDownIcon,
-  TruckIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { CategoryAttribute, Product } from '@/types'
@@ -22,8 +21,6 @@ export default function ProductDetailExtras({ product, attributeDefinitions, rel
   const { addToCart } = useCartStore()
   const bundleProducts = relatedProducts.slice(0, 3)
   const [selectedBundleIds, setSelectedBundleIds] = useState<string[]>([])
-  const [postalCode, setPostalCode] = useState('')
-  const [showDeliveryMessage, setShowDeliveryMessage] = useState(false)
 
   useEffect(() => setSelectedBundleIds(bundleProducts.map((item) => item.id)), [relatedProducts])
 
@@ -51,7 +48,7 @@ export default function ProductDetailExtras({ product, attributeDefinitions, rel
   const faqs = product.faqs?.length ? product.faqs : defaultFaqs
 
   return <div className="mt-8 space-y-12 border-t border-gray-200 pt-8">
-    <section className="grid min-w-0 gap-6 lg:grid-cols-2">
+    <section className="grid min-w-0 gap-6">
       <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-xl font-bold text-gray-900">Características técnicas</h2>
         <p className="mt-1 text-sm text-gray-600">Información configurada específicamente para este producto.</p>
@@ -62,14 +59,6 @@ export default function ProductDetailExtras({ product, attributeDefinitions, rel
       </div>
 
       <div className="min-w-0 space-y-5">
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-blue-950 p-4 text-white shadow-sm sm:p-5">
-          <TruckIcon className="h-8 w-8 text-blue-200" />
-          <h2 className="mt-3 text-xl font-bold">Consulta entrega en tu zona</h2>
-          <p className="mt-1 text-sm text-blue-100">Ingresa tu código postal para preparar una consulta de cobertura.</p>
-          <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row"><input inputMode="numeric" maxLength={5} value={postalCode} onChange={(event) => { setPostalCode(event.target.value.replace(/\D/g, '')); setShowDeliveryMessage(false) }} placeholder="Código postal" className="w-full min-w-0 flex-1 rounded-lg border-0 px-3 py-2 text-gray-900" /><button type="button" disabled={postalCode.length !== 5} onClick={() => setShowDeliveryMessage(true)} className="w-full rounded-lg bg-white px-4 py-2 text-sm font-bold text-blue-950 disabled:opacity-50 sm:w-auto">Consultar</button></div>
-          {showDeliveryMessage && <p className="mt-3 break-words rounded-lg bg-white/10 p-3 text-sm [overflow-wrap:anywhere]">Tenemos cobertura nacional. Confirma costo y tiempo para el C.P. {postalCode} mediante la cotización del producto.</p>}
-        </div>
-
         {product.documents && product.documents.length > 0 && <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="text-xl font-bold text-gray-900">Documentos y descargas</h2><div className="mt-4 space-y-2">{product.documents.map((document) => <a key={`${document.name}-${document.url}`} href={document.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 font-semibold text-blue-800 hover:bg-blue-50"><span className="flex items-center gap-2"><DocumentArrowDownIcon className="h-5 w-5" />{document.name}</span><span className="text-xs">Abrir</span></a>)}</div></div>}
       </div>
     </section>
