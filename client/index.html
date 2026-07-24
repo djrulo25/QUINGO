@@ -19,9 +19,16 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
+          window.setTimeout(() => sessionStorage.removeItem('quingo-sw-reloaded'), 10000);
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            registration.update();
+            window.setInterval(() => registration.update(), 5 * 60 * 1000);
+          }).catch(err => console.log('ServiceWorker registration failed: ', err));
+        });
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (sessionStorage.getItem('quingo-sw-reloaded')) return;
+          sessionStorage.setItem('quingo-sw-reloaded', '1');
+          window.location.reload();
         });
       }
     </script>

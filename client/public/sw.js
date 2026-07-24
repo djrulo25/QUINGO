@@ -1,63 +1,25 @@
-const CACHE_NAME = 'quingo-v2';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-];
+const CACHE_NAME = 'quingo-v3';
 
-// Install event
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-// Activate event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((cacheNames) => Promise.all(
+      cacheNames
+        .filter((cacheName) => cacheName.startsWith('quingo-') && cacheName !== CACHE_NAME)
+        .map((cacheName) => caches.delete(cacheName))
+    ))
   );
   self.clients.claim();
 });
 
-// Fetch event
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  
-  // API calls - network first
-  if (request.url.includes('/api/')) {
-    event.respondWith(fetch(request));
-    return;
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(new Request(request, { cache: 'no-store' })));
   }
-
-  // Other resources - cache first
-  event.respondWith(
-    caches.match(request).then((response) => {
-      return (
-        response ||
-        fetch(request).then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-      );
-    })
-  );
 });
 
 // Background sync for cart
