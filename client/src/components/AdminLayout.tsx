@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Bars3Icon,
@@ -12,9 +12,11 @@ import {
   ChevronDownIcon,
   ArrowLeftOnRectangleIcon,
   Cog6ToothIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useStoreSettings } from '@/store/StoreSettingsContext'
+import { getStoredAdmin, hasAdminPermission } from '@/utils/adminPermissions'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -25,6 +27,7 @@ interface AdminMenuItem {
   path: string
   icon: typeof HomeIcon
   children?: { label: string; path: string }[]
+  permission: string
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -43,16 +46,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Dashboard',
       path: '/admin/dashboard',
       icon: HomeIcon,
+      permission: 'dashboard',
     },
     {
       label: 'Productos',
       path: '/admin/products',
       icon: ShoppingBagIcon,
+      permission: 'products',
     },
     {
       label: 'Categorías',
       path: '/admin/categories',
       icon: ChartBarIcon,
+      permission: 'categories',
       children: [
         { label: 'Gestionar categorías', path: '/admin/categories' },
         { label: 'Plantillas de atributos', path: '/admin/attributes' },
@@ -62,32 +68,66 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       label: 'Pedidos',
       path: '/admin/orders',
       icon: ShoppingCartIcon,
+      permission: 'orders',
     },
     {
       label: 'Entregas',
       path: '/admin/orders?filter=shipped',
       icon: TruckIcon,
+      permission: 'deliveries',
     },
     {
       label: 'Devoluciones',
       path: '/admin/orders?filter=returned',
       icon: ArrowPathIcon,
+      permission: 'returns',
     },
     {
       label: 'Reportes',
       path: '/admin/reports',
       icon: ChartBarIcon,
+      permission: 'reports',
     },
     {
       label: 'Configuración',
       path: '/admin/settings',
       icon: Cog6ToothIcon,
+      permission: 'settings',
       children: [
         { label: 'Configuración de tienda', path: '/admin/settings' },
         { label: 'Importar catálogo', path: '/admin/settings/import' },
       ],
     },
+    {
+      label: 'Perfiles y accesos',
+      path: '/admin/profiles',
+      icon: UserGroupIcon,
+      permission: 'profiles',
+    },
   ]
+  const visibleMenuItems = menuItems.filter((item) => hasAdminPermission(item.permission))
+
+  useEffect(() => {
+    const permissionByPath: [string, string][] = [
+      ['/admin/profiles', 'profiles'],
+      ['/admin/settings', 'settings'],
+      ['/admin/reports', 'reports'],
+      ['/admin/orders', 'orders'],
+      ['/admin/categories', 'categories'],
+      ['/admin/attributes', 'categories'],
+      ['/admin/products', 'products'],
+      ['/admin/dashboard', 'dashboard'],
+    ]
+    const required = permissionByPath.find(([path]) => location.pathname.startsWith(path))?.[1]
+    if (required && !hasAdminPermission(required)) {
+      const fallback = visibleMenuItems[0]?.path
+      if (fallback) navigate(fallback, { replace: true })
+      else {
+        toast.error('Tu perfil no tiene módulos asignados')
+        handleLogout()
+      }
+    }
+  }, [location.pathname])
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken')
@@ -142,7 +182,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Menu Items */}
         <nav className={`flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = item.icon
             const hasChildren = Boolean(item.children?.length)
             const active = hasChildren
@@ -202,6 +242,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Logout Button */}
         <div className={`p-3 sm:p-4 border-t border-blue-800 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
+          {sidebarOpen && <div className="mb-3 truncate px-4 text-xs text-blue-200">{getStoredAdmin()?.profileName || 'Administrador'}</div>}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 hover:bg-blue-800 transition"

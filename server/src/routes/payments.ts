@@ -2,6 +2,7 @@ import express, { Router, Request, Response } from 'express'
 import Stripe from 'stripe'
 import Order from '../models/Order.js'
 import { sendOrderEmail } from '../utils/email.js'
+import { sendOrderWhatsApp } from '../utils/whatsapp.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { calculateOrder } from '../services/commerce.js'
 
@@ -58,6 +59,10 @@ const updateOrderPaymentStatus = async (paymentIntent: Stripe.PaymentIntent) => 
           subject: finalSubject,
           showVoucher: false
         })
+        // Los pedidos con tarjeta ya notifican al crearse. OXXO se confirma hasta que Stripe reporta el pago.
+        if (order.paymentMethod === 'oxxo') {
+          await sendOrderWhatsApp(order)
+        }
       }
     } catch (err) {
       console.error('Failed to send payment confirmation email:', err)

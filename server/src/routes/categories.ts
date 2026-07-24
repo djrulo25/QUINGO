@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import Category from '../models/Category.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requirePermission } from '../middleware/auth.js'
 import Product from '../models/Product.js'
 import { deleteCloudinaryAsset } from '../utils/cloudinaryAssets.js'
 
@@ -75,7 +75,7 @@ router.get('/:id/attributes', async (req: Request, res: Response) => {
 })
 
 // Get all categories for admin management
-router.get('/admin', authMiddleware, async (req: Request, res: Response) => {
+router.get('/admin', authMiddleware, requirePermission('categories'), async (req: Request, res: Response) => {
   try {
     const categories = await Category.find().sort({ level: 1, order: 1, name: 1 })
     res.json(categories)
@@ -85,7 +85,7 @@ router.get('/admin', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Create category
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', authMiddleware, requirePermission('categories'), async (req: Request, res: Response) => {
   try {
     const category = new Category(req.body)
     await category.save()
@@ -97,7 +97,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Update category
-router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', authMiddleware, requirePermission('categories'), async (req: Request, res: Response) => {
   try {
     const previous = await Category.findById(req.params.id).lean()
     const category = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
@@ -116,7 +116,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Delete category
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, requirePermission('categories'), async (req: Request, res: Response) => {
   try {
     const [childCount, productCount] = await Promise.all([
       Category.countDocuments({ parent: req.params.id }),

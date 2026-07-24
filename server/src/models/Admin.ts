@@ -6,6 +6,8 @@ export interface IAdmin extends Document {
   password: string
   name: string
   role: 'admin' | 'super_admin'
+  profile?: mongoose.Types.ObjectId
+  active: boolean
   createdAt: Date
   updatedAt: Date
   comparePassword: (password: string) => Promise<boolean>
@@ -33,6 +35,14 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       enum: ['admin', 'super_admin'],
       default: 'admin',
+    },
+    profile: {
+      type: Schema.Types.ObjectId,
+      ref: 'AdminProfile',
+    },
+    active: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }

@@ -14,7 +14,7 @@ export default function CheckoutPage() {
   const { settings } = useStoreSettings()
   const navigate = useNavigate()
   const { cart, clearCart } = useCartStore()
-  const { customer, isLoggedIn } = useCustomerStore()
+  const { customer, isLoggedIn, token: customerToken } = useCustomerStore()
   const [loading, setLoading] = useState(false)
   const [addresses, setAddresses] = useState<IAddress[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
@@ -153,7 +153,7 @@ export default function CheckoutPage() {
     if (redirectUrl) {
       toast.success('Pago OXXO generado. Código y pedido pendiente listos.')
       setPaymentProcessed(true)
-      await clearCart(true)
+      await clearCart(true, customerToken || undefined)
       if (confirmationPath) navigate(confirmationPath)
       return
     }
@@ -231,7 +231,9 @@ export default function CheckoutPage() {
       } as any
 
       const response = await orderAPI.create(orderData)
-      if (options?.clearCartAfterCreation !== false) await clearCart(true)
+      if (options?.clearCartAfterCreation !== false) {
+        await clearCart(true, customerToken || undefined)
+      }
 
       if (options?.redirectAfterCreation === false) {
         return response.data

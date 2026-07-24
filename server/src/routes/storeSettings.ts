@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import StoreSettings, { DEFAULT_STORE_SETTINGS } from '../models/StoreSettings.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requirePermission } from '../middleware/auth.js'
 import { deleteCloudinaryAsset } from '../utils/cloudinaryAssets.js'
 
 const router = Router()
@@ -13,12 +13,12 @@ router.get('/', async (_req: Request, res: Response) => {
   catch { res.status(500).json({ error: 'No se pudo cargar la configuración de la tienda' }) }
 })
 
-router.get('/admin', authMiddleware, async (_req: Request, res: Response) => {
+router.get('/admin', authMiddleware, requirePermission('settings'), async (_req: Request, res: Response) => {
   try { res.json(await getSettings()) }
   catch { res.status(500).json({ error: 'No se pudo cargar la configuración de la tienda' }) }
 })
 
-router.put('/', authMiddleware, async (req: Request, res: Response) => {
+router.put('/', authMiddleware, requirePermission('settings'), async (req: Request, res: Response) => {
   try {
     const current: any = await getSettings()
     const colors = { ...current.colors, ...(req.body.colors || {}) }

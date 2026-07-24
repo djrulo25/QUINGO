@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import Product from '../models/Product.js'
 import Category from '../models/Category.js'
 import Order from '../models/Order.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requirePermission } from '../middleware/auth.js'
 import { deleteCloudinaryAsset } from '../utils/cloudinaryAssets.js'
 
 const router = Router()
@@ -199,7 +199,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 })
 
 // Create product (Admin)
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', authMiddleware, requirePermission('products'), async (req: Request, res: Response) => {
   try {
     const payload = req.body
     if (payload.category && !payload.categorySlug) {
@@ -220,7 +220,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Update product (Admin)
-router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', authMiddleware, requirePermission('products'), async (req: Request, res: Response) => {
   try {
     const previous = await Product.findById(req.params.id).lean()
     if (!previous) return res.status(404).json({ error: 'Product not found' })
@@ -244,7 +244,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 })
 
 // Delete product (Admin)
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, requirePermission('products'), async (req: Request, res: Response) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id)
     if (!product) {

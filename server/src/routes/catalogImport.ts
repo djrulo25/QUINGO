@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import Category, { AttributeType } from '../models/Category.js'
 import Product from '../models/Product.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requirePermission } from '../middleware/auth.js'
 
 const router = Router()
 const slugify = (value: unknown) => String(value || '').trim().toLowerCase()
@@ -90,7 +90,7 @@ const validatePayload = async (body: ImportPayload) => {
   return { categories, subcategories, attributes, products, errors, total }
 }
 
-router.post('/catalog', authMiddleware, async (req: Request, res: Response) => {
+router.post('/catalog', authMiddleware, requirePermission('products'), async (req: Request, res: Response) => {
   try {
     const data = await validatePayload(req.body || {})
     if (req.body.dryRun || data.errors.length) {

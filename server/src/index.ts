@@ -16,6 +16,7 @@ import debugRoutes from './routes/debug.js'
 import { authMiddleware } from './middleware/auth.js'
 import storeSettingsRoutes from './routes/storeSettings.js'
 import catalogImportRoutes from './routes/catalogImport.js'
+import adminAccessRoutes from './routes/adminAccess.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -65,6 +66,7 @@ app.use('/api/customers', customerRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/store-settings', storeSettingsRoutes)
 app.use('/api/import', catalogImportRoutes)
+app.use('/api/admin-access', adminAccessRoutes)
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

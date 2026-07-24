@@ -196,11 +196,14 @@ export const useCartStore = create<CartStore>()(persist((set, get) => ({
   },
 
   clearCart: async (sync = false, token?: string) => {
-    set({ cart: initialCart, cartLoaded: false })
+    // El carrito vacío ya es el estado cargado. Marcarlo como "no cargado"
+    // hacía que Layout solicitara al servidor la copia anterior mientras el
+    // DELETE seguía en curso y volviera a llenar el carrito.
+    set({ cart: initialCart, cartLoaded: true })
     if (sync) {
       try {
         const authToken = token ?? getStoredToken() ?? undefined
-        await cartAPI.clear(authToken)
+        if (authToken) await cartAPI.clear(authToken)
       } catch (error) {
         console.error('Failed to clear cart on server:', error)
       }

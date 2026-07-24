@@ -120,4 +120,14 @@ export const catalogImportAPI = {
   commit: (data: object) => apiClient.post('/import/catalog', { ...data, dryRun: false }, getAdminAuthConfig()),
 }
 
+export const adminAccessAPI = {
+  getProfiles: () => apiClient.get('/admin-access/profiles', getAdminAuthConfig()),
+  createProfile: (data: object) => apiClient.post('/admin-access/profiles', data, getAdminAuthConfig()),
+  updateProfile: (id: string, data: object) => apiClient.put(`/admin-access/profiles/${id}`, data, getAdminAuthConfig()),
+  deleteProfile: (id: string) => apiClient.delete(`/admin-access/profiles/${id}`, getAdminAuthConfig()),
+  getUsers: () => apiClient.get('/admin-access/users', getAdminAuthConfig()),
+  createUser: (data: object) => apiClient.post('/admin-access/users', data, getAdminAuthConfig()),
+  updateUser: (id: string, data: object) => apiClient.put(`/admin-access/users/${id}`, data, getAdminAuthConfig()),
+}
+
 export default apiClient

@@ -30,6 +30,7 @@ import AdminReportsPage from '@/pages/AdminReportsPage'
 import { StoreSettingsProvider } from '@/store/StoreSettingsContext'
 import AdminStoreSettingsPage from '@/pages/AdminStoreSettingsPage'
 import AdminCatalogImportPage from '@/pages/AdminCatalogImportPage'
+import AdminProfilesPage from '@/pages/AdminProfilesPage'
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
                 <Route path="/reports" element={<AdminReportsPage />} />
                 <Route path="/settings" element={<AdminStoreSettingsPage />} />
                 <Route path="/settings/import" element={<AdminCatalogImportPage />} />
+                <Route path="/profiles" element={<AdminProfilesPage />} />
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
             </AdminLayout>

@@ -3,13 +3,14 @@ import { randomBytes } from 'crypto'
 import Stripe from 'stripe'
 import Order from '../models/Order.js'
 import { sendOrderEmail } from '../utils/email.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { sendOrderWhatsApp } from '../utils/whatsapp.js'
+import { authMiddleware, requireAnyPermission } from '../middleware/auth.js'
 import { calculateOrder } from '../services/commerce.js'
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2024-04-10' as any })
 
-router.get('/', authMiddleware, async (_req: Request, res: Response) => {
+router.get('/', authMiddleware, requireAnyPermission('dashboard', 'orders', 'deliveries', 'returns', 'reports'), async (_req: Request, res: Response) => {
   try { res.json(await Order.find().sort({ createdAt: -1 })) }
   catch { res.status(500).json({ error: 'Error fetching orders' }) }
 })
@@ -51,6 +52,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     if (paymentMethod !== 'oxxo') {
       sendOrderEmail(order).catch((error) => console.error('Failed to send order email:', error))
+      sendOrderWhatsApp(order).catch((error) => console.error('Failed to send order WhatsApp:', error))
     }
     const response = order.toObject()
     res.status(201).json({ ...response, confirmationToken })
@@ -69,12 +71,12 @@ router.get('/confirmation/:id', async (req: Request, res: Response) => {
   } catch { res.status(404).json({ error: 'Pedido no encontrado o enlace inválido' }) }
 })
 
-router.get('/customer/:email', authMiddleware, async (req: Request, res: Response) => {
+router.get('/customer/:email', authMiddleware, requireAnyPermission('orders', 'deliveries', 'returns'), async (req: Request, res: Response) => {
   try { res.json(await Order.find({ 'customer.email': req.params.email })) }
   catch { res.status(500).json({ error: 'Error fetching orders' }) }
 })
 
-router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, requireAnyPermission('orders', 'deliveries', 'returns'), async (req: Request, res: Response) => {
   try {
     const order = await Order.findById(req.params.id)
     if (!order) return res.status(404).json({ error: 'Order not found' })
@@ -82,7 +84,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   } catch { res.status(404).json({ error: 'Order not found' }) }
 })
 
-router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', authMiddleware, requireAnyPermission('orders', 'deliveries', 'returns'), async (req: Request, res: Response) => {
   try {
     const allowed = ['status', 'paymentStatus', 'paymentIntentId', 'oxxoVoucherUrl', 'notes']
     const update = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)))
