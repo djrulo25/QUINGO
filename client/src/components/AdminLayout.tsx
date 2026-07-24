@@ -49,22 +49,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       permission: 'dashboard',
     },
     {
-      label: 'Productos',
-      path: '/admin/products',
-      icon: ShoppingBagIcon,
-      permission: 'products',
-    },
-    {
-      label: 'Categorías',
-      path: '/admin/categories',
-      icon: ChartBarIcon,
-      permission: 'categories',
-      children: [
-        { label: 'Gestionar categorías', path: '/admin/categories' },
-        { label: 'Plantillas de atributos', path: '/admin/attributes' },
-      ],
-    },
-    {
       label: 'Pedidos',
       path: '/admin/orders',
       icon: ShoppingCartIcon,
@@ -81,6 +65,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       path: '/admin/orders?filter=returned',
       icon: ArrowPathIcon,
       permission: 'returns',
+    },
+    {
+      label: 'Productos',
+      path: '/admin/products',
+      icon: ShoppingBagIcon,
+      permission: 'products',
+    },
+    {
+      label: 'Categorías',
+      path: '/admin/categories',
+      icon: ChartBarIcon,
+      permission: 'categories',
+      children: [
+        { label: 'Gestionar categorías', path: '/admin/categories' },
+        { label: 'Plantillas de atributos', path: '/admin/attributes' },
+      ],
     },
     {
       label: 'Reportes',
