@@ -35,12 +35,12 @@ export default function ProductListRow({ product }: ProductListRowProps) {
   )
 
   return (
-    <div className="grid min-w-[780px] gap-3 border-b border-gray-200 bg-white p-3 last:border-b-0 md:grid-cols-[72px_minmax(180px,1fr)_100px_90px_230px] md:items-center">
+    <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 border-b border-gray-200 bg-white p-3 last:border-b-0 md:min-w-[780px] md:grid-cols-[72px_minmax(180px,1fr)_100px_90px_230px] md:items-center md:gap-3">
       <Link to={`/products/${product.id}`} className="hidden h-16 w-16 overflow-hidden rounded bg-gray-100 md:block">
         <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
       </Link>
 
-      <div className="min-w-0">
+      <div className="col-span-2 min-w-0 md:col-span-1">
         <div className="flex gap-3 md:hidden">
           <Link to={`/products/${product.id}`} className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-100">
             <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
@@ -79,7 +79,7 @@ export default function ProductListRow({ product }: ProductListRowProps) {
         )}
       </div>
 
-      <div className="flex min-w-0 gap-2">
+      <div className="col-span-2 flex min-w-0 gap-2 md:col-span-1">
         <input
           type="number"
           min="1"
@@ -94,7 +94,7 @@ export default function ProductListRow({ product }: ProductListRowProps) {
           type="button"
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg bg-blue-900 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg bg-blue-900 px-2 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400 sm:px-3"
         >
           <ShoppingCartIcon className="h-4 w-4" />
           Agregar
