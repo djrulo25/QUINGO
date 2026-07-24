@@ -21,6 +21,7 @@ export default function AdminStoreSettingsPage() {
       ...DEFAULT_STORE_SETTINGS,
       ...data,
       homeBrands: data.homeBrands?.length ? data.homeBrands : DEFAULT_STORE_SETTINGS.homeBrands,
+      shippingMethods: data.shippingMethods?.length ? data.shippingMethods : DEFAULT_STORE_SETTINGS.shippingMethods,
     })).catch(() => toast.error('No se pudo cargar la configuración')).finally(() => setLoading(false))
   }, [])
 

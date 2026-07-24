@@ -6,7 +6,21 @@ import { deleteCloudinaryAsset } from '../utils/cloudinaryAssets.js'
 const router = Router()
 const hexColor = /^#[0-9a-f]{6}$/i
 
-const getSettings = async () => (await StoreSettings.findOne({ storeKey: 'default' }).lean()) || DEFAULT_STORE_SETTINGS
+const getSettings = async () => {
+  const stored: any = await StoreSettings.findOne({ storeKey: 'default' }).lean()
+  if (!stored) return DEFAULT_STORE_SETTINGS
+  return {
+    ...DEFAULT_STORE_SETTINGS,
+    ...stored,
+    colors: { ...DEFAULT_STORE_SETTINGS.colors, ...(stored.colors || {}) },
+    contact: { ...DEFAULT_STORE_SETTINGS.contact, ...(stored.contact || {}) },
+    social: { ...DEFAULT_STORE_SETTINGS.social, ...(stored.social || {}) },
+    home: { ...DEFAULT_STORE_SETTINGS.home, ...(stored.home || {}) },
+    homeBrands: stored.homeBrands?.length ? stored.homeBrands : DEFAULT_STORE_SETTINGS.homeBrands,
+    fiscal: { ...DEFAULT_STORE_SETTINGS.fiscal, ...(stored.fiscal || {}) },
+    shippingMethods: stored.shippingMethods?.length ? stored.shippingMethods : DEFAULT_STORE_SETTINGS.shippingMethods,
+  }
+}
 
 router.get('/', async (_req: Request, res: Response) => {
   try { res.json(await getSettings()) }
