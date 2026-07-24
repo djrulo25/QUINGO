@@ -35,7 +35,7 @@ export default function ProductListRow({ product }: ProductListRowProps) {
   )
 
   return (
-    <div className="grid gap-3 border-b border-gray-200 bg-white p-3 last:border-b-0 md:grid-cols-[72px_1fr_110px_110px_190px] md:items-center">
+    <div className="grid min-w-[780px] gap-3 border-b border-gray-200 bg-white p-3 last:border-b-0 md:grid-cols-[72px_minmax(180px,1fr)_100px_90px_230px] md:items-center">
       <Link to={`/products/${product.id}`} className="hidden h-16 w-16 overflow-hidden rounded bg-gray-100 md:block">
         <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
       </Link>
@@ -79,7 +79,7 @@ export default function ProductListRow({ product }: ProductListRowProps) {
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex min-w-0 gap-2">
         <input
           type="number"
           min="1"
@@ -94,14 +94,14 @@ export default function ProductListRow({ product }: ProductListRowProps) {
           type="button"
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-blue-900 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg bg-blue-900 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
           <ShoppingCartIcon className="h-4 w-4" />
           Agregar
         </button>
         <a
           href={`https://wa.me/${settings.contact.whatsapp.replace(/\D/g, '')}?text=${quoteMessage}`}
-          className="flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50"
+          className="flex shrink-0 items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-gray-700 hover:bg-gray-50"
           aria-label={`Cotizar ${product.name}`}
         >
           <ChatBubbleLeftRightIcon className="h-5 w-5" />

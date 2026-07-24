@@ -6,6 +6,7 @@ import {
   TableCellsIcon,
   XMarkIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { Product, FilterOptions, CategoryAttribute, CategoryTreeNode } from '@/types'
@@ -98,6 +99,9 @@ export default function ProductsPage() {
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(new Set())
   const [catalogLoadError, setCatalogLoadError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [currentPage, setCurrentPage] = useState(Math.max(1, Number(searchParams.get('page')) || 1))
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -182,6 +186,7 @@ export default function ProductsPage() {
     const categoryFromQuery = searchParams.get('category') || undefined
     const subcategoryFromQuery = searchParams.get('subcategory') || undefined
     const searchFromQuery = searchParams.get('search') || ''
+    const pageFromQuery = Math.max(1, Number(searchParams.get('page')) || 1)
 
     setFilters((currentFilters) => {
       if (
@@ -205,6 +210,7 @@ export default function ProductsPage() {
 
       return searchFromQuery
     })
+    setCurrentPage(pageFromQuery)
   }, [searchParams])
 
   useEffect(() => {
@@ -216,12 +222,23 @@ export default function ProductsPage() {
       try {
         setLoading(true)
         setCatalogLoadError(false)
-        const { data } = await requestWithRetry(() => productAPI.getAll({
+        const { data } = await requestWithRetry(() => productAPI.getPage({
             ...filters,
             search: searchQuery.trim() || undefined,
             attributeFilters: buildAttributeFilters(filterableAttributes, attributeFilterValues, activeBrand),
+            page: currentPage,
+            limit: 24,
+            sort: sortBy,
           }))
-        setProducts(data)
+        setProducts(data.items)
+        setTotalProducts(data.total)
+        setTotalPages(data.totalPages)
+        if (data.page !== currentPage) {
+          const nextParams = new URLSearchParams(searchParams)
+          if (data.page > 1) nextParams.set('page', String(data.page))
+          else nextParams.delete('page')
+          setSearchParams(nextParams, { replace: true })
+        }
       } catch (error) {
         console.error('Error fetching products:', error)
         setCatalogLoadError(true)
@@ -232,7 +249,7 @@ export default function ProductsPage() {
 
     const debounceTimer = window.setTimeout(fetchProducts, 400)
     return () => window.clearTimeout(debounceTimer)
-  }, [filters, searchQuery, filterableAttributes, attributeFilterValues, activeBrand, reloadKey])
+  }, [filters, searchQuery, filterableAttributes, attributeFilterValues, activeBrand, currentPage, sortBy, reloadKey])
 
   const activeCategoryName = useMemo(() => {
     if (!activeCategorySlug) {
@@ -262,6 +279,7 @@ export default function ProductsPage() {
 
   const handleCatalogSearch = (query: string) => {
     const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('page')
 
     if (query) {
       nextParams.set('search', query)
@@ -276,7 +294,17 @@ export default function ProductsPage() {
   const hasActiveFilters = searchQuery || filters.category || filters.subcategory || activeBrand || activeAttributeFilterCount > 0
 
   const setAttributeFilter = (key: string, value: string) => {
+    setCurrentPage(1)
     setAttributeFilterValues((current) => ({ ...current, [key]: value }))
+  }
+
+  const goToPage = (page: number) => {
+    const nextPage = Math.min(Math.max(page, 1), totalPages)
+    const nextParams = new URLSearchParams(searchParams)
+    if (nextPage > 1) nextParams.set('page', String(nextPage))
+    else nextParams.delete('page')
+    setSearchParams(nextParams)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const renderFilterControls = (closeAfterAction = false) => (
@@ -450,7 +478,7 @@ export default function ProductsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="hidden lg:block">
             <div className="sticky top-28">
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -467,12 +495,12 @@ export default function ProductsPage() {
             </div>
           </aside>
 
-          <section>
+          <section className="min-w-0">
             <div className="mb-4 flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-bold text-gray-900">
-                    {loading ? 'Cargando productos...' : catalogLoadError ? 'No se pudo cargar el catálogo' : `${sortedProducts.length} productos encontrados`}
+                    {loading ? 'Cargando productos...' : catalogLoadError ? 'No se pudo cargar el catálogo' : `${totalProducts} productos encontrados`}
                   </p>
                   {activeCategoryName && (
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-900">
@@ -511,7 +539,12 @@ export default function ProductsPage() {
                 </div>
                 <select
                   value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as SortOption)}
+                  onChange={(event) => {
+                    setSortBy(event.target.value as SortOption)
+                    const nextParams = new URLSearchParams(searchParams)
+                    nextParams.delete('page')
+                    setSearchParams(nextParams)
+                  }}
                   className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
                   {SORT_OPTIONS.map((option) => (
@@ -545,8 +578,8 @@ export default function ProductsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                  <div className="hidden grid-cols-[72px_1fr_110px_110px_190px] gap-3 bg-gray-100 px-3 py-2 text-xs font-bold uppercase text-gray-500 md:grid">
+                <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                  <div className="hidden min-w-[780px] grid-cols-[72px_minmax(180px,1fr)_100px_90px_230px] gap-3 bg-gray-100 px-3 py-2 text-xs font-bold uppercase text-gray-500 md:grid">
                     <span></span>
                     <span>Producto</span>
                     <span>Stock</span>
@@ -589,6 +622,49 @@ export default function ProductsPage() {
                   </div>
                 )}
               </div>
+            )}
+
+            {!loading && !catalogLoadError && totalPages > 1 && (
+              <nav className="mt-6 flex flex-wrap items-center justify-center gap-2" aria-label="Paginación del catálogo">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => goToPage(currentPage - 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                  Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, index) => index + 1)
+                  .filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2)
+                  .map((page, index, pages) => (
+                    <span key={page} className="contents">
+                      {index > 0 && page - pages[index - 1] > 1 && <span className="px-1 text-gray-500">…</span>}
+                      <button
+                        type="button"
+                        onClick={() => goToPage(page)}
+                        aria-current={page === currentPage ? 'page' : undefined}
+                        className={`min-w-10 rounded-lg px-3 py-2 text-sm font-bold ${
+                          page === currentPage
+                            ? 'bg-blue-900 text-white'
+                            : 'border border-gray-300 bg-white text-gray-700 hover:border-blue-600'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </span>
+                  ))}
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => goToPage(currentPage + 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:border-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Siguiente
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+                <span className="w-full text-center text-xs text-gray-500">Página {currentPage} de {totalPages}</span>
+              </nav>
             )}
           </section>
         </div>

@@ -52,6 +52,10 @@ apiClient.interceptors.request.use((config) => {
 export const productAPI = {
   getAll: (filters?: Record<string, any>) =>
     apiClient.get<Product[]>('/products', { params: filters }),
+  getPage: (filters?: Record<string, any>) =>
+    apiClient.get<{ items: Product[]; total: number; page: number; pageSize: number; totalPages: number }>('/products', {
+      params: { ...filters, paginated: true },
+    }),
   getById: (id: string) => apiClient.get<Product>(`/products/${id}`),
   search: (query: string) =>
     apiClient.get<Product[]>('/products/search', { params: { q: query } }),

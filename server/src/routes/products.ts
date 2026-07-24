@@ -44,7 +44,7 @@ function transformProduct(doc: any) {
 // Get all products with filters
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { category, subcategory, priceMin, priceMax, search, inStock, attributeFilters } = req.query
+    const { category, subcategory, priceMin, priceMax, search, inStock, attributeFilters, paginated, page, limit, sort } = req.query
 
     let query: any = {}
     const conditions: any[] = []
@@ -111,6 +111,28 @@ router.get('/', async (req: Request, res: Response) => {
           query[field] = value.trim()
         }
       }
+    }
+
+    if (paginated === 'true') {
+      const requestedPage = Math.max(1, Number(page) || 1)
+      const pageSize = Math.min(60, Math.max(1, Number(limit) || 24))
+      const sortQuery = sort === 'price-desc'
+        ? { price: -1 as const, _id: 1 as const }
+        : { price: 1 as const, _id: 1 as const }
+      const total = await Product.countDocuments(query)
+      const totalPages = Math.max(1, Math.ceil(total / pageSize))
+      const currentPage = Math.min(requestedPage, totalPages)
+      const products = await Product.find(query)
+        .sort(sortQuery)
+        .skip((currentPage - 1) * pageSize)
+        .limit(pageSize)
+      return res.json({
+        items: products.map(transformProduct),
+        total,
+        page: currentPage,
+        pageSize,
+        totalPages,
+      })
     }
 
     const products = await Product.find(query).limit(100)
