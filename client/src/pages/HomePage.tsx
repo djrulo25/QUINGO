@@ -61,6 +61,8 @@ export default function HomePage() {
   const [categories, setCategories] = useState<CategoryTreeNode[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [topProducts, setTopProducts] = useState<Product[]>([])
+  const [postalCode, setPostalCode] = useState('')
+  const [showDeliveryMessage, setShowDeliveryMessage] = useState(false)
   const [quoteForm, setQuoteForm] = useState({
     sku: '',
     quantity: '1',
@@ -418,6 +420,53 @@ export default function HomePage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-gray-100 py-8 sm:py-10">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl bg-blue-950 p-5 text-white shadow-sm sm:p-7">
+            <div className="flex items-start gap-4">
+              <div className="rounded-xl bg-white/10 p-3">
+                <TruckIcon className="h-7 w-7 text-blue-200" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold sm:text-2xl">Consulta entrega en tu zona</h2>
+                <p className="mt-1 text-sm text-blue-100">
+                  Ingresa tu código postal para preparar una consulta de cobertura.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex min-w-0 flex-col gap-2 sm:flex-row">
+              <input
+                inputMode="numeric"
+                maxLength={5}
+                value={postalCode}
+                onChange={(event) => {
+                  setPostalCode(event.target.value.replace(/\D/g, ''))
+                  setShowDeliveryMessage(false)
+                }}
+                placeholder="Código postal"
+                aria-label="Código postal"
+                className="w-full min-w-0 flex-1 rounded-lg border-0 px-3 py-2.5 text-gray-900 outline-none focus:ring-2 focus:ring-blue-300"
+              />
+              <button
+                type="button"
+                disabled={postalCode.length !== 5}
+                onClick={() => setShowDeliveryMessage(true)}
+                className="w-full rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-blue-950 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              >
+                Consultar
+              </button>
+            </div>
+
+            {showDeliveryMessage && (
+              <p className="mt-3 break-words rounded-lg bg-white/10 p-3 text-sm [overflow-wrap:anywhere]">
+                Tenemos cobertura nacional. Confirma costo y tiempo para el C.P. {postalCode} mediante la cotización del producto.
+              </p>
+            )}
           </div>
         </div>
       </section>
