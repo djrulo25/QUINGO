@@ -25,6 +25,21 @@ type SortOption = (typeof SORT_OPTIONS)[number]['value']
 type ViewMode = 'grid' | 'list'
 type AttributeFilterValues = Record<string, string>
 
+const waitForRetry = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds))
+
+const requestWithRetry = async <T,>(request: () => Promise<T>, attempts = 4): Promise<T> => {
+  let lastError: unknown
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await request()
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts - 1) await waitForRetry(1200 * (attempt + 1))
+    }
+  }
+  throw lastError
+}
+
 const buildAttributeFilters = (definitions: CategoryAttribute[], values: AttributeFilterValues, brand?: string) => {
   const filters: Record<string, string | boolean | { min?: number; max?: number }> = {}
   if (brand) filters.marca = brand
@@ -81,11 +96,13 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [attributeFilterValues, setAttributeFilterValues] = useState<AttributeFilterValues>({})
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(new Set())
+  const [catalogLoadError, setCatalogLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const response = await categoryAPI.getAll()
+        const response = await requestWithRetry(() => categoryAPI.getAll())
         setCategories(getTopLevelCategories(response.data))
       } catch (error) {
         console.error('Error loading categories', error)
@@ -93,7 +110,7 @@ export default function ProductsPage() {
     }
 
     loadCategories()
-  }, [])
+  }, [reloadKey])
 
   const catalogItems = useMemo(() => flattenCategoryCatalog(categories), [categories])
   const activeCategorySlug = filters.subcategory || filters.category
@@ -198,14 +215,16 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
       try {
         setLoading(true)
-        const { data } = await productAPI.getAll({
-          ...filters,
-          search: searchQuery.trim() || undefined,
-          attributeFilters: buildAttributeFilters(filterableAttributes, attributeFilterValues, activeBrand),
-        })
+        setCatalogLoadError(false)
+        const { data } = await requestWithRetry(() => productAPI.getAll({
+            ...filters,
+            search: searchQuery.trim() || undefined,
+            attributeFilters: buildAttributeFilters(filterableAttributes, attributeFilterValues, activeBrand),
+          }))
         setProducts(data)
       } catch (error) {
         console.error('Error fetching products:', error)
+        setCatalogLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -213,7 +232,7 @@ export default function ProductsPage() {
 
     const debounceTimer = window.setTimeout(fetchProducts, 400)
     return () => window.clearTimeout(debounceTimer)
-  }, [filters, searchQuery, filterableAttributes, attributeFilterValues, activeBrand])
+  }, [filters, searchQuery, filterableAttributes, attributeFilterValues, activeBrand, reloadKey])
 
   const activeCategoryName = useMemo(() => {
     if (!activeCategorySlug) {
@@ -453,7 +472,7 @@ export default function ProductsPage() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-bold text-gray-900">
-                    {loading ? 'Cargando productos...' : `${sortedProducts.length} productos encontrados`}
+                    {loading ? 'Cargando productos...' : catalogLoadError ? 'No se pudo cargar el catálogo' : `${sortedProducts.length} productos encontrados`}
                   </p>
                   {activeCategoryName && (
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-900">
@@ -509,6 +528,14 @@ export default function ProductsPage() {
                 {[...Array(6)].map((_, index) => (
                   <div key={index} className="h-80 animate-pulse rounded-lg bg-gray-200" />
                 ))}
+              </div>
+            ) : catalogLoadError ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-12 text-center shadow-sm">
+                <p className="text-lg font-bold text-amber-950">No se pudo conectar con el catálogo</p>
+                <p className="mt-2 text-sm text-amber-800">Tus productos siguen guardados. El servidor puede estar iniciando; vuelve a intentar la carga.</p>
+                <button type="button" onClick={() => setReloadKey((current) => current + 1)} className="mt-5 rounded-lg bg-blue-900 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800">
+                  Reintentar
+                </button>
               </div>
             ) : sortedProducts.length > 0 ? (
               viewMode === 'grid' ? (
