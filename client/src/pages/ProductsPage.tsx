@@ -5,6 +5,8 @@ import {
   Squares2X2Icon,
   TableCellsIcon,
   XMarkIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { Product, FilterOptions, CategoryAttribute, CategoryTreeNode } from '@/types'
 import ProductCard from '@/components/ProductCard'
@@ -76,6 +78,7 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('price-asc')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [attributeFilterValues, setAttributeFilterValues] = useState<AttributeFilterValues>({})
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -100,6 +103,61 @@ export default function ProductsPage() {
     () => (activeCategory?.attributes || []).filter((attribute) => attribute.filterable !== false).slice(0, 8),
     [activeCategory]
   )
+
+  useEffect(() => {
+    if (!activeCategorySlug || categories.length === 0) return
+    const findAncestors = (nodes: CategoryTreeNode[], ancestors: string[] = []): string[] | null => {
+      for (const node of nodes) {
+        if (node.slug === activeCategorySlug) return ancestors
+        const found = findAncestors(node.children || [], [...ancestors, node.id])
+        if (found) return found
+      }
+      return null
+    }
+    const ancestors = findAncestors(categories)
+    if (ancestors) setExpandedCategoryIds(new Set(ancestors))
+  }, [activeCategorySlug, categories])
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategoryIds((current) => {
+      const next = new Set(current)
+      if (next.has(categoryId)) next.delete(categoryId)
+      else next.add(categoryId)
+      return next
+    })
+  }
+
+  const renderCategoryNode = (category: CategoryTreeNode, root: CategoryTreeNode, depth = 0): React.ReactNode => {
+    const hasChildren = category.children?.length > 0
+    const expanded = expandedCategoryIds.has(category.id)
+    const isActive = category.slug === activeCategorySlug
+    const link = getCategoryProductLink({ category, root, depth })
+
+    return (
+      <div key={category.id}>
+        <div className={`flex items-center rounded-md border-l-2 transition ${isActive ? 'border-blue-800 bg-blue-50' : 'border-transparent hover:bg-gray-100'}`} style={{ paddingLeft: `${depth * 14}px` }}>
+          {hasChildren ? (
+            <button type="button" onClick={() => toggleCategory(category.id)} className="flex min-w-0 flex-1 items-center gap-2 py-2 pl-2 pr-1 text-left text-sm font-semibold text-gray-900" aria-expanded={expanded}>
+              {expanded ? <ChevronDownIcon className="h-4 w-4 shrink-0" /> : <ChevronRightIcon className="h-4 w-4 shrink-0" />}
+              <span className="min-w-0 break-words">{category.name}</span>
+            </button>
+          ) : (
+            <Link to={link} className={`block min-w-0 flex-1 py-2 pl-8 pr-2 text-sm ${isActive ? 'font-bold text-blue-900' : 'font-medium text-gray-700 hover:text-blue-700'}`}>
+              {category.name}
+            </Link>
+          )}
+        </div>
+        {hasChildren && expanded && (
+          <div>
+            <Link to={link} className="block py-1.5 pr-2 text-xs font-semibold text-blue-700 hover:bg-blue-50" style={{ paddingLeft: `${depth * 14 + 36}px` }}>
+              Ver todos
+            </Link>
+            {category.children.map((child) => renderCategoryNode(child, root, depth + 1))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   useEffect(() => {
     const categoryFromQuery = searchParams.get('category') || undefined
@@ -367,26 +425,8 @@ export default function ProductsPage() {
                     Todos
                   </Link>
                 </div>
-                <div className="space-y-1">
-                  {catalogItems.slice(0, 24).map((item) => {
-                    const isActive = item.category.slug === activeCategorySlug
-
-                    return (
-                      <Link
-                        key={item.category.id}
-                        to={getCategoryProductLink(item)}
-                        className={`block rounded-md border-l-2 py-1.5 pr-2 text-sm font-medium transition ${
-                          isActive
-                            ? 'border-blue-800 bg-blue-50 text-blue-900'
-                            : `border-transparent hover:bg-gray-100 hover:text-blue-700 ${
-                                item.depth > 0 ? 'text-gray-600' : 'text-gray-900'
-                              }`
-                        } ${item.depth > 0 ? 'pl-5' : 'pl-2'}`}
-                      >
-                        {item.category.name}
-                      </Link>
-                    )
-                  })}
+                <div className="max-h-[calc(100vh-12rem)] space-y-1 overflow-y-auto overscroll-contain pr-1">
+                  {categories.map((category) => renderCategoryNode(category, category))}
                 </div>
               </div>
             </div>
