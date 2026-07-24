@@ -3,7 +3,8 @@ import { Product, Order, Customer, Address, CategoryAttribute, StoreSettings } f
 
 const rawApiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://quingo-api.onrender.com/api'
 const normalizedApiUrl = rawApiUrl.trim().replace(/\/+$/, '')
-const API_BASE_URL = normalizedApiUrl.endsWith('/api') ? normalizedApiUrl : `${normalizedApiUrl}/api`
+const configuredApiUrl = normalizedApiUrl.endsWith('/api') ? normalizedApiUrl : `${normalizedApiUrl}/api`
+const API_BASE_URL = window.location.hostname.endsWith('vercel.app') ? '/api' : configuredApiUrl
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

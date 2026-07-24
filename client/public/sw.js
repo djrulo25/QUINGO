@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quingo-v1';
+const CACHE_NAME = 'quingo-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -39,17 +39,7 @@ self.addEventListener('fetch', (event) => {
   
   // API calls - network first
   if (request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
+    event.respondWith(fetch(request));
     return;
   }
 
