@@ -16,6 +16,21 @@ import { getTopLevelCategories } from '@/utils/categories'
 import { useStoreSettings } from '@/store/StoreSettingsContext'
 type ProductRailVariant = 'offers' | 'new' | 'top'
 
+const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds))
+
+const loadWithRetry = async <T,>(request: () => Promise<T>, attempts = 4): Promise<T> => {
+  let lastError: unknown
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await request()
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts - 1) await wait(1200 * (attempt + 1))
+    }
+  }
+  throw lastError
+}
+
 const TRUST_SIGNALS = [
   {
     title: 'Pago seguro',
@@ -74,7 +89,7 @@ export default function HomePage() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const response = await categoryAPI.getAll()
+        const response = await loadWithRetry(() => categoryAPI.getAll())
         setCategories(getTopLevelCategories(response.data))
       } catch (error) {
         console.error('Error loading categories', error)
@@ -85,7 +100,7 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    productAPI.getTopSelling()
+    loadWithRetry(() => productAPI.getTopSelling())
       .then(({ data }) => setTopProducts(data.slice(0, 4)))
       .catch(() => setTopProducts([]))
   }, [])
@@ -93,7 +108,7 @@ export default function HomePage() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const response = await productAPI.getAll()
+        const response = await loadWithRetry(() => productAPI.getAll())
         setProducts(response.data)
       } catch (error) {
         console.error('Error loading featured products', error)
