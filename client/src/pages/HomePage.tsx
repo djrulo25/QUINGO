@@ -16,6 +16,18 @@ import { getTopLevelCategories } from '@/utils/categories'
 import { useStoreSettings } from '@/store/StoreSettingsContext'
 type ProductRailVariant = 'offers' | 'new' | 'top'
 
+const BRAND_LINKS = [
+  { name: 'AVALLOY', image: '/images/brands/avalloy.svg', dark: true },
+  { name: 'INFRA', image: '/images/brands/infra.png' },
+  { name: 'JOSTEIN' },
+  { name: 'LEO' },
+  { name: 'OKILA', image: '/images/brands/okila.svg' },
+  { name: 'OXFORD' },
+  { name: 'PAC STD' },
+  { name: 'SAMY' },
+  { name: 'WESTERN', image: '/images/brands/western.png' },
+] as const
+
 const TRUST_SIGNALS = [
   {
     title: 'Pago seguro',
@@ -213,14 +225,29 @@ export default function HomePage() {
             buttonClassName="sm:w-14"
           />
 
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-4 pt-1 text-xs sm:text-sm">
-            {categories.slice(0, 6).map((category) => (
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-4 pt-1">
+            {BRAND_LINKS.map((brand) => (
               <Link
-                key={category.id}
-                to={getCategoryProductLink(category)}
-                className="shrink-0 rounded-full border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 hover:border-blue-700 hover:text-blue-800"
+                key={brand.name}
+                to={`/products?brand=${encodeURIComponent(brand.name)}`}
+                aria-label={`Ver productos ${brand.name}`}
+                title={`Ver productos ${brand.name}`}
+                className={`group flex h-12 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 px-3 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md sm:h-14 sm:w-32 ${
+                  'dark' in brand && brand.dark ? 'bg-gray-950' : 'bg-white'
+                }`}
               >
-                {category.name}
+                {'image' in brand ? (
+                  <img
+                    src={brand.image}
+                    alt={brand.name}
+                    className="max-h-8 max-w-full object-contain transition group-hover:scale-105 sm:max-h-9"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="text-center text-sm font-black tracking-[0.12em] text-gray-800 transition group-hover:text-blue-800">
+                    {brand.name}
+                  </span>
+                )}
               </Link>
             ))}
           </div>

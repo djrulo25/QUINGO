@@ -25,8 +25,9 @@ type SortOption = (typeof SORT_OPTIONS)[number]['value']
 type ViewMode = 'grid' | 'list'
 type AttributeFilterValues = Record<string, string>
 
-const buildAttributeFilters = (definitions: CategoryAttribute[], values: AttributeFilterValues) => {
+const buildAttributeFilters = (definitions: CategoryAttribute[], values: AttributeFilterValues, brand?: string) => {
   const filters: Record<string, string | boolean | { min?: number; max?: number }> = {}
+  if (brand) filters.marca = brand
   for (const attribute of definitions) {
     if (attribute.type === 'number') {
       const min = values[`${attribute.key}__min`]
@@ -66,6 +67,7 @@ const renderAttributeFilter = (
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const activeBrand = searchParams.get('brand') || ''
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
@@ -199,7 +201,7 @@ export default function ProductsPage() {
         const { data } = await productAPI.getAll({
           ...filters,
           search: searchQuery.trim() || undefined,
-          attributeFilters: buildAttributeFilters(filterableAttributes, attributeFilterValues),
+          attributeFilters: buildAttributeFilters(filterableAttributes, attributeFilterValues, activeBrand),
         })
         setProducts(data)
       } catch (error) {
@@ -211,7 +213,7 @@ export default function ProductsPage() {
 
     const debounceTimer = window.setTimeout(fetchProducts, 400)
     return () => window.clearTimeout(debounceTimer)
-  }, [filters, searchQuery, filterableAttributes, attributeFilterValues])
+  }, [filters, searchQuery, filterableAttributes, attributeFilterValues, activeBrand])
 
   const activeCategoryName = useMemo(() => {
     if (!activeCategorySlug) {
@@ -252,7 +254,7 @@ export default function ProductsPage() {
   }
 
   const activeAttributeFilterCount = Object.values(attributeFilterValues).filter(Boolean).length
-  const hasActiveFilters = searchQuery || filters.category || filters.subcategory || activeAttributeFilterCount > 0
+  const hasActiveFilters = searchQuery || filters.category || filters.subcategory || activeBrand || activeAttributeFilterCount > 0
 
   const setAttributeFilter = (key: string, value: string) => {
     setAttributeFilterValues((current) => ({ ...current, [key]: value }))
@@ -376,6 +378,20 @@ export default function ProductsPage() {
                 className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-sm font-semibold text-white"
               >
                 Busqueda: {searchQuery}
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            )}
+            {activeBrand && (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams)
+                  nextParams.delete('brand')
+                  setSearchParams(nextParams)
+                }}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-3 py-1 text-sm font-semibold text-white"
+              >
+                Marca: {activeBrand}
                 <XMarkIcon className="h-4 w-4" />
               </button>
             )}
