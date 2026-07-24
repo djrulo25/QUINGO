@@ -68,9 +68,11 @@ export const useCustomerStore = create<CustomerStore>()(
           }
 
           const data: AuthResponse = await response.json()
+          const cartStore = useCartStore.getState()
+          cartStore.setCartLoaded(true)
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
           localStorage.setItem('authToken', data.token)
-          await useCartStore.getState().loadCart(data.token)
+          await cartStore.mergeCartAfterAuth(data.token)
           return data
         } catch (error: any) {
           const errorMsg = error.message || 'Error registering'
@@ -93,9 +95,11 @@ export const useCustomerStore = create<CustomerStore>()(
           }
 
           const data: AuthResponse = await response.json()
+          const cartStore = useCartStore.getState()
+          cartStore.setCartLoaded(true)
           set({ token: data.token, customer: data.customer as ICustomer, isLoggedIn: true, isLoading: false })
           localStorage.setItem('authToken', data.token)
-          await useCartStore.getState().loadCart(data.token)
+          await cartStore.mergeCartAfterAuth(data.token)
           return data
         } catch (error: any) {
           const errorMsg = error.message || 'Error logging in'

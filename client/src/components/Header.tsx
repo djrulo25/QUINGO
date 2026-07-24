@@ -401,7 +401,7 @@ export default function Header() {
                 </>
               ) : (
                 <Link
-                  to="/customer/login"
+                  to={`/customer/login?returnTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-lg transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                   title="Inicia sesión"
                   aria-label="Iniciar sesión"

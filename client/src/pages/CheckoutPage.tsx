@@ -21,6 +21,7 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<'details' | 'payment'>('details')
   const [paymentProcessed, setPaymentProcessed] = useState(false)
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [continueAsGuest, setContinueAsGuest] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -308,6 +309,44 @@ export default function CheckoutPage() {
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold mb-8">Continuar con la compra</h1>
 
+        {!isLoggedIn && (
+          <section className="mb-6 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-gray-900">¿Cómo quieres continuar?</h2>
+              <p className="mt-1 text-sm text-gray-600">Tu carrito se conservará cualquiera que sea tu elección.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setContinueAsGuest(true)}
+                className={`rounded-xl border p-4 text-left transition ${
+                  continueAsGuest
+                    ? 'border-blue-700 bg-blue-50 ring-1 ring-blue-700'
+                    : 'border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/50'
+                }`}
+              >
+                <span className="block font-bold text-gray-900">Continuar como invitado</span>
+                <span className="mt-1 block text-sm text-gray-600">Compra sin crear una cuenta.</span>
+              </button>
+              <Link
+                to="/customer/register?returnTo=%2Fcheckout"
+                className="rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-blue-400 hover:bg-blue-50/50"
+              >
+                <span className="block font-bold text-gray-900">Crear una cuenta</span>
+                <span className="mt-1 block text-sm text-gray-600">Conserva carrito, direcciones y pedidos.</span>
+              </Link>
+              <Link
+                to="/customer/login?returnTo=%2Fcheckout"
+                className="rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-blue-400 hover:bg-blue-50/50"
+              >
+                <span className="block font-bold text-gray-900">Ya tengo cuenta</span>
+                <span className="mt-1 block text-sm text-gray-600">Inicia sesión y combina tus productos.</span>
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {(isLoggedIn || continueAsGuest) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
@@ -615,6 +654,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

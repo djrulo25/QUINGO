@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useCustomerStore } from '@/store/customerStore'
 import toast from 'react-hot-toast'
 
 export default function LoginForm() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { login, isLoading } = useCustomerStore()
+  const requestedReturnTo = searchParams.get('returnTo') || ''
+  const returnTo = requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')
+    ? requestedReturnTo
+    : '/customer/profile'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -22,7 +27,7 @@ export default function LoginForm() {
     try {
       await login(formData.email, formData.password)
       toast.success('Login successful!')
-      navigate('/customer/profile')
+      navigate(returnTo)
     } catch (error: any) {
       toast.error(error.message || 'Login failed')
     }
@@ -81,7 +86,7 @@ export default function LoginForm() {
 
         <div className="mt-6 pt-6 border-t space-y-3">
           <p className="text-gray-600 text-sm mb-3">
-            ¿No tienes cuenta? <Link to="/customer/register" className="text-blue-600 font-semibold hover:underline">
+            ¿No tienes cuenta? <Link to={`/customer/register?returnTo=${encodeURIComponent(returnTo)}`} className="text-blue-600 font-semibold hover:underline">
               Regístrate aquí
             </Link>
           </p>

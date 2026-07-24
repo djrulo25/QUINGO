@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useCustomerStore } from '@/store/customerStore'
 import toast from 'react-hot-toast'
 
 export default function RegisterForm() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { register, isLoading } = useCustomerStore()
+  const requestedReturnTo = searchParams.get('returnTo') || ''
+  const returnTo = requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')
+    ? requestedReturnTo
+    : '/customer/profile'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -37,7 +42,7 @@ export default function RegisterForm() {
         formData.phone
       )
       toast.success('¡Registro exitoso!')
-      navigate('/customer/profile')
+      navigate(returnTo)
     } catch (error: any) {
       toast.error(error.message || 'Error en el registro')
     }
@@ -152,7 +157,7 @@ export default function RegisterForm() {
 
         <div className="mt-6 pt-6 border-t text-center">
           <p className="text-gray-600 text-sm">
-            ¿Ya tienes cuenta? <Link to="/customer/login" className="text-blue-600 font-semibold hover:underline">
+            ¿Ya tienes cuenta? <Link to={`/customer/login?returnTo=${encodeURIComponent(returnTo)}`} className="text-blue-600 font-semibold hover:underline">
               Inicia sesión
             </Link>
           </p>

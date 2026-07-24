@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { Cart, CartItem, Product } from '@/types'
 import { cartAPI } from '@/api/index'
 
@@ -11,6 +12,7 @@ interface CartStore {
   updateQuantity: (productId: string, quantity: number) => void
   clearCart: (sync?: boolean, token?: string) => Promise<void>
   loadCart: (token?: string) => Promise<void>
+  mergeCartAfterAuth: (token: string) => Promise<void>
   getTotal: () => number
 }
 
@@ -99,13 +101,14 @@ const getStoredToken = (): string | null => {
 const syncCartToServer = async (cart: Cart, token?: string) => {
   try {
     const authToken = token ?? getStoredToken() ?? undefined
+    if (!authToken) return
     await cartAPI.sync(cart.items.map(mapCartItemToServerItem), authToken)
   } catch (error) {
     console.error('Failed to sync cart to server:', error)
   }
 }
 
-export const useCartStore = create<CartStore>()((set, get) => ({
+export const useCartStore = create<CartStore>()(persist((set, get) => ({
   cart: initialCart,
   cartLoaded: false,
   setCartLoaded: (loaded: boolean) => set({ cartLoaded: loaded }),
@@ -226,5 +229,60 @@ export const useCartStore = create<CartStore>()((set, get) => ({
     }
   },
 
+  mergeCartAfterAuth: async (token: string) => {
+    const localItems = get().cart.items
+
+    try {
+      const response = await cartAPI.get(token)
+      const serverItems = Array.isArray(response.data?.items)
+        ? response.data.items.map(mapServerItemToCartItem)
+        : []
+      const mergedByProduct = new Map<string, CartItem>()
+
+      for (const item of serverItems) {
+        mergedByProduct.set(item.product.id, item)
+      }
+
+      for (const localItem of localItems) {
+        const serverItem = mergedByProduct.get(localItem.product.id)
+        if (!serverItem) {
+          mergedByProduct.set(localItem.product.id, localItem)
+          continue
+        }
+
+        const combinedQuantity = serverItem.quantity + localItem.quantity
+        const availableStock = localItem.product.stock || serverItem.product.stock
+        const quantity = availableStock > 0
+          ? Math.min(combinedQuantity, availableStock)
+          : combinedQuantity
+        const product = applyVolumePrice({
+          ...serverItem.product,
+          ...localItem.product,
+          volumePricing: localItem.product.volumePricing || serverItem.product.volumePricing || [],
+        }, quantity)
+
+        mergedByProduct.set(localItem.product.id, {
+          ...serverItem,
+          product,
+          quantity,
+          addedAt: localItem.addedAt || serverItem.addedAt,
+        })
+      }
+
+      const items = [...mergedByProduct.values()]
+      const totals = calculateTotals(items)
+      const mergedCart = { items, ...totals }
+
+      set({ cart: mergedCart, cartLoaded: true })
+      await syncCartToServer(mergedCart, token)
+    } catch (error) {
+      console.error('Failed to merge cart after authentication:', error)
+      set({ cartLoaded: true })
+    }
+  },
+
   getTotal: () => get().cart.totalPrice,
+}), {
+  name: 'quingo-cart',
+  partialize: (state) => ({ cart: state.cart }),
 }))
