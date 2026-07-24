@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PhotoIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, ChevronUpIcon, PhotoIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { storeSettingsAPI } from '@/api'
 import { StoreSettings } from '@/types'
@@ -47,6 +47,16 @@ export default function AdminStoreSettingsPage() {
       ...current,
       homeBrands: current.homeBrands.map((brand, brandIndex) => brandIndex === index ? { ...brand, ...changes } : brand),
     }))
+  }
+
+  const moveHomeBrand = (index: number, direction: -1 | 1) => {
+    setSettings((current) => {
+      const destination = index + direction
+      if (destination < 0 || destination >= current.homeBrands.length) return current
+      const homeBrands = [...current.homeBrands]
+      ;[homeBrands[index], homeBrands[destination]] = [homeBrands[destination], homeBrands[index]]
+      return { ...current, homeBrands }
+    })
   }
 
   const handleBrandImage = async (index: number, file?: File) => {
@@ -114,13 +124,26 @@ export default function AdminStoreSettingsPage() {
     </div></section>
 
     <section className="rounded-xl bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold">Marcas del inicio</h2>
-        <p className="mt-1 text-sm text-gray-500">Configura las imágenes de la franja ubicada debajo del buscador. El nombre coincide con la marca registrada en los productos y no debe modificarse.</p>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-bold">Marcas del inicio</h2>
+          <p className="mt-1 text-sm text-gray-500">Crea y organiza las marcas que aparecerán debajo del buscador. El nombre debe coincidir con el campo «marca» de los productos para que el filtro encuentre resultados.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSettings((current) => ({
+            ...current,
+            homeBrands: [...current.homeBrands, { name: `NUEVA MARCA ${current.homeBrands.length + 1}`, imageUrl: '', enabled: true, darkBackground: false }],
+          }))}
+          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg border border-blue-700 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Agregar marca
+        </button>
       </div>
       <div className="space-y-3">
         {settings.homeBrands.map((brand, index) => (
-          <div key={brand.name} className="grid gap-4 rounded-xl border border-gray-200 p-4 lg:grid-cols-[150px_1fr_auto] lg:items-center">
+          <div key={`${brand.name}-${index}`} className="grid gap-4 rounded-xl border border-gray-200 p-4 lg:grid-cols-[150px_1fr_auto] lg:items-center">
             <div className={`flex h-20 items-center justify-center overflow-hidden rounded-lg border border-gray-200 p-3 ${brand.darkBackground ? 'bg-gray-950' : 'bg-gray-50'}`}>
               {brand.imageUrl ? (
                 <img src={brand.imageUrl} alt={`Vista previa de ${brand.name}`} className="max-h-12 max-w-full object-contain" />
@@ -130,7 +153,13 @@ export default function AdminStoreSettingsPage() {
             </div>
 
             <div className="min-w-0">
-              <p className="mb-2 text-sm font-bold text-gray-900">{brand.name}</p>
+              <label className={labelClass}>Nombre de la marca y valor del filtro</label>
+              <input
+                className={`${fieldClass} mb-3 font-semibold uppercase`}
+                value={brand.name}
+                placeholder="Ej. XTOOLS"
+                onChange={(event) => updateHomeBrand(index, { name: event.target.value.toUpperCase() })}
+              />
               <label className={labelClass}>Imagen o URL del logotipo</label>
               <input
                 className={fieldClass}
@@ -160,7 +189,7 @@ export default function AdminStoreSettingsPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 lg:flex-col">
+            <div className="flex flex-wrap items-center gap-4 lg:flex-col lg:items-stretch">
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <input type="checkbox" checked={brand.enabled} onChange={(event) => updateHomeBrand(index, { enabled: event.target.checked })} />
                 Mostrar
@@ -169,6 +198,17 @@ export default function AdminStoreSettingsPage() {
                 <input type="checkbox" checked={brand.darkBackground} onChange={(event) => updateHomeBrand(index, { darkBackground: event.target.checked })} />
                 Fondo oscuro
               </label>
+              <div className="flex items-center gap-1">
+                <button type="button" disabled={index === 0} onClick={() => moveHomeBrand(index, -1)} className="rounded-md border p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label={`Subir ${brand.name}`}>
+                  <ChevronUpIcon className="h-4 w-4" />
+                </button>
+                <button type="button" disabled={index === settings.homeBrands.length - 1} onClick={() => moveHomeBrand(index, 1)} className="rounded-md border p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label={`Bajar ${brand.name}`}>
+                  <ChevronDownIcon className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={() => setSettings((current) => ({ ...current, homeBrands: current.homeBrands.filter((_, brandIndex) => brandIndex !== index) }))} className="rounded-md border border-red-200 p-1.5 text-red-600 hover:bg-red-50" aria-label={`Eliminar ${brand.name}`}>
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

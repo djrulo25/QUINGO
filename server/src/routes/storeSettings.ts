@@ -32,6 +32,10 @@ router.put('/', authMiddleware, requirePermission('settings'), async (req: Reque
     const homeBrands = Array.isArray(req.body.homeBrands)
       ? req.body.homeBrands
       : (current.homeBrands?.length ? current.homeBrands : DEFAULT_STORE_SETTINGS.homeBrands)
+    const normalizedBrandNames = homeBrands.map((brand: any) => String(brand.name || '').trim().toUpperCase()).filter(Boolean)
+    if (new Set(normalizedBrandNames).size !== normalizedBrandNames.length) {
+      return res.status(400).json({ error: 'No puede haber marcas repetidas en la configuración del inicio' })
+    }
     const payload = {
       name: String(req.body.name || current.name).trim(),
       logoUrl: String(req.body.logoUrl ?? current.logoUrl).trim(),
