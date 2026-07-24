@@ -151,6 +151,13 @@ export default function Header() {
     navigate(path)
   }
 
+  const handleLogoClick = () => {
+    closeMobileMenu()
+    window.setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    }, 0)
+  }
+
   const handleMobileBack = () => {
     if (mobilePath.length > 0) {
       setMobilePath((currentPath) => currentPath.slice(0, -1))
@@ -195,7 +202,7 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" aria-label="Ir al inicio" className="text-white">
+          <Link to="/" onClick={handleLogoClick} aria-label="Ir al inicio y subir al comienzo" className="text-white">
             {settings.logoUrl
               ? <img src={settings.logoUrl} alt={settings.name} className="h-12 max-w-[120px] object-contain" />
               : settings.name.toUpperCase() === 'QUINGO' ? <BrandLogo variant="compact" /> : <span className="text-xl font-bold">{settings.name}</span>}
