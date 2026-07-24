@@ -351,9 +351,9 @@ export default function ProductsPage() {
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Catalogo de Productos</h1>
-          <p className="mt-2 text-gray-600">Busca por producto, categoria o SKU.</p>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="whitespace-nowrap text-lg font-bold leading-tight text-gray-900 sm:text-3xl">Catálogo de productos</h1>
+          <p className="mt-1 text-sm text-gray-600 sm:mt-2 sm:text-base">Busca por producto, categoría o SKU.</p>
         </div>
 
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
