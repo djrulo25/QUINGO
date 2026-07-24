@@ -16,18 +16,6 @@ import { getTopLevelCategories } from '@/utils/categories'
 import { useStoreSettings } from '@/store/StoreSettingsContext'
 type ProductRailVariant = 'offers' | 'new' | 'top'
 
-const BRAND_LINKS = [
-  { name: 'AVALLOY', image: '/images/brands/avalloy.svg', dark: true },
-  { name: 'INFRA', image: '/images/brands/infra.png' },
-  { name: 'JOSTEIN' },
-  { name: 'LEO' },
-  { name: 'OKILA', image: '/images/brands/okila.svg' },
-  { name: 'OXFORD' },
-  { name: 'PAC STD' },
-  { name: 'SAMY' },
-  { name: 'WESTERN', image: '/images/brands/western.png' },
-] as const
-
 const TRUST_SIGNALS = [
   {
     title: 'Pago seguro',
@@ -228,19 +216,19 @@ export default function HomePage() {
           />
 
           <div className="mt-2 flex gap-2 overflow-x-auto pb-4 pt-1">
-            {BRAND_LINKS.map((brand) => (
+            {settings.homeBrands.filter((brand) => brand.enabled).map((brand) => (
               <Link
                 key={brand.name}
                 to={`/products?brand=${encodeURIComponent(brand.name)}`}
                 aria-label={`Ver productos ${brand.name}`}
                 title={`Ver productos ${brand.name}`}
                 className={`group flex h-12 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 px-3 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md sm:h-14 sm:w-32 ${
-                  'dark' in brand && brand.dark ? 'bg-gray-950' : 'bg-white'
+                  brand.darkBackground ? 'bg-gray-950' : 'bg-white'
                 }`}
               >
-                {'image' in brand ? (
+                {brand.imageUrl ? (
                   <img
-                    src={brand.image}
+                    src={brand.imageUrl}
                     alt={brand.name}
                     className="max-h-8 max-w-full object-contain transition group-hover:scale-105 sm:max-h-9"
                     loading="lazy"

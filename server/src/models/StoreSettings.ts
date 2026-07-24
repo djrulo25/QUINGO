@@ -36,6 +36,12 @@ export interface IStoreSettings extends Document {
     popularSearches: string[]
     footerTagline: string
   }
+  homeBrands: Array<{
+    name: string
+    imageUrl: string
+    enabled: boolean
+    darkBackground: boolean
+  }>
   fiscal: {
     legalName: string
     rfc: string
@@ -101,6 +107,13 @@ const storeSettingsSchema = new Schema<IStoreSettings>({
     popularSearches: { type: [String], default: ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura'] },
     footerTagline: { type: String, default: 'Suministros industriales para soldadura, protección, gases y operación diaria.' },
   },
+  homeBrands: [{
+    name: { type: String, required: true, trim: true, uppercase: true },
+    imageUrl: { type: String, default: '', trim: true },
+    enabled: { type: Boolean, default: true },
+    darkBackground: { type: Boolean, default: false },
+    _id: false,
+  }],
   fiscal: {
     legalName: { type: String, default: '' },
     rfc: { type: String, default: '', uppercase: true },
@@ -146,6 +159,17 @@ export const DEFAULT_STORE_SETTINGS = {
     popularSearches: ['electrodos', 'guantes', 'reguladores', 'mangueras', 'caretas', 'soldadura'],
     footerTagline: 'Suministros industriales para soldadura, protección, gases y operación diaria.',
   },
+  homeBrands: [
+    { name: 'AVALLOY', imageUrl: '/images/brands/avalloy.svg', enabled: true, darkBackground: true },
+    { name: 'INFRA', imageUrl: '/images/brands/infra.png', enabled: true, darkBackground: false },
+    { name: 'JOSTEIN', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'LEO', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'OKILA', imageUrl: '/images/brands/okila.svg', enabled: true, darkBackground: false },
+    { name: 'OXFORD', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'PAC STD', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'SAMY', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'WESTERN', imageUrl: '/images/brands/western.png', enabled: true, darkBackground: false },
+  ],
   fiscal: { legalName: '', rfc: '', taxRegime: '', postalCode: '', fiscalAddress: '', invoiceEmail: '' },
   shippingMethods: [
     { id: 'standard', name: 'Envío estándar', description: 'Entrega regular', price: 20, estimatedDays: '3 a 5 días hábiles', enabled: true },

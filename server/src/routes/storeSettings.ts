@@ -29,6 +29,9 @@ router.put('/', authMiddleware, requirePermission('settings'), async (req: Reque
     if (!shippingMethods.length || shippingMethods.some((method: any) => !method.id || !method.name || !Number.isFinite(Number(method.price)) || Number(method.price) < 0)) {
       return res.status(400).json({ error: 'Configura al menos un método de envío válido' })
     }
+    const homeBrands = Array.isArray(req.body.homeBrands)
+      ? req.body.homeBrands
+      : (current.homeBrands?.length ? current.homeBrands : DEFAULT_STORE_SETTINGS.homeBrands)
     const payload = {
       name: String(req.body.name || current.name).trim(),
       logoUrl: String(req.body.logoUrl ?? current.logoUrl).trim(),
@@ -38,6 +41,12 @@ router.put('/', authMiddleware, requirePermission('settings'), async (req: Reque
       contact: { ...current.contact, ...(req.body.contact || {}) },
       social: { ...current.social, ...(req.body.social || {}) },
       home: { ...current.home, ...(req.body.home || {}) },
+      homeBrands: homeBrands.map((brand: any) => ({
+        name: String(brand.name || '').trim().toUpperCase(),
+        imageUrl: String(brand.imageUrl || '').trim(),
+        enabled: brand.enabled !== false,
+        darkBackground: brand.darkBackground === true,
+      })).filter((brand: any) => brand.name),
       fiscal: { ...current.fiscal, ...(req.body.fiscal || {}) },
       shippingMethods: shippingMethods.map((method: any) => ({
         id: String(method.id).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-'),

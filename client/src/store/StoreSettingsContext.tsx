@@ -24,6 +24,17 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     popularSearches: [],
     footerTagline: 'Suministros industriales para soldadura, protección, gases y operación diaria.',
   },
+  homeBrands: [
+    { name: 'AVALLOY', imageUrl: '/images/brands/avalloy.svg', enabled: true, darkBackground: true },
+    { name: 'INFRA', imageUrl: '/images/brands/infra.png', enabled: true, darkBackground: false },
+    { name: 'JOSTEIN', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'LEO', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'OKILA', imageUrl: '/images/brands/okila.svg', enabled: true, darkBackground: false },
+    { name: 'OXFORD', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'PAC STD', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'SAMY', imageUrl: '', enabled: true, darkBackground: false },
+    { name: 'WESTERN', imageUrl: '/images/brands/western.png', enabled: true, darkBackground: false },
+  ],
   fiscal: { legalName: '', rfc: '', taxRegime: '', postalCode: '', fiscalAddress: '', invoiceEmail: '' },
   shippingMethods: [
     { id: 'standard', name: 'Envío estándar', description: 'Entrega regular', price: 20, estimatedDays: '3 a 5 días hábiles', enabled: true },
@@ -46,7 +57,7 @@ export function StoreSettingsProvider({ children }: { children: ReactNode }) {
   const refresh = async () => {
     try {
       const { data } = await storeSettingsAPI.getPublic()
-      setSettings({ ...DEFAULT_STORE_SETTINGS, ...data, colors: { ...DEFAULT_STORE_SETTINGS.colors, ...data.colors }, contact: { ...DEFAULT_STORE_SETTINGS.contact, ...data.contact }, social: { ...DEFAULT_STORE_SETTINGS.social, ...data.social }, home: { ...DEFAULT_STORE_SETTINGS.home, ...data.home }, fiscal: { ...DEFAULT_STORE_SETTINGS.fiscal, ...data.fiscal }, shippingMethods: data.shippingMethods?.length ? data.shippingMethods : DEFAULT_STORE_SETTINGS.shippingMethods })
+      setSettings({ ...DEFAULT_STORE_SETTINGS, ...data, colors: { ...DEFAULT_STORE_SETTINGS.colors, ...data.colors }, contact: { ...DEFAULT_STORE_SETTINGS.contact, ...data.contact }, social: { ...DEFAULT_STORE_SETTINGS.social, ...data.social }, home: { ...DEFAULT_STORE_SETTINGS.home, ...data.home }, homeBrands: data.homeBrands?.length ? data.homeBrands : DEFAULT_STORE_SETTINGS.homeBrands, fiscal: { ...DEFAULT_STORE_SETTINGS.fiscal, ...data.fiscal }, shippingMethods: data.shippingMethods?.length ? data.shippingMethods : DEFAULT_STORE_SETTINGS.shippingMethods })
     } catch {
       setSettings(DEFAULT_STORE_SETTINGS)
     } finally {

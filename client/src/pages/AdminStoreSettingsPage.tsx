@@ -13,10 +13,15 @@ export default function AdminStoreSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingBrand, setUploadingBrand] = useState<string | null>(null)
   const { refresh } = useStoreSettings()
 
   useEffect(() => {
-    storeSettingsAPI.getAdmin().then(({ data }) => setSettings({ ...DEFAULT_STORE_SETTINGS, ...data })).catch(() => toast.error('No se pudo cargar la configuración')).finally(() => setLoading(false))
+    storeSettingsAPI.getAdmin().then(({ data }) => setSettings({
+      ...DEFAULT_STORE_SETTINGS,
+      ...data,
+      homeBrands: data.homeBrands?.length ? data.homeBrands : DEFAULT_STORE_SETTINGS.homeBrands,
+    })).catch(() => toast.error('No se pudo cargar la configuración')).finally(() => setLoading(false))
   }, [])
 
   const updateSection = <K extends keyof StoreSettings>(section: K, key: string, value: unknown) => {
@@ -35,6 +40,30 @@ export default function AdminStoreSettingsPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'No se pudo subir el logotipo')
     } finally { setUploading(false) }
+  }
+
+  const updateHomeBrand = (index: number, changes: Partial<StoreSettings['homeBrands'][number]>) => {
+    setSettings((current) => ({
+      ...current,
+      homeBrands: current.homeBrands.map((brand, brandIndex) => brandIndex === index ? { ...brand, ...changes } : brand),
+    }))
+  }
+
+  const handleBrandImage = async (index: number, file?: File) => {
+    if (!file) return
+    const brand = settings.homeBrands[index]
+    const formData = new FormData()
+    formData.append('image', file)
+    try {
+      setUploadingBrand(brand.name)
+      const { data } = await storeSettingsAPI.uploadLogo(formData)
+      updateHomeBrand(index, { imageUrl: data.url })
+      toast.success(`Imagen de ${brand.name} cargada; guarda los cambios para aplicarla`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || `No se pudo subir la imagen de ${brand.name}`)
+    } finally {
+      setUploadingBrand(null)
+    }
   }
 
   const save = async (event: React.FormEvent) => {
@@ -73,6 +102,68 @@ export default function AdminStoreSettingsPage() {
       {([['heroEyebrow','Texto superior del banner'],['heroTitle','Título del banner'],['heroSubtitle','Descripción del banner'],['heroImageUrl','Imagen del banner (URL)'],['categoriesTitle','Título de categorías'],['categoriesSubtitle','Descripción de categorías'],['offersTitle','Título de ofertas'],['offersSubtitle','Descripción de ofertas'],['newTitle','Título de nuevos productos'],['newSubtitle','Descripción de nuevos productos'],['topTitle','Título de más vendidos'],['topSubtitle','Descripción de más vendidos'],['quoteTitle','Título de cotización'],['quoteDescription','Descripción de cotización'],['footerTagline','Descripción del footer']] as const).map(([key,label]) => <div className={['heroTitle','heroSubtitle','offersSubtitle','newSubtitle','topSubtitle','quoteDescription','footerTagline'].includes(key) ? 'md:col-span-2' : ''} key={key}><label className={labelClass}>{label}</label>{['heroTitle','heroSubtitle','offersSubtitle','newSubtitle','topSubtitle','quoteDescription','footerTagline'].includes(key) ? <textarea rows={2} className={fieldClass} value={settings.home[key]} onChange={(e) => updateSection('home', key, e.target.value)} /> : <input className={fieldClass} value={settings.home[key]} onChange={(e) => updateSection('home', key, e.target.value)} />}</div>)}
     </div></section>
 
+    <section className="rounded-xl bg-white p-5 shadow-sm">
+      <div className="mb-4">
+        <h2 className="text-lg font-bold">Marcas del inicio</h2>
+        <p className="mt-1 text-sm text-gray-500">Configura las imágenes de la franja ubicada debajo del buscador. El nombre coincide con la marca registrada en los productos y no debe modificarse.</p>
+      </div>
+      <div className="space-y-3">
+        {settings.homeBrands.map((brand, index) => (
+          <div key={brand.name} className="grid gap-4 rounded-xl border border-gray-200 p-4 lg:grid-cols-[150px_1fr_auto] lg:items-center">
+            <div className={`flex h-20 items-center justify-center overflow-hidden rounded-lg border border-gray-200 p-3 ${brand.darkBackground ? 'bg-gray-950' : 'bg-gray-50'}`}>
+              {brand.imageUrl ? (
+                <img src={brand.imageUrl} alt={`Vista previa de ${brand.name}`} className="max-h-12 max-w-full object-contain" />
+              ) : (
+                <span className={`text-sm font-black tracking-[0.12em] ${brand.darkBackground ? 'text-white' : 'text-gray-800'}`}>{brand.name}</span>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="mb-2 text-sm font-bold text-gray-900">{brand.name}</p>
+              <label className={labelClass}>Imagen o URL del logotipo</label>
+              <input
+                className={fieldClass}
+                value={brand.imageUrl}
+                placeholder="https://... o /images/brands/..."
+                onChange={(event) => updateHomeBrand(index, { imageUrl: event.target.value })}
+              />
+              <div className="mt-2 flex flex-wrap gap-3">
+                <label className="cursor-pointer rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800">
+                  {uploadingBrand === brand.name ? 'Subiendo...' : brand.imageUrl ? 'Reemplazar imagen' : 'Subir imagen'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingBrand !== null}
+                    onChange={(event) => {
+                      void handleBrandImage(index, event.target.files?.[0])
+                      event.target.value = ''
+                    }}
+                  />
+                </label>
+                {brand.imageUrl && (
+                  <button type="button" onClick={() => updateHomeBrand(index, { imageUrl: '' })} className="text-xs font-semibold text-red-600">
+                    Quitar imagen
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 lg:flex-col">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <input type="checkbox" checked={brand.enabled} onChange={(event) => updateHomeBrand(index, { enabled: event.target.checked })} />
+                Mostrar
+              </label>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <input type="checkbox" checked={brand.darkBackground} onChange={(event) => updateHomeBrand(index, { darkBackground: event.target.checked })} />
+                Fondo oscuro
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
     <section className="rounded-xl bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-bold">Datos fiscales</h2><p className="mb-4 text-sm text-gray-500">Estos datos preparan la integración futura de CFDI; no incluyen certificados ni contraseñas.</p><div className="grid gap-4 md:grid-cols-2">
       {([['legalName','Razón social'],['rfc','RFC'],['taxRegime','Régimen fiscal'],['postalCode','Código postal'],['fiscalAddress','Domicilio fiscal'],['invoiceEmail','Correo de facturación']] as const).map(([key,label]) => <div key={key}><label className={labelClass}>{label}</label><input className={fieldClass} value={settings.fiscal[key]} onChange={(e) => updateSection('fiscal', key, e.target.value)} /></div>)}
     </div></section>
@@ -83,6 +174,6 @@ export default function AdminStoreSettingsPage() {
 
     <section className="rounded-xl bg-white p-5 shadow-sm"><h2 className="mb-4 text-lg font-bold">Redes sociales</h2><div className="grid gap-4 md:grid-cols-2">{Object.entries(settings.social).map(([key,value]) => <div key={key}><label className={labelClass}>{key[0].toUpperCase()+key.slice(1)}</label><input className={fieldClass} placeholder="https://" value={value} onChange={(e) => updateSection('social', key, e.target.value)} /></div>)}</div></section>
 
-    <div className="sticky bottom-4 flex justify-end"><button disabled={saving || uploading} className="rounded-xl bg-blue-700 px-6 py-3 font-bold text-white shadow-lg hover:bg-blue-800 disabled:bg-gray-400">{saving ? 'Guardando...' : 'Guardar configuración'}</button></div>
+    <div className="sticky bottom-4 flex justify-end"><button disabled={saving || uploading || uploadingBrand !== null} className="rounded-xl bg-blue-700 px-6 py-3 font-bold text-white shadow-lg hover:bg-blue-800 disabled:bg-gray-400">{saving ? 'Guardando...' : 'Guardar configuración'}</button></div>
   </form>
 }

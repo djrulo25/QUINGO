@@ -110,6 +110,13 @@ export interface ShippingMethod {
   enabled: boolean
 }
 
+export interface HomeBrand {
+  name: string
+  imageUrl: string
+  enabled: boolean
+  darkBackground: boolean
+}
+
 export interface StoreSettings {
   name: string
   logoUrl: string
@@ -145,6 +152,7 @@ export interface StoreSettings {
     popularSearches: string[]
     footerTagline: string
   }
+  homeBrands: HomeBrand[]
   fiscal: {
     legalName: string
     rfc: string
